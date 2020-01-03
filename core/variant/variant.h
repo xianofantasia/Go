@@ -772,6 +772,7 @@ public:
 	bool identity_compare(const Variant &p_variant) const;
 	bool booleanize() const;
 	String stringify(int recursion_count = 0) const;
+	String dump(int recursion_count = 0) const;
 	String to_json_string() const;
 
 	void static_assign(const Variant &p_variant);
