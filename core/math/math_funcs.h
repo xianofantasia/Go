@@ -31,6 +31,7 @@
 #ifndef MATH_FUNCS_H
 #define MATH_FUNCS_H
 
+#include "core/error/error_macros.h"
 #include "core/math/math_defs.h"
 #include "core/math/random_pcg.h"
 #include "core/typedefs.h"
@@ -199,6 +200,10 @@ public:
 		return value;
 	}
 	static _ALWAYS_INLINE_ int posmod(int p_x, int p_y) {
+		if (p_y == 0) {
+			ERR_FAIL_V_MSG(-1, "p_y is 0");
+			return -1;
+		}
 		int value = p_x % p_y;
 		if ((value < 0 && p_y > 0) || (value > 0 && p_y < 0)) {
 			value += p_y;
