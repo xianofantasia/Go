@@ -201,7 +201,7 @@ public:
 	}
 	static _ALWAYS_INLINE_ int posmod(int p_x, int p_y) {
 		if (p_y == 0) {
-			ERR_FAIL_V_MSG(-1, "p_y is 0");
+			ERR_FAIL_V_MSG(-1, "Cannot divide by zero");
 			return -1;
 		}
 		int value = p_x % p_y;
