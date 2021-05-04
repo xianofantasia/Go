@@ -70,7 +70,7 @@ public:
 	int get_window_height();
 	void *get_glx_context();
 
-	Error initialize();
+	Error initialize(Atom &wm_delete);
 
 	void set_use_vsync(bool p_use);
 	bool is_using_vsync() const;
