@@ -4522,6 +4522,13 @@ void CanvasItemEditor::_popup_callback(int p_op) {
 			view_menu->get_popup()->set_item_checked(view_menu->get_popup()->get_item_index(PREVIEW_CANVAS_SCALE), preview);
 
 		} break;
+		case PREVIEW_3D_SCENE_BACKGROUND: {
+			bool enable_3d = view_menu->get_popup()->is_item_checked(view_menu->get_popup()->get_item_index(PREVIEW_3D_SCENE_BACKGROUND));
+			enable_3d = !enable_3d;
+			RenderingServer::get_singleton()->viewport_set_disable_3d(EditorNode::get_singleton()->get_scene_root()->get_viewport_rid(), !enable_3d);
+			view_menu->get_popup()->set_item_checked(view_menu->get_popup()->get_item_index(PREVIEW_3D_SCENE_BACKGROUND), enable_3d);
+
+		} break;
 		case SKELETON_MAKE_BONES: {
 			HashMap<Node *, Object *> &selection = editor_selection->get_selection();
 			Node *editor_root = EditorNode::get_singleton()->get_edited_scene()->get_tree()->get_edited_scene_root();
@@ -5191,6 +5198,7 @@ CanvasItemEditor::CanvasItemEditor() {
 	p->add_shortcut(ED_SHORTCUT("canvas_item_editor/clear_guides", TTR("Clear Guides")), CLEAR_GUIDES);
 	p->add_separator();
 	p->add_check_shortcut(ED_SHORTCUT("canvas_item_editor/preview_canvas_scale", TTR("Preview Canvas Scale"), KeyModifierMask::SHIFT | KeyModifierMask::CMD | Key::P), PREVIEW_CANVAS_SCALE);
+	p->add_check_shortcut(ED_SHORTCUT("canvas_item_editor/preview_3d_scene_background", TTR("Preview 3D Scene Background"), KeyModifierMask::SHIFT | KeyModifierMask::CMD | Key::H), PREVIEW_3D_SCENE_BACKGROUND);
 
 	hb->add_child(memnew(VSeparator));
 
@@ -5770,17 +5778,23 @@ void CanvasItemEditorViewport::_update_theme() {
 	label->add_theme_color_override("font_color", get_theme_color(SNAME("warning_color"), SNAME("Editor")));
 }
 
+void CanvasItemEditorViewport::_project_settings_changed() {
+	Viewport *viewport = EditorNode::get_singleton()->get_scene_root()->get_viewport();
+	viewport->apply_project_settings();
+}
+
 void CanvasItemEditorViewport::_notification(int p_what) {
 	switch (p_what) {
 		case NOTIFICATION_THEME_CHANGED: {
 			_update_theme();
 		} break;
-
 		case NOTIFICATION_ENTER_TREE: {
 			_update_theme();
 			connect("mouse_exited", callable_mp(this, &CanvasItemEditorViewport::_on_mouse_exit));
 		} break;
-
+		case NOTIFICATION_READY: {
+			EditorNode::get_singleton()->connect("project_settings_changed", callable_mp(this, &CanvasItemEditorViewport::_project_settings_changed));
+		} break;
 		case NOTIFICATION_EXIT_TREE: {
 			disconnect("mouse_exited", callable_mp(this, &CanvasItemEditorViewport::_on_mouse_exit));
 		} break;

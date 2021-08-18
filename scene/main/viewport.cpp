@@ -370,6 +370,37 @@ void Viewport::_sub_window_remove(Window *p_window) {
 	RenderingServer::get_singleton()->viewport_set_parent_viewport(p_window->viewport, p_window->parent ? p_window->parent->viewport : RID());
 }
 
+void Viewport::apply_project_settings() {
+	// Update shadow atlas if changed.
+	const int shadowmap_size = ProjectSettings::get_singleton()->get("rendering/shadows/shadow_atlas/size");
+	const bool shadowmap_16_bits = ProjectSettings::get_singleton()->get("rendering/shadows/shadow_atlas/16_bits");
+	const int atlas_q0 = ProjectSettings::get_singleton()->get("rendering/shadows/shadow_atlas/quadrant_0_subdiv");
+	const int atlas_q1 = ProjectSettings::get_singleton()->get("rendering/shadows/shadow_atlas/quadrant_1_subdiv");
+	const int atlas_q2 = ProjectSettings::get_singleton()->get("rendering/shadows/shadow_atlas/quadrant_2_subdiv");
+	const int atlas_q3 = ProjectSettings::get_singleton()->get("rendering/shadows/shadow_atlas/quadrant_3_subdiv");
+
+	set_shadow_atlas_size(shadowmap_size);
+	set_shadow_atlas_16_bits(shadowmap_16_bits);
+	set_shadow_atlas_quadrant_subdiv(0, Viewport::ShadowAtlasQuadrantSubdiv(atlas_q0));
+	set_shadow_atlas_quadrant_subdiv(1, Viewport::ShadowAtlasQuadrantSubdiv(atlas_q1));
+	set_shadow_atlas_quadrant_subdiv(2, Viewport::ShadowAtlasQuadrantSubdiv(atlas_q2));
+	set_shadow_atlas_quadrant_subdiv(3, Viewport::ShadowAtlasQuadrantSubdiv(atlas_q3));
+
+	// Update MSAA, screen-space AA and debanding if changed.
+	const int msaa_mode = ProjectSettings::get_singleton()->get("rendering/anti_aliasing/quality/msaa");
+	set_msaa(Viewport::MSAA(msaa_mode));
+	const int ssaa_mode = GLOBAL_GET("rendering/anti_aliasing/quality/screen_space_aa");
+	set_screen_space_aa(Viewport::ScreenSpaceAA(ssaa_mode));
+	const bool use_debanding = GLOBAL_GET("rendering/anti_aliasing/quality/use_debanding");
+	set_use_debanding(use_debanding);
+
+	const bool use_occlusion_culling = GLOBAL_GET("rendering/occlusion_culling/use_occlusion_culling");
+	set_use_occlusion_culling(use_occlusion_culling);
+
+	const float mesh_lod_threshold = GLOBAL_GET("rendering/mesh_lod/lod_change/threshold_pixels");
+	set_mesh_lod_threshold(mesh_lod_threshold);
+}
+
 void Viewport::_notification(int p_what) {
 	switch (p_what) {
 		case NOTIFICATION_ENTER_TREE: {
