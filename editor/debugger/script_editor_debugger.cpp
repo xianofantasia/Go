@@ -792,15 +792,12 @@ void ScriptEditorDebugger::_notification(int p_what) {
 					CanvasItemEditor *editor = CanvasItemEditor::get_singleton();
 
 					Dictionary state = editor->get_state();
+					Vector2 offset = state["ofs"];
 					float zoom = state["zoom"];
-					Point2 offset = state["ofs"];
-					Transform2D transform;
-
-					transform.scale_basis(Size2(zoom, zoom));
-					transform.elements[2] = -offset * zoom;
 
 					Array msg;
-					msg.push_back(transform);
+					msg.push_back(offset);
+					msg.push_back(Vector2(zoom, zoom));
 					_put_msg("scene:override_camera_2D:transform", msg);
 
 				} else if (camera_override >= CameraOverride::OVERRIDE_3D_1) {

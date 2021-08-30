@@ -845,44 +845,9 @@ Listener2D *Viewport::get_listener_2d() const {
 	return listener_2d;
 }
 
-void Viewport::enable_canvas_transform_override(bool p_enable) {
-	if (override_canvas_transform == p_enable) {
-		return;
-	}
-
-	override_canvas_transform = p_enable;
-	if (p_enable) {
-		RenderingServer::get_singleton()->viewport_set_canvas_transform(viewport, find_world_2d()->get_canvas(), canvas_transform_override);
-	} else {
-		RenderingServer::get_singleton()->viewport_set_canvas_transform(viewport, find_world_2d()->get_canvas(), canvas_transform);
-	}
-}
-
-bool Viewport::is_canvas_transform_override_enbled() const {
-	return override_canvas_transform;
-}
-
-void Viewport::set_canvas_transform_override(const Transform2D &p_transform) {
-	if (canvas_transform_override == p_transform) {
-		return;
-	}
-
-	canvas_transform_override = p_transform;
-	if (override_canvas_transform) {
-		RenderingServer::get_singleton()->viewport_set_canvas_transform(viewport, find_world_2d()->get_canvas(), canvas_transform_override);
-	}
-}
-
-Transform2D Viewport::get_canvas_transform_override() const {
-	return canvas_transform_override;
-}
-
 void Viewport::set_canvas_transform(const Transform2D &p_transform) {
 	canvas_transform = p_transform;
-
-	if (!override_canvas_transform) {
-		RenderingServer::get_singleton()->viewport_set_canvas_transform(viewport, find_world_2d()->get_canvas(), canvas_transform);
-	}
+	RenderingServer::get_singleton()->viewport_set_canvas_transform(viewport, find_world_2d()->get_canvas(), canvas_transform);
 }
 
 Transform2D Viewport::get_canvas_transform() const {
@@ -921,6 +886,17 @@ void Viewport::_listener_2d_set(Listener2D *p_listener) {
 void Viewport::_listener_2d_remove(Listener2D *p_listener) {
 	if (listener_2d == p_listener) {
 		listener_2d = nullptr;
+	}
+}
+
+void Viewport::_camera_2d_update_canvas_transform(const Transform2D &p_transform) {
+#ifdef TOOLS_ENABLED
+	if (is_camera_2d_overriden()) {
+		set_global_canvas_transform(p_transform);
+	} else
+#endif // TOOLS_ENABLED
+	{
+		set_canvas_transform(p_transform);
 	}
 }
 
@@ -3156,12 +3132,10 @@ void Viewport::_camera_3d_set(Camera3D *p_camera) {
 
 	camera_3d = p_camera;
 
-	if (!camera_3d_override) {
-		if (camera_3d) {
-			RenderingServer::get_singleton()->viewport_attach_camera(viewport, camera_3d->get_camera());
-		} else {
-			RenderingServer::get_singleton()->viewport_attach_camera(viewport, RID());
-		}
+	if (camera_3d) {
+		RenderingServer::get_singleton()->viewport_attach_camera(viewport, camera_3d->get_camera());
+	} else {
+		RenderingServer::get_singleton()->viewport_attach_camera(viewport, RID());
 	}
 
 	if (camera_3d) {
@@ -3201,58 +3175,89 @@ void Viewport::_camera_3d_make_next_current(Camera3D *p_exclude) {
 	}
 }
 
-void Viewport::enable_camera_3d_override(bool p_enable) {
-	if (p_enable == camera_3d_override) {
+#ifdef TOOLS_ENABLED
+
+template <typename OverrideT, typename CameraT>
+_FORCE_INLINE_ void _enable_camera_override(Viewport &viewport, OverrideT &camera_override, CameraT *&camera, const String &camera_override_node_name) {
+	camera_override.enabled = true;
+	camera_override.previous_camera = camera ? camera->get_instance_id() : ObjectID();
+
+	CameraT *override_camera = memnew(CameraT);
+	viewport.add_child(override_camera);
+	override_camera->set_name(camera_override_node_name);
+	override_camera->make_current();
+}
+
+template <typename OverrideT, typename CameraT>
+_FORCE_INLINE_ void _disable_camera_override(Viewport &viewport, OverrideT &camera_override, CameraT *&camera) {
+	camera_override.enabled = false;
+	memdelete(camera);
+
+	CameraT *previous_camera_instance = (CameraT *)ObjectDB::get_instance(camera_override.previous_camera);
+	if (previous_camera_instance) {
+		previous_camera_instance->make_current();
+	}
+
+	camera_override.previous_camera = ObjectID();
+}
+
+void Viewport::enable_camera_2d_override(bool p_enable) {
+	if (p_enable == is_camera_2d_overriden()) {
 		return;
 	}
 
 	if (p_enable) {
-		camera_3d_override.rid = RenderingServer::get_singleton()->camera_create();
+		_enable_camera_override(*this, camera_2d_override, camera_2d, "Camera2DOverride");
+		camera_2d->set_anchor_mode(Camera2D::ANCHOR_MODE_FIXED_TOP_LEFT);
+		camera_2d_override.previous_global_canvas_transform = get_global_canvas_transform();
 	} else {
-		RenderingServer::get_singleton()->free(camera_3d_override.rid);
-		camera_3d_override.rid = RID();
+		_disable_camera_override(*this, camera_2d_override, camera_2d);
+		set_global_canvas_transform(camera_2d_override.previous_global_canvas_transform);
+		camera_2d_override.previous_global_canvas_transform = Transform2D();
+	}
+}
+
+bool Viewport::is_camera_2d_overriden() const {
+	return camera_2d_override.enabled;
+}
+
+void Viewport::set_camera_2d_override_transform(const Vector2 &p_position, const Vector2 &p_zoom) {
+	ERR_FAIL_COND(!is_camera_2d_overriden());
+	camera_2d->set_position(p_position);
+	camera_2d->set_zoom(p_zoom);
+}
+
+void Viewport::enable_camera_3d_override(bool p_enable) {
+	if (p_enable == is_camera_3d_overriden()) {
+		return;
 	}
 
 	if (p_enable) {
-		RenderingServer::get_singleton()->viewport_attach_camera(viewport, camera_3d_override.rid);
-	} else if (camera_3d) {
-		RenderingServer::get_singleton()->viewport_attach_camera(viewport, camera_3d->get_camera());
+		_enable_camera_override(*this, camera_3d_override, camera_3d, "Camera3DOverride");
 	} else {
-		RenderingServer::get_singleton()->viewport_attach_camera(viewport, RID());
+		_disable_camera_override(*this, camera_3d_override, camera_3d);
 	}
 }
 
 void Viewport::set_camera_3d_override_perspective(real_t p_fovy_degrees, real_t p_z_near, real_t p_z_far) {
-	if (camera_3d_override) {
-		if (camera_3d_override.fov == p_fovy_degrees && camera_3d_override.z_near == p_z_near &&
-				camera_3d_override.z_far == p_z_far && camera_3d_override.projection == Camera3DOverrideData::PROJECTION_PERSPECTIVE) {
-			return;
-		}
-
-		camera_3d_override.fov = p_fovy_degrees;
-		camera_3d_override.z_near = p_z_near;
-		camera_3d_override.z_far = p_z_far;
-		camera_3d_override.projection = Camera3DOverrideData::PROJECTION_PERSPECTIVE;
-
-		RenderingServer::get_singleton()->camera_set_perspective(camera_3d_override.rid, camera_3d_override.fov, camera_3d_override.z_near, camera_3d_override.z_far);
-	}
+	ERR_FAIL_COND(!is_camera_3d_overriden());
+	camera_3d->set_perspective(p_fovy_degrees, p_z_near, p_z_far);
 }
 
 void Viewport::set_camera_3d_override_orthogonal(real_t p_size, real_t p_z_near, real_t p_z_far) {
-	if (camera_3d_override) {
-		if (camera_3d_override.size == p_size && camera_3d_override.z_near == p_z_near &&
-				camera_3d_override.z_far == p_z_far && camera_3d_override.projection == Camera3DOverrideData::PROJECTION_ORTHOGONAL) {
-			return;
-		}
-
-		camera_3d_override.size = p_size;
-		camera_3d_override.z_near = p_z_near;
-		camera_3d_override.z_far = p_z_far;
-		camera_3d_override.projection = Camera3DOverrideData::PROJECTION_ORTHOGONAL;
-
-		RenderingServer::get_singleton()->camera_set_orthogonal(camera_3d_override.rid, camera_3d_override.size, camera_3d_override.z_near, camera_3d_override.z_far);
-	}
+	ERR_FAIL_COND(!is_camera_3d_overriden());
+	camera_3d->set_orthogonal(p_size, p_z_near, p_z_far);
 }
+
+bool Viewport::is_camera_3d_overriden() const {
+	return camera_3d_override.enabled;
+}
+
+void Viewport::set_camera_3d_override_transform(const Transform3D &p_transform) {
+	ERR_FAIL_COND(!is_camera_3d_overriden());
+	camera_3d->set_transform(p_transform);
+}
+#endif // TOOLS_ENABLED
 
 void Viewport::set_disable_3d(bool p_disable) {
 	disable_3d = p_disable;
@@ -3261,25 +3266,6 @@ void Viewport::set_disable_3d(bool p_disable) {
 
 bool Viewport::is_3d_disabled() const {
 	return disable_3d;
-}
-
-bool Viewport::is_camera_3d_override_enabled() const {
-	return camera_3d_override;
-}
-
-void Viewport::set_camera_3d_override_transform(const Transform3D &p_transform) {
-	if (camera_3d_override) {
-		camera_3d_override.transform = p_transform;
-		RenderingServer::get_singleton()->camera_set_transform(camera_3d_override.rid, p_transform);
-	}
-}
-
-Transform3D Viewport::get_camera_3d_override_transform() const {
-	if (camera_3d_override) {
-		return camera_3d_override.transform;
-	}
-
-	return Transform3D();
 }
 
 Ref<World3D> Viewport::get_world_3d() const {

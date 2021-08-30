@@ -206,6 +206,24 @@ private:
 	Camera2D *camera_2d = nullptr;
 	Set<CanvasLayer *> canvas_layers;
 
+#ifdef TOOLS_ENABLED
+	struct Camera2DOverride {
+		bool enabled = false;
+		ObjectID previous_camera;
+		Transform2D previous_global_canvas_transform;
+	};
+
+	Camera2DOverride camera_2d_override;
+
+	struct Camera3DOverride {
+		bool enabled = false;
+		ObjectID previous_camera;
+	};
+
+	Camera3DOverride camera_3d_override;
+
+#endif // TOOLS_ENABLED
+
 	RID viewport;
 	RID current_canvas;
 	RID subwindow_canvas;
@@ -213,9 +231,6 @@ private:
 	bool audio_listener_2d = false;
 	RID internal_listener_2d;
 
-	bool override_canvas_transform = false;
-
-	Transform2D canvas_transform_override;
 	Transform2D canvas_transform;
 	Transform2D global_canvas_transform;
 	Transform2D stretch_transform;
@@ -424,6 +439,7 @@ private:
 
 	friend class Camera2D;
 	void _camera_2d_set(Camera2D *p_camera_2d);
+	void _camera_2d_update_canvas_transform(const Transform2D &p_transform);
 
 	friend class CanvasLayer;
 	void _canvas_layer_add(CanvasLayer *p_canvas_layer);
@@ -476,12 +492,6 @@ public:
 	void set_world_2d(const Ref<World2D> &p_world_2d);
 	Ref<World2D> get_world_2d() const;
 	Ref<World2D> find_world_2d() const;
-
-	void enable_canvas_transform_override(bool p_enable);
-	bool is_canvas_transform_override_enbled() const;
-
-	void set_canvas_transform_override(const Transform2D &p_transform);
-	Transform2D get_canvas_transform_override() const;
 
 	void set_canvas_transform(const Transform2D &p_transform);
 	Transform2D get_canvas_transform() const;
@@ -610,24 +620,6 @@ public:
 
 	void _collision_object_3d_input_event(CollisionObject3D *p_object, Camera3D *p_camera, const Ref<InputEvent> &p_input_event, const Vector3 &p_pos, const Vector3 &p_normal, int p_shape);
 
-	struct Camera3DOverrideData {
-		Transform3D transform;
-		enum Projection {
-			PROJECTION_PERSPECTIVE,
-			PROJECTION_ORTHOGONAL
-		};
-		Projection projection = Projection::PROJECTION_PERSPECTIVE;
-		real_t fov = 0.0;
-		real_t size = 0.0;
-		real_t z_near = 0.0;
-		real_t z_far = 0.0;
-		RID rid;
-
-		operator bool() const {
-			return rid != RID();
-		}
-	} camera_3d_override;
-
 	friend class Camera3D;
 	Camera3D *camera_3d = nullptr;
 	Set<Camera3D *> camera_3d_set;
@@ -638,14 +630,17 @@ public:
 	void _camera_3d_remove(Camera3D *p_camera);
 	void _camera_3d_make_next_current(Camera3D *p_exclude);
 
+#ifdef TOOLS_ENABLED
+	void enable_camera_2d_override(bool p_enable);
+	bool is_camera_2d_overriden() const;
+	void set_camera_2d_override_transform(const Vector2 &p_position, const Vector2 &p_zoom);
+
 	void enable_camera_3d_override(bool p_enable);
-	bool is_camera_3d_override_enabled() const;
-
+	bool is_camera_3d_overriden() const;
 	void set_camera_3d_override_transform(const Transform3D &p_transform);
-	Transform3D get_camera_3d_override_transform() const;
-
 	void set_camera_3d_override_perspective(real_t p_fovy_degrees, real_t p_z_near, real_t p_z_far);
 	void set_camera_3d_override_orthogonal(real_t p_size, real_t p_z_near, real_t p_z_far);
+#endif // TOOLS_ENABLED
 
 	void set_disable_3d(bool p_disable);
 	bool is_3d_disabled() const;

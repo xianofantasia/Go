@@ -80,16 +80,17 @@ Error SceneDebugger::parse_message(void *p_user, const String &p_msg, const Arra
 		ERR_FAIL_COND_V(p_args.size() < 1, ERR_INVALID_DATA);
 		ObjectID id = p_args[0];
 		_send_object_id(id);
-
+#ifdef TOOLS_ENABLED
 	} else if (p_msg == "override_camera_2D:set") { // Camera
 		ERR_FAIL_COND_V(p_args.size() < 1, ERR_INVALID_DATA);
-		bool enforce = p_args[0];
-		scene_tree->get_root()->enable_canvas_transform_override(enforce);
+		bool enable = p_args[0];
+		scene_tree->get_root()->enable_camera_2d_override(enable);
 
 	} else if (p_msg == "override_camera_2D:transform") {
-		ERR_FAIL_COND_V(p_args.size() < 1, ERR_INVALID_DATA);
-		Transform2D transform = p_args[0];
-		scene_tree->get_root()->set_canvas_transform_override(transform);
+		ERR_FAIL_COND_V(p_args.size() < 2, ERR_INVALID_DATA);
+		Vector2 position = p_args[0];
+		Vector2 zoom = p_args[1];
+		scene_tree->get_root()->set_camera_2d_override_transform(position, zoom);
 #ifndef _3D_DISABLED
 	} else if (p_msg == "override_camera_3D:set") {
 		ERR_FAIL_COND_V(p_args.size() < 1, ERR_INVALID_DATA);
@@ -110,6 +111,7 @@ Error SceneDebugger::parse_message(void *p_user, const String &p_msg, const Arra
 		}
 		scene_tree->get_root()->set_camera_3d_override_transform(transform);
 #endif // _3D_DISABLED
+#endif // TOOLS_ENABLED
 	} else if (p_msg == "set_object_property") {
 		ERR_FAIL_COND_V(p_args.size() < 3, ERR_INVALID_DATA);
 		_set_object_property(p_args[0], p_args[1], p_args[2]);

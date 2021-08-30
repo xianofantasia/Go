@@ -51,7 +51,7 @@ void Camera2D::_update_scroll() {
 
 		Transform2D xform = get_camera_transform();
 
-		viewport->set_canvas_transform(xform);
+		viewport->_camera_2d_update_canvas_transform(xform);
 
 		Size2 screen_size = _get_camera_screen_size();
 		Point2 screen_offset = (anchor_mode == ANCHOR_MODE_DRAG_CENTER ? (screen_size * 0.5) : Point2());
