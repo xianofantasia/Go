@@ -1740,7 +1740,7 @@
 		<member name="rendering/shadows/directional_shadow/16_bits" type="bool" setter="" getter="" default="true">
 		</member>
 		<member name="rendering/shadows/directional_shadow/size" type="int" setter="" getter="" default="4096">
-			The directional shadow's size in pixels. Higher values will result in sharper shadows, at the cost of performance. The value will be rounded up to the nearest power of 2.
+			The directional shadow's size in pixels. Higher values will result in sharper shadows, at the cost of performance.
 		</member>
 		<member name="rendering/shadows/directional_shadow/size.mobile" type="int" setter="" getter="" default="2048">
 			Lower-end override for [member rendering/shadows/directional_shadow/size] on mobile devices, due to performance concerns or driver support.
@@ -1768,7 +1768,7 @@
 			Subdivision quadrant size for shadow mapping. See shadow mapping documentation.
 		</member>
 		<member name="rendering/shadows/shadow_atlas/size" type="int" setter="" getter="" default="4096">
-			Size for shadow atlas (used for OmniLights and SpotLights). See documentation.
+			Size for shadow atlas (used for [OmniLight3D]s and [SpotLight3D]s). The value will be rounded up to the nearest power of 2.
 		</member>
 		<member name="rendering/shadows/shadow_atlas/size.mobile" type="int" setter="" getter="" default="2048">
 			Lower-end override for [member rendering/shadows/shadow_atlas/size] on mobile devices, due to performance concerns or driver support.

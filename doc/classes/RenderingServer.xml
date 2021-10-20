@@ -3197,7 +3197,7 @@
 			<argument index="1" name="size" type="int" />
 			<argument index="2" name="use_16_bits" type="bool" default="false" />
 			<description>
-				Sets the size of the shadow atlas's images (used for omni and spot lights). The value will be rounded up to the nearest power of 2.
+				Sets the size of the shadow atlas's images (used for [OmniLight3D]s and [SpotLight3D]s). The value will be rounded up to the nearest power of 2.
 			</description>
 		</method>
 		<method name="viewport_set_size">
