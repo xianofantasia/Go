@@ -317,7 +317,7 @@ RID RendererSceneRenderRD::reflection_atlas_create() {
 	if (is_clustered_enabled()) {
 		ra.cluster_builder = memnew(ClusterBuilderRD);
 		ra.cluster_builder->set_shared(&cluster_builder_shared);
-		ra.cluster_builder->setup(Size2i(ra.size, ra.size), max_cluster_elements, RID(), RID(), RID());
+		ra.cluster_builder->setup(Size2i(ra.size, ra.size), max_cluster_elements, RID(), RID(), RID(), cluster_size);
 	} else {
 		ra.cluster_builder = nullptr;
 	}
@@ -335,7 +335,7 @@ void RendererSceneRenderRD::reflection_atlas_set_size(RID p_ref_atlas, int p_ref
 
 	if (ra->cluster_builder) {
 		// only if we're using our cluster
-		ra->cluster_builder->setup(Size2i(ra->size, ra->size), max_cluster_elements, RID(), RID(), RID());
+		ra->cluster_builder->setup(Size2i(ra->size, ra->size), max_cluster_elements, RID(), RID(), RID(), cluster_size);
 	}
 
 	ra->size = p_reflection_size;
@@ -2583,7 +2583,7 @@ void RendererSceneRenderRD::render_buffers_configure(RID p_render_buffers, RID p
 	rb->data->configure(rb->internal_texture, rb->depth_texture, target_texture, p_internal_width, p_internal_height, p_msaa, p_use_taa, p_view_count, rb->vrs_texture);
 
 	if (is_clustered_enabled()) {
-		rb->cluster_builder->setup(Size2i(p_internal_width, p_internal_height), max_cluster_elements, rb->depth_texture, RendererRD::MaterialStorage::get_singleton()->sampler_rd_get_default(RS::CANVAS_ITEM_TEXTURE_FILTER_NEAREST, RS::CANVAS_ITEM_TEXTURE_REPEAT_DISABLED), rb->internal_texture);
+		rb->cluster_builder->setup(Size2i(p_internal_width, p_internal_height), max_cluster_elements, rb->depth_texture, RendererRD::MaterialStorage::get_singleton()->sampler_rd_get_default(RS::CANVAS_ITEM_TEXTURE_FILTER_NEAREST, RS::CANVAS_ITEM_TEXTURE_REPEAT_DISABLED), rb->internal_texture, cluster_size);
 	}
 }
 
@@ -4320,6 +4320,7 @@ RendererSceneRenderRD::RendererSceneRenderRD() {
 
 void RendererSceneRenderRD::init() {
 	max_cluster_elements = get_max_elements();
+	cluster_size = ClusterBuilderRD::ClusterSize(int(GLOBAL_GET("rendering/limits/cluster_builder/cluster_size")));
 
 	directional_shadow.size = GLOBAL_GET("rendering/shadows/directional_shadow/size");
 	directional_shadow.use_16_bits = GLOBAL_GET("rendering/shadows/directional_shadow/16_bits");
