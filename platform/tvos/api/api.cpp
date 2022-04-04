@@ -1,5 +1,5 @@
 /*************************************************************************/
-/*  display_layer.h                                                      */
+/*  api.cpp                                                              */
 /*************************************************************************/
 /*                       This file is part of:                           */
 /*                           GODOT ENGINE                                */
@@ -28,31 +28,21 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
 /*************************************************************************/
 
-#import <OpenGLES/EAGLDrawable.h>
-#import <QuartzCore/QuartzCore.h>
+#include "api.h"
 
-@protocol DisplayLayer <NSObject>
+#if defined(TVOS_ENABLED)
 
-- (void)renderDisplayLayer;
-- (void)initializeDisplayLayer;
-- (void)layoutDisplayLayer;
+void register_tvos_api() {
+	godot_tvos_plugins_initialize();
+}
 
-@end
+void unregister_tvos_api() {
+	godot_tvos_plugins_deinitialize();
+}
 
-// An ugly workaround for iOS simulator
-#if defined(TARGET_OS_SIMULATOR) && TARGET_OS_SIMULATOR
-#if defined(__IPHONE_13_0)
-API_AVAILABLE(ios(13.0))
-@interface GodotMetalLayer : CAMetalLayer <DisplayLayer>
 #else
-@interface GodotMetalLayer : CALayer <DisplayLayer>
-#endif
-#else
-@interface GodotMetalLayer : CAMetalLayer <DisplayLayer>
-#endif
-@end
 
-API_DEPRECATED("OpenGLES is deprecated", ios(2.0, 12.0))
-@interface GodotOpenGLLayer : CAEAGLLayer <DisplayLayer>
+void register_tvos_api() {}
+void unregister_tvos_api() {}
 
-@end
+#endif

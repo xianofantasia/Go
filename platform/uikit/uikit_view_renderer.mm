@@ -1,5 +1,5 @@
 /*************************************************************************/
-/*  joypad_iphone.h                                                      */
+/*  uikit_view_renderer.mm                                               */
 /*************************************************************************/
 /*                       This file is part of:                           */
 /*                           GODOT ENGINE                                */
@@ -28,23 +28,85 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
 /*************************************************************************/
 
-#import <GameController/GameController.h>
+#import "uikit_view_renderer.h"
 
-@interface JoypadIPhoneObserver : NSObject
+#include "core/config/project_settings.h"
+#include "core/os/keyboard.h"
+#include "main/main.h"
+#include "servers/audio_server.h"
 
-- (void)startObserving;
-- (void)startProcessing;
-- (void)finishObserving;
+#import <AudioToolbox/AudioServices.h>
+#import <QuartzCore/QuartzCore.h>
+#import <UIKit/UIKit.h>
+
+@interface UIKitViewRenderer ()
+
+@property(assign, nonatomic) BOOL hasFinishedProjectDataSetup;
+@property(assign, nonatomic) BOOL hasStartedMain;
+@property(assign, nonatomic) BOOL hasFinishedSetup;
 
 @end
 
-class JoypadIPhone {
-private:
-	JoypadIPhoneObserver *observer;
+@implementation UIKitViewRenderer
 
-public:
-	JoypadIPhone();
-	~JoypadIPhone();
+- (BOOL)setupView:(UIView *)view {
+	if (self.hasFinishedSetup) {
+		return NO;
+	}
 
-	void start_processing();
-};
+	if (!OS::get_singleton()) {
+		exit(0);
+	}
+
+	if (!self.hasFinishedProjectDataSetup) {
+		[self setupProjectData];
+		return YES;
+	}
+
+	if (!self.hasStartedMain) {
+		self.hasStartedMain = [self startUIKitPlatform];
+		return YES;
+	}
+
+	self.hasFinishedSetup = YES;
+
+	return NO;
+}
+
+- (void)setupProjectData {
+	self.hasFinishedProjectDataSetup = YES;
+
+	Main::setup2();
+
+	// this might be necessary before here
+	NSDictionary *dict = [[NSBundle mainBundle] infoDictionary];
+	for (NSString *key in dict) {
+		NSObject *value = [dict objectForKey:key];
+		String ukey = String::utf8([key UTF8String]);
+
+		// we need a NSObject to Variant conversor
+
+		if ([value isKindOfClass:[NSString class]]) {
+			NSString *str = (NSString *)value;
+			String uval = String::utf8([str UTF8String]);
+
+			ProjectSettings::get_singleton()->set("Info.plist/" + ukey, uval);
+
+		} else if ([value isKindOfClass:[NSNumber class]]) {
+			NSNumber *n = (NSNumber *)value;
+			double dval = [n doubleValue];
+
+			ProjectSettings::get_singleton()->set("Info.plist/" + ukey, dval);
+		};
+		// do stuff
+	}
+}
+
+- (BOOL)startUIKitPlatform {
+	return NO;
+}
+
+- (void)renderOnView:(UIView *)view {
+}
+
+@end

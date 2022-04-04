@@ -1,5 +1,5 @@
 /*************************************************************************/
-/*  vulkan_context_iphone.h                                              */
+/*  uikit_app_delegate.h                                                 */
 /*************************************************************************/
 /*                       This file is part of:                           */
 /*                           GODOT ENGINE                                */
@@ -28,21 +28,14 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
 /*************************************************************************/
 
-#ifndef VULKAN_CONTEXT_IPHONE_H
-#define VULKAN_CONTEXT_IPHONE_H
-
-#include "drivers/vulkan/vulkan_context.h"
-
 #import <UIKit/UIKit.h>
 
-class VulkanContextIPhone : public VulkanContext {
-	virtual const char *_get_platform_surface_extension() const;
+typedef NSObject<UIApplicationDelegate> ApplicationDelegateService;
 
-public:
-	Error window_create(DisplayServer::WindowID p_window_id, DisplayServer::VSyncMode p_vsync_mode, CALayer *p_metal_layer, int p_width, int p_height);
+@interface UIKitApplicalitionDelegate : NSObject <UIApplicationDelegate>
 
-	VulkanContextIPhone();
-	~VulkanContextIPhone();
-};
+@property(class, readonly, strong) NSArray<ApplicationDelegateService *> *services;
 
-#endif // VULKAN_CONTEXT_IPHONE_H
++ (void)addService:(ApplicationDelegateService *)service;
+
+@end
