@@ -1,5 +1,5 @@
 /*************************************************************************/
-/*  display_layer.h                                                      */
+/*  godot_view.h                                                         */
 /*************************************************************************/
 /*                       This file is part of:                           */
 /*                           GODOT ENGINE                                */
@@ -28,18 +28,8 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
 /*************************************************************************/
 
-#import <OpenGLES/EAGLDrawable.h>
-#import <QuartzCore/QuartzCore.h>
+#import "platform/uikit/uikit_view.h"
 
-@protocol DisplayLayer <NSObject>
-
-- (void)startRenderDisplayLayer;
-- (void)stopRenderDisplayLayer;
-- (void)initializeDisplayLayer;
-- (void)layoutDisplayLayer;
-
-@end
-
-@interface GodotOpenGLLayer : CAEAGLLayer <DisplayLayer>
+@interface GodotView : UIKitView
 
 @end

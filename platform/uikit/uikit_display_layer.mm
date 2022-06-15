@@ -1,5 +1,5 @@
 /*************************************************************************/
-/*  display_layer.mm                                                     */
+/*  uikit_display_layer.mm                                               */
 /*************************************************************************/
 /*                       This file is part of:                           */
 /*                           GODOT ENGINE                                */
@@ -28,13 +28,13 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
 /*************************************************************************/
 
-#import "display_layer.h"
+#import "uikit_display_layer.h"
 
 #include "core/os/keyboard.h"
 #include "core/project_settings.h"
 #include "main/main.h"
-#include "os_iphone.h"
 #include "servers/audio_server.h"
+#include "uikit_os.h"
 
 #import <AudioToolbox/AudioServices.h>
 #import <GameController/GameController.h>
@@ -47,7 +47,7 @@
 int gl_view_base_fb;
 bool gles3_available = true;
 
-@implementation GodotOpenGLLayer {
+@implementation UIKitOpenGLLayer {
 	// The pixel dimensions of the backbuffer
 	GLint backingWidth;
 	GLint backingHeight;
@@ -78,7 +78,7 @@ bool gles3_available = true;
 			NSLog(@"Failed to create OpenGL ES 3.0 context. Falling back to OpenGL ES 2.0");
 		} else {
 			context_offscreen = [[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES3];
-			OSIPhone::get_singleton()->set_offscreen_gl_context(context_offscreen);
+			OS_UIKit::get_singleton()->set_offscreen_gl_context(context_offscreen);
 		}
 	}
 
@@ -172,7 +172,7 @@ bool gles3_available = true;
 		vm.height = backingHeight;
 		vm.resizable = false;
 		OS::get_singleton()->set_video_mode(vm);
-		OSIPhone::get_singleton()->set_base_framebuffer(viewFramebuffer);
+		OS_UIKit::get_singleton()->set_base_framebuffer(viewFramebuffer);
 	}
 
 	gl_view_base_fb = viewFramebuffer;
