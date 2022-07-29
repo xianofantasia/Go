@@ -333,6 +333,13 @@
 				Sorts items in the list by their text.
 			</description>
 		</method>
+		<method name="update_auto_height">
+			<return type="void" />
+			<description>
+				Updates the list's auto height value based on its items. If [member auto_height] is [code]true[/code], [method Control.get_minimum_size] may return the auto height if [member Control.custom_minimum_size] is less than the auto height.
+				Scrollbar is adjusted accordingly if necessary.
+			</description>
+		</method>
 	</methods>
 	<members>
 		<member name="allow_reselect" type="bool" setter="set_allow_reselect" getter="get_allow_reselect" default="false">
