@@ -31,6 +31,7 @@
 #include "array.h"
 
 #include "container_type_validate.h"
+#include "core/math/random_number_generator.h"
 #include "core/object/class_db.h"
 #include "core/object/script_language.h"
 #include "core/templates/hashfuncs.h"
@@ -578,6 +579,21 @@ void Array::shuffle() {
 	Variant *data = _p->array.ptrw();
 	for (int i = n - 1; i >= 1; i--) {
 		const int j = Math::rand() % (i + 1);
+		const Variant tmp = data[j];
+		data[j] = data[i];
+		data[i] = tmp;
+	}
+}
+
+void Array::rng_shuffle(Ref<RandomNumberGenerator> p_rng) {
+	ERR_FAIL_COND_MSG(_p->read_only, "Array is in read-only state.");
+	const int n = _p->array.size();
+	if (n < 2) {
+		return;
+	}
+	Variant *data = _p->array.ptrw();
+	for (int i = n - 1; i >= 1; i--) {
+		const int j = p_rng->randi() % (i + 1);
 		const Variant tmp = data[j];
 		data[j] = data[i];
 		data[i] = tmp;

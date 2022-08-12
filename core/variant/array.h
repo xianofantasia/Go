@@ -40,6 +40,10 @@ class ArrayPrivate;
 class Object;
 class StringName;
 class Callable;
+class RandomNumberGenerator;
+
+template <typename T>
+class Ref;
 
 class Array {
 	mutable ArrayPrivate *_p;
@@ -84,6 +88,7 @@ public:
 	void sort();
 	void sort_custom(const Callable &p_callable);
 	void shuffle();
+	void rng_shuffle(Ref<RandomNumberGenerator>);
 	int bsearch(const Variant &p_value, bool p_before = true);
 	int bsearch_custom(const Variant &p_value, const Callable &p_callable, bool p_before = true);
 	void reverse();

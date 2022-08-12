@@ -482,7 +482,8 @@
 		<method name="shuffle">
 			<return type="void" />
 			<description>
-				Shuffles the array such that the items will have a random order. This method uses the global random number generator common to methods such as [method @GlobalScope.randi]. Call [method @GlobalScope.randomize] to ensure that a new seed will be used each time if you want non-reproducible shuffling.
+				Shuffles the array such that the items will have a random order. This method uses the global random number generator common to methods such as [method @GlobalScope.randi].
+				If you want to shuffle using a non-global random number generator, use [method RandomNumberGenerator.shuffle_array].
 			</description>
 		</method>
 		<method name="size" qualifiers="const">
@@ -533,7 +534,7 @@
 			<param index="0" name="func" type="Callable" />
 			<description>
 				Sorts the array using a custom method. The custom method receives two arguments (a pair of elements from the array) and must return either [code]true[/code] or [code]false[/code]. For two elements [code]a[/code] and [code]b[/code], if the given method returns [code]true[/code], element [code]b[/code] will be after element [code]a[/code] in the array.
-				[b]Note:[/b] You cannot randomize the return value as the heapsort algorithm expects a deterministic result. Doing so will result in unexpected behavior.
+				[b]Note:[/b] You cannot randomize the return value as the heapsort algorithm expects a deterministic result. Doing so will result in unexpected behavior. For randomizing the array order you can use [method shuffle].
 				[codeblocks]
 				[gdscript]
 				func sort_ascending(a, b):
