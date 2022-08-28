@@ -3472,6 +3472,16 @@ List<Node *> SceneTreeDock::paste_nodes(bool p_paste_as_sibling) {
 			clipboard_resource_remap[target_scene] = remap;
 		}
 		resource_remap = clipboard_resource_remap[target_scene];
+	} else {
+		HashMap<Node *, HashMap<Ref<Resource>, Ref<Resource>>> resources_local_to_sub_scene; // Record the mappings in the sub-scene.
+		for (Node *E : node_clipboard) {
+			_create_remap_for_scene(E, owner, resources_local_to_sub_scene);
+		}
+		resource_remap = resources_local_to_sub_scene[owner];
+
+		for (KeyValue<Ref<Resource>, Ref<Resource>> &E : resource_remap) {
+			E.value->setup_local_to_scene();
+		}
 	}
 
 	for (Node *node : node_clipboard) {
@@ -3709,6 +3719,33 @@ void SceneTreeDock::_create_remap_for_resource(Ref<Resource> p_resource, HashMap
 				}
 			}
 		}
+	}
+}
+
+void SceneTreeDock::_create_remap_for_scene(Node *p_node, Node *p_for_scene, HashMap<Node *, HashMap<Ref<Resource>, Ref<Resource>>> &r_remap) {
+	if (!p_node->get_scene_file_path().is_empty()) {
+		return;
+	}
+
+	List<PropertyInfo> props;
+	p_node->get_property_list(&props);
+
+	for (const PropertyInfo &E : props) {
+		if (!(E.usage & PROPERTY_USAGE_STORAGE)) {
+			continue;
+		}
+
+		Ref<Resource> res = p_node->get(E.name);
+		if (res.is_valid() && res->is_local_to_scene()) {
+			if (p_for_scene == res->get_local_scene() || r_remap[p_for_scene].has(res)) {
+				return; // The resources in the instantiated sub-scene have already bee configured.
+			}
+			SceneState::get_remap_resource(res, r_remap, nullptr, p_for_scene);
+		}
+	}
+
+	for (int i = 0; i < p_node->get_child_count(); i++) {
+		_create_remap_for_scene(p_node->get_child(i), p_for_scene, r_remap);
 	}
 }
 
