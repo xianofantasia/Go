@@ -144,7 +144,13 @@ public:
 		ELEMENT_TYPE_DECAL,
 		ELEMENT_TYPE_REFLECTION_PROBE,
 		ELEMENT_TYPE_MAX,
+	};
 
+	enum ClusterSize {
+		CLUSTER_SIZE_32,
+		CLUSTER_SIZE_64,
+		CLUSTER_SIZE_128,
+		CLUSTER_SIZE_256,
 	};
 
 private:
@@ -180,7 +186,7 @@ private:
 		DIVISOR_4,
 	};
 
-	uint32_t cluster_size = 32;
+	uint32_t cluster_size = 64;
 	bool use_msaa = true;
 	Divisor divisor = DIVISOR_4;
 
@@ -218,7 +224,7 @@ private:
 	RID debug_uniform_set;
 
 public:
-	void setup(Size2i p_screen_size, uint32_t p_max_elements, RID p_depth_buffer, RID p_depth_buffer_sampler, RID p_color_buffer);
+	void setup(Size2i p_screen_size, uint32_t p_max_elements, RID p_depth_buffer, RID p_depth_buffer_sampler, RID p_color_buffer, ClusterSize cluster_size);
 
 	void begin(const Transform3D &p_view_transform, const Projection &p_cam_projection, bool p_flip_y);
 

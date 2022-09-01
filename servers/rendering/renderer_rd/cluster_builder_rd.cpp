@@ -241,7 +241,7 @@ void ClusterBuilderRD::_clear() {
 	cluster_store_uniform_set = RID();
 }
 
-void ClusterBuilderRD::setup(Size2i p_screen_size, uint32_t p_max_elements, RID p_depth_buffer, RID p_depth_buffer_sampler, RID p_color_buffer) {
+void ClusterBuilderRD::setup(Size2i p_screen_size, uint32_t p_max_elements, RID p_depth_buffer, RID p_depth_buffer_sampler, RID p_color_buffer, ClusterSize p_cluster_size) {
 	ERR_FAIL_COND(p_max_elements == 0);
 	ERR_FAIL_COND(p_screen_size.x < 1);
 	ERR_FAIL_COND(p_screen_size.y < 1);
@@ -249,6 +249,21 @@ void ClusterBuilderRD::setup(Size2i p_screen_size, uint32_t p_max_elements, RID 
 	_clear();
 
 	screen_size = p_screen_size;
+
+	switch (p_cluster_size) {
+		case CLUSTER_SIZE_32:
+			cluster_size = 32;
+			break;
+		case CLUSTER_SIZE_64:
+			cluster_size = 64;
+			break;
+		case CLUSTER_SIZE_128:
+			cluster_size = 128;
+			break;
+		case CLUSTER_SIZE_256:
+			cluster_size = 256;
+			break;
+	}
 
 	cluster_screen_size.width = (p_screen_size.width - 1) / cluster_size + 1;
 	cluster_screen_size.height = (p_screen_size.height - 1) / cluster_size + 1;
