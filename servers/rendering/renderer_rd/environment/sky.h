@@ -42,6 +42,7 @@
 
 // Forward declare RendererSceneRenderRD so we can pass it into some of our methods, these classes are pretty tightly bound
 class RendererSceneRenderRD;
+class RenderSceneBuffersRD;
 
 namespace RendererRD {
 
@@ -147,20 +148,23 @@ private:
 public:
 	struct SkySceneState {
 		struct UBO {
-			uint32_t volumetric_fog_enabled;
-			float volumetric_fog_inv_length;
-			float volumetric_fog_detail_spread;
+			uint32_t volumetric_fog_enabled; // 4 - 4
+			float volumetric_fog_inv_length; // 4 - 8
+			float volumetric_fog_detail_spread; // 4 - 12
+			float volumetric_fog_sky_affect; // 4 - 16
 
-			float fog_aerial_perspective;
+			uint32_t fog_enabled; // 4 - 20
+			float fog_sky_affect; // 4 - 24
+			float fog_density; // 4 - 28
+			float fog_sun_scatter; // 4 - 32
 
-			float fog_light_color[3];
-			float fog_sun_scatter;
+			float fog_light_color[3]; // 12 - 44
+			float fog_aerial_perspective; // 4 - 48
 
-			uint32_t fog_enabled;
-			float fog_density;
-
-			float z_far;
-			uint32_t directional_light_count;
+			float z_far; // 4 - 52
+			uint32_t directional_light_count; // 4 - 56
+			uint32_t pad1; // 4 - 60
+			uint32_t pad2; // 4 - 64
 		};
 
 		UBO ubo;
@@ -296,7 +300,7 @@ public:
 	void set_texture_format(RD::DataFormat p_texture_format);
 	~SkyRD();
 
-	void setup(RID p_env, RID p_render_buffers, const PagedArray<RID> &p_lights, RID p_camera_attributes, const Projection &p_projection, const Transform3D &p_transform, const Size2i p_screen_size, RendererSceneRenderRD *p_scene_render);
+	void setup(RID p_env, Ref<RenderSceneBuffersRD> p_render_buffers, const PagedArray<RID> &p_lights, RID p_camera_attributes, const Projection &p_projection, const Transform3D &p_transform, const Size2i p_screen_size, RendererSceneRenderRD *p_scene_render);
 	void update(RID p_env, const Projection &p_projection, const Transform3D &p_transform, double p_time, float p_luminance_multiplier = 1.0);
 	void draw(RID p_env, bool p_can_continue_color, bool p_can_continue_depth, RID p_fb, uint32_t p_view_count, const Projection *p_projections, const Transform3D &p_transform, double p_time, float p_luminance_multiplier = 1.0); // only called by clustered renderer
 	void update_res_buffers(RID p_env, uint32_t p_view_count, const Projection *p_projections, const Transform3D &p_transform, double p_time, float p_luminance_multiplier = 1.0);

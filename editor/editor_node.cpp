@@ -170,6 +170,7 @@
 #include "editor/plugins/mesh_instance_3d_editor_plugin.h"
 #include "editor/plugins/mesh_library_editor_plugin.h"
 #include "editor/plugins/multimesh_editor_plugin.h"
+#include "editor/plugins/navigation_link_2d_editor_plugin.h"
 #include "editor/plugins/navigation_polygon_editor_plugin.h"
 #include "editor/plugins/node_3d_editor_plugin.h"
 #include "editor/plugins/occluder_instance_3d_editor_plugin.h"
@@ -366,7 +367,7 @@ void EditorNode::_update_scene_tabs() {
 		scene_tabs->add_tab(disambiguated_scene_names[i] + (unsaved ? "(*)" : ""), icon);
 
 		if (DisplayServer::get_singleton()->has_feature(DisplayServer::FEATURE_GLOBAL_MENU)) {
-			DisplayServer::get_singleton()->global_menu_add_item("_dock", editor_data.get_scene_title(i) + (unsaved ? "(*)" : ""), callable_mp(this, &EditorNode::_global_menu_scene), i);
+			DisplayServer::get_singleton()->global_menu_add_item("_dock", editor_data.get_scene_title(i) + (unsaved ? "(*)" : ""), callable_mp(this, &EditorNode::_global_menu_scene), Callable(), i);
 		}
 
 		if (show_rb && editor_data.get_scene_root_script(i).is_valid()) {
@@ -4110,6 +4111,7 @@ void EditorNode::register_editor_types() {
 	GDREGISTER_CLASS(EditorSyntaxHighlighter);
 	GDREGISTER_ABSTRACT_CLASS(EditorInterface);
 	GDREGISTER_CLASS(EditorExportPlugin);
+	GDREGISTER_ABSTRACT_CLASS(EditorExportPlatform);
 	GDREGISTER_CLASS(EditorResourceConversionPlugin);
 	GDREGISTER_CLASS(EditorSceneFormatImporter);
 	GDREGISTER_CLASS(EditorScenePostImportPlugin);
@@ -7348,6 +7350,7 @@ EditorNode::EditorNode() {
 	add_editor_plugin(memnew(GPUParticles2DEditorPlugin));
 	add_editor_plugin(memnew(LightOccluder2DEditorPlugin));
 	add_editor_plugin(memnew(Line2DEditorPlugin));
+	add_editor_plugin(memnew(NavigationLink2DEditorPlugin));
 	add_editor_plugin(memnew(NavigationPolygonEditorPlugin));
 	add_editor_plugin(memnew(Path2DEditorPlugin));
 	add_editor_plugin(memnew(Polygon2DEditorPlugin));
@@ -7420,11 +7423,6 @@ EditorNode::EditorNode() {
 	editor_plugins_over = memnew(EditorPluginList);
 	editor_plugins_force_over = memnew(EditorPluginList);
 	editor_plugins_force_input_forwarding = memnew(EditorPluginList);
-
-	Ref<EditorExportTextSceneToBinaryPlugin> export_text_to_binary_plugin;
-	export_text_to_binary_plugin.instantiate();
-
-	EditorExport::get_singleton()->add_export_plugin(export_text_to_binary_plugin);
 
 	Ref<GDExtensionExportPlugin> gdextension_export_plugin;
 	gdextension_export_plugin.instantiate();
