@@ -6794,7 +6794,7 @@ EditorNode::EditorNode() {
 
 	ED_SHORTCUT_AND_COMMAND("editor/editor_settings", TTR("Editor Settings..."));
 	ED_SHORTCUT_OVERRIDE("editor/editor_settings", "macos", KeyModifierMask::CMD + Key::COMMA);
-	settings_menu->add_icon_shortcut(gui_base->get_theme_icon(SNAME("Window"), SNAME("EditorIcons")),ED_GET_SHORTCUT("editor/editor_settings"), SETTINGS_PREFERENCES);
+	settings_menu->add_icon_shortcut(gui_base->get_theme_icon(SNAME("Tools"), SNAME("EditorIcons")), ED_GET_SHORTCUT("editor/editor_settings"), SETTINGS_PREFERENCES);
 	settings_menu->add_icon_shortcut(gui_base->get_theme_icon(SNAME("TextEditorPlay"), SNAME("EditorIcons")), ED_SHORTCUT("editor/command_palette", TTR("Command Palette..."), KeyModifierMask::CMD | KeyModifierMask::SHIFT | Key::P), HELP_COMMAND_PALETTE);
 	settings_menu->add_separator();
 
@@ -6807,13 +6807,13 @@ EditorNode::EditorNode() {
 
 	ED_SHORTCUT_AND_COMMAND("editor/take_screenshot", TTR("Take Screenshot"), KeyModifierMask::CTRL | Key::F12);
 	ED_SHORTCUT_OVERRIDE("editor/take_screenshot", "macos", KeyModifierMask::CMD | Key::F12);
-	settings_menu->add_shortcut(ED_GET_SHORTCUT("editor/take_screenshot"), EDITOR_SCREENSHOT);
+	settings_menu->add_icon_shortcut(gui_base->get_theme_icon(SNAME("Image"), SNAME("EditorIcons")), ED_GET_SHORTCUT("editor/take_screenshot"), EDITOR_SCREENSHOT);
 
 	settings_menu->set_item_tooltip(-1, TTR("Screenshots are stored in the Editor Data/Settings Folder."));
 
 	ED_SHORTCUT_AND_COMMAND("editor/fullscreen_mode", TTR("Toggle Fullscreen"), KeyModifierMask::SHIFT | Key::F11);
 	ED_SHORTCUT_OVERRIDE("editor/fullscreen_mode", "macos", KeyModifierMask::CMD | KeyModifierMask::CTRL | Key::F);
-	settings_menu->add_icon_shortcut(gui_base->get_theme_icon(SNAME("DistractionFree"), SNAME("EditorIcons")), ED_GET_SHORTCUT("editor/fullscreen_mode"), SETTINGS_TOGGLE_FULLSCREEN);
+	settings_menu->add_shortcut(ED_GET_SHORTCUT("editor/fullscreen_mode"), SETTINGS_TOGGLE_FULLSCREEN);
 
 	settings_menu->add_separator();
 
@@ -6827,7 +6827,7 @@ EditorNode::EditorNode() {
 	}
 	settings_menu->add_separator();
 
-	settings_menu->add_icon_item(gui_base->get_theme_icon(SNAME("Tools"), SNAME("EditorIcons")), TTR("Manage Editor Features..."), SETTINGS_MANAGE_FEATURE_PROFILES);
+	settings_menu->add_icon_item(gui_base->get_theme_icon(SNAME("Override"), SNAME("EditorIcons")), TTR("Manage Editor Features..."), SETTINGS_MANAGE_FEATURE_PROFILES);
 	settings_menu->add_item(TTR("Manage Export Templates..."), SETTINGS_MANAGE_EXPORT_TEMPLATES);
 
 	help_menu = memnew(PopupMenu);
