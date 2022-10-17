@@ -138,6 +138,10 @@ public:
 	virtual bool start_passthrough() { return false; }
 	virtual void stop_passthrough() {}
 
+	virtual bool is_scene_capture_supported() { return false; }
+	virtual bool is_scene_capture_enabled() { return false; }
+	virtual bool request_scene_capture() { return false; }
+
 	virtual void notification(int p_what){};
 
 	XRInterface();
