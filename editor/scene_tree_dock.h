@@ -108,6 +108,7 @@ class SceneTreeDock : public VBoxContainer {
 	Vector<ObjectID> subresources;
 
 	bool reset_create_dialog = false;
+	bool changing_scene = false;
 
 	int current_option = 0;
 	CreateDialog *create_dialog = nullptr;
@@ -248,6 +249,7 @@ class SceneTreeDock : public VBoxContainer {
 	void _files_dropped(Vector<String> p_files, NodePath p_to, int p_type);
 	void _script_dropped(String p_file, NodePath p_to);
 	void _quick_open();
+	void _reset_quick_open();
 
 	void _tree_rmb(const Vector2 &p_menu_pos);
 	void _update_tree_menu();
@@ -258,8 +260,9 @@ class SceneTreeDock : public VBoxContainer {
 	void _filter_option_selected(int option);
 	void _append_filter_options_to(PopupMenu *p_menu, bool p_include_separator = true);
 
+	Node *_instantiate_scene(const String &p_path);
 	void _perform_instantiate_scenes(const Vector<String> &p_files, Node *parent, int p_pos);
-	void _replace_with_branch_scene(const String &p_file, Node *base);
+	void _replace_with_instance(Node *p_instance, Node *p_base);
 
 	void _remote_tree_selected();
 	void _local_tree_selected();
