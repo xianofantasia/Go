@@ -34,11 +34,11 @@
 		<method name="get_author_info" qualifiers="const">
 			<return type="Dictionary" />
 			<description>
-				Returns engine author information in a Dictionary.
-				[code]lead_developers[/code]    - Array of Strings, lead developer names
-				[code]founders[/code]           - Array of Strings, founder names
-				[code]project_managers[/code]   - Array of Strings, project manager names
-				[code]developers[/code]         - Array of Strings, developer names
+				Returns engine author information in a [Dictionary] of [PackedStringArray]s.
+				[code]lead_developers[/code]    - [PackedStringArray], lead developer names
+				[code]founders[/code]           - [PackedStringArray], founder names
+				[code]project_managers[/code]   - [PackedStringArray], project manager names
+				[code]developers[/code]         - [PackedStringArray], developer names
 			</description>
 		</method>
 		<method name="get_copyright_info" qualifiers="const">
@@ -52,7 +52,7 @@
 		<method name="get_donor_info" qualifiers="const">
 			<return type="Dictionary" />
 			<description>
-				Returns a Dictionary of Arrays of donor names.
+				Returns a [Dictionary] of [PackedStringArray]s of donor names.
 				{[code]platinum_sponsors[/code], [code]gold_sponsors[/code], [code]silver_sponsors[/code], [code]bronze_sponsors[/code], [code]mini_sponsors[/code], [code]gold_donors[/code], [code]silver_donors[/code], [code]bronze_donors[/code]}
 			</description>
 		</method>

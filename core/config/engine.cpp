@@ -110,16 +110,16 @@ Dictionary Engine::get_version_info() const {
 	return dict;
 }
 
-static Array array_from_info(const char *const *info_list) {
-	Array arr;
+static PackedStringArray array_from_info(const char *const *info_list) {
+	PackedStringArray arr;
 	for (int i = 0; info_list[i] != nullptr; i++) {
 		arr.push_back(String::utf8(info_list[i]));
 	}
 	return arr;
 }
 
-static Array array_from_info_count(const char *const *info_list, int info_count) {
-	Array arr;
+static PackedStringArray array_from_info_count(const char *const *info_list, int info_count) {
+	PackedStringArray arr;
 	for (int i = 0; i < info_count; i++) {
 		arr.push_back(String::utf8(info_list[i]));
 	}
