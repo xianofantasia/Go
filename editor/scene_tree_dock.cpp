@@ -65,7 +65,62 @@ void SceneTreeDock::_nodes_drag_begin() {
 }
 
 void SceneTreeDock::_quick_open() {
-	instantiate_scenes(quick_open->get_selected_files(), scene_tree->get_selected());
+	if (changing_scene) {
+		List<Node *> selection = editor_selection->get_selected_node_list();
+		ERR_FAIL_COND(selection.size() <= 0);
+
+		String scene = quick_open->get_selected();
+		HashMap<Node *, Node *> nodes_to_replace;
+		bool error = false;
+
+		for (Node *n : selection) {
+			if (!n || n == edited_scene || n->get_scene_file_path().is_empty()) {
+				continue;
+			}
+
+			Node *newnode = _instantiate_scene(scene);
+			if (!newnode) {
+				error = true;
+				break;
+			}
+			newnode->set_name(n->get_name());
+
+			List<PropertyInfo> pinfo;
+			n->get_property_list(&pinfo);
+
+			for (const PropertyInfo &E : pinfo) {
+				if (E.usage & PROPERTY_USAGE_STORAGE) {
+					newnode->set(E.name, n->get(E.name));
+				}
+			}
+			nodes_to_replace.insert(n, newnode);
+		}
+
+		if (error || nodes_to_replace.is_empty()) {
+			for (KeyValue<Node *, Node *> &pair : nodes_to_replace) {
+				memdelete(pair.value);
+			}
+			ERR_FAIL_MSG("Failed to change instance scenes.");
+		}
+
+		Ref<EditorUndoRedoManager> &ur = EditorNode::get_undo_redo();
+		ur->create_action(TTR("Change scene of instance(s)"), UndoRedo::MERGE_DISABLE, edited_scene);
+
+		for (const KeyValue<Node *, Node *> &pair : nodes_to_replace) {
+			ur->add_do_method(this, "_replace_with_instance", pair.value, pair.key);
+			ur->add_do_reference(pair.value);
+			ur->add_undo_method(this, "_replace_with_instance", pair.key, pair.value);
+			ur->add_undo_reference(pair.key);
+		}
+
+		ur->commit_action();
+	} else {
+		instantiate_scenes(quick_open->get_selected_files(), scene_tree->get_selected());
+	}
+}
+
+void SceneTreeDock::_reset_quick_open() {
+	changing_scene = false;
 }
 
 void SceneTreeDock::input(const Ref<InputEvent> &p_event) {
@@ -178,50 +233,49 @@ void SceneTreeDock::instantiate_scenes(const Vector<String> &p_files, Node *p_pa
 	_perform_instantiate_scenes(p_files, parent, -1);
 }
 
+Node *SceneTreeDock::_instantiate_scene(const String &p_path) {
+	Ref<PackedScene> sdata = ResourceLoader::load(p_path);
+	if (!sdata.is_valid()) {
+		current_option = -1;
+		accept->set_text(vformat(TTR("Error loading scene from %s"), p_path));
+		accept->popup_centered();
+		return nullptr;
+	}
+
+	Node *instantiated_scene = sdata->instantiate(PackedScene::GEN_EDIT_STATE_INSTANCE);
+	if (!instantiated_scene) {
+		current_option = -1;
+		accept->set_text(vformat(TTR("Error instancing scene from %s"), p_path));
+		accept->popup_centered();
+		return nullptr;
+	}
+
+	if (!edited_scene->get_scene_file_path().is_empty()) {
+		if (_cyclical_dependency_exists(edited_scene->get_scene_file_path(), instantiated_scene)) {
+			accept->set_text(vformat(TTR("Cannot instance the scene '%s' because the current scene exists within one of its nodes."), p_path));
+			accept->popup_centered();
+			memdelete(instantiated_scene);
+			return nullptr;
+		}
+	}
+
+	instantiated_scene->set_scene_file_path(ProjectSettings::get_singleton()->localize_path(p_path));
+	return instantiated_scene;
+}
+
 void SceneTreeDock::_perform_instantiate_scenes(const Vector<String> &p_files, Node *parent, int p_pos) {
 	ERR_FAIL_COND(!parent);
 
 	Vector<Node *> instances;
 
-	bool error = false;
-
 	for (int i = 0; i < p_files.size(); i++) {
-		Ref<PackedScene> sdata = ResourceLoader::load(p_files[i]);
-		if (!sdata.is_valid()) {
-			current_option = -1;
-			accept->set_text(vformat(TTR("Error loading scene from %s"), p_files[i]));
-			accept->popup_centered();
-			error = true;
-			break;
+		Node *instantiated_scene = _instantiate_scene(p_files[i]);
+		if (instantiated_scene) {
+			instances.push_back(instantiated_scene);
 		}
-
-		Node *instantiated_scene = sdata->instantiate(PackedScene::GEN_EDIT_STATE_INSTANCE);
-		if (!instantiated_scene) {
-			current_option = -1;
-			accept->set_text(vformat(TTR("Error instancing scene from %s"), p_files[i]));
-			accept->popup_centered();
-			error = true;
-			break;
-		}
-
-		if (!edited_scene->get_scene_file_path().is_empty()) {
-			if (_cyclical_dependency_exists(edited_scene->get_scene_file_path(), instantiated_scene)) {
-				accept->set_text(vformat(TTR("Cannot instance the scene '%s' because the current scene exists within one of its nodes."), p_files[i]));
-				accept->popup_centered();
-				error = true;
-				break;
-			}
-		}
-
-		instantiated_scene->set_scene_file_path(ProjectSettings::get_singleton()->localize_path(p_files[i]));
-
-		instances.push_back(instantiated_scene);
 	}
 
-	if (error) {
-		for (int i = 0; i < instances.size(); i++) {
-			memdelete(instances[i]);
-		}
+	if (instances.is_empty()) {
 		return;
 	}
 
@@ -253,52 +307,17 @@ void SceneTreeDock::_perform_instantiate_scenes(const Vector<String> &p_files, N
 	}
 }
 
-void SceneTreeDock::_replace_with_branch_scene(const String &p_file, Node *base) {
-	Ref<PackedScene> sdata = ResourceLoader::load(p_file);
-	if (!sdata.is_valid()) {
-		accept->set_text(vformat(TTR("Error loading scene from %s"), p_file));
-		accept->popup_centered();
-		return;
-	}
+void SceneTreeDock::_replace_with_instance(Node *p_instance, Node *p_base) {
+	Node *parent = p_base->get_parent();
+	int pos = p_base->get_index();
+	parent->remove_child(p_base);
+	parent->add_child(p_instance, true);
+	parent->move_child(p_instance, pos);
 
-	Node *instantiated_scene = sdata->instantiate(PackedScene::GEN_EDIT_STATE_INSTANCE);
-	if (!instantiated_scene) {
-		accept->set_text(vformat(TTR("Error instancing scene from %s"), p_file));
-		accept->popup_centered();
-		return;
-	}
-
-	Ref<EditorUndoRedoManager> &undo_redo = EditorNode::get_undo_redo();
-	undo_redo->create_action(TTR("Replace with Branch Scene"));
-
-	Node *parent = base->get_parent();
-	int pos = base->get_index();
-	undo_redo->add_do_method(parent, "remove_child", base);
-	undo_redo->add_undo_method(parent, "remove_child", instantiated_scene);
-	undo_redo->add_do_method(parent, "add_child", instantiated_scene, true);
-	undo_redo->add_undo_method(parent, "add_child", base, true);
-	undo_redo->add_do_method(parent, "move_child", instantiated_scene, pos);
-	undo_redo->add_undo_method(parent, "move_child", base, pos);
-
-	List<Node *> owned;
-	base->get_owned_by(base->get_owner(), &owned);
-	Array owners;
-	for (Node *F : owned) {
-		owners.push_back(F);
-	}
-	undo_redo->add_do_method(instantiated_scene, "set_owner", edited_scene);
-	undo_redo->add_undo_method(this, "_set_owners", edited_scene, owners);
-
-	undo_redo->add_do_method(editor_selection, "clear");
-	undo_redo->add_undo_method(editor_selection, "clear");
-	undo_redo->add_do_method(editor_selection, "add_node", instantiated_scene);
-	undo_redo->add_undo_method(editor_selection, "add_node", base);
-	undo_redo->add_do_property(scene_tree, "set_selected", instantiated_scene);
-	undo_redo->add_undo_property(scene_tree, "set_selected", base);
-
-	undo_redo->add_do_reference(instantiated_scene);
-	undo_redo->add_undo_reference(base);
-	undo_redo->commit_action();
+	p_instance->set_owner(edited_scene);
+	editor_selection->clear();
+	editor_selection->add_node(p_instance);
+	scene_tree->set_selected(p_instance);
 }
 
 bool SceneTreeDock::_cyclical_dependency_exists(const String &p_target_scene_path, Node *p_desired_node) {
@@ -498,10 +517,6 @@ void SceneTreeDock::_tool_selected(int p_tool, bool p_confirm_override) {
 				break;
 			}
 
-			if (!_validate_no_instance()) {
-				break;
-			}
-
 			if (reset_create_dialog) {
 				create_dialog->set_base_type("Node");
 				reset_create_dialog = false;
@@ -513,7 +528,13 @@ void SceneTreeDock::_tool_selected(int p_tool, bool p_confirm_override) {
 			}
 
 			if (selected) {
-				create_dialog->popup_create(false, true, selected->get_class(), selected->get_name());
+				if (selected != edited_scene && !selected->get_scene_file_path().is_empty()) {
+					changing_scene = true;
+					quick_open->popup_dialog("PackedScene", true);
+					quick_open->set_title(TTR("Change Scene"));
+				} else {
+					create_dialog->popup_create(false, true, selected->get_class(), selected->get_name());
+				}
 			}
 		} break;
 		case TOOL_EXTEND_SCRIPT: {
@@ -2264,6 +2285,10 @@ void SceneTreeDock::_create() {
 		for (Node *n : selection) {
 			ERR_FAIL_COND(!n);
 
+			if (n != edited_scene && !n->get_scene_file_path().is_empty()) {
+				continue; // Skip instances if they somehow made it here.
+			}
+
 			Variant c = create_dialog->instance_selected();
 
 			ERR_FAIL_COND(!c);
@@ -2462,7 +2487,24 @@ void SceneTreeDock::_new_scene_from(String p_file) {
 			accept->popup_centered();
 			return;
 		}
-		_replace_with_branch_scene(p_file, base);
+
+		Node *instance = _instantiate_scene(p_file);
+
+		List<Node *> owned;
+		base->get_owned_by(base->get_owner(), &owned);
+		Array owners;
+		for (Node *F : owned) {
+			owners.push_back(F);
+		}
+
+		Ref<EditorUndoRedoManager> &undo_redo = EditorNode::get_undo_redo();
+		undo_redo->create_action(TTR("Replace with Branch Scene"));
+		undo_redo->add_do_method(this, "_replace_with_instance", instance, base);
+		undo_redo->add_do_reference(instance);
+		undo_redo->add_undo_method(this, "_replace_with_instance", base, instance);
+		undo_redo->add_undo_method(this, "_set_owners", edited_scene, owners);
+		undo_redo->add_undo_reference(instance);
+		undo_redo->commit_action();
 	} else {
 		accept->set_text(TTR("Error duplicating scene to save it."));
 		accept->popup_centered();
@@ -2785,16 +2827,27 @@ void SceneTreeDock::_tree_rmb(const Vector2 &p_menu_pos) {
 		}
 
 		bool can_replace = true;
+		bool has_instances = false;
+		bool has_only_instances = true;
+
 		for (Node *E : selection) {
-			if (E != edited_scene && (E->get_owner() != edited_scene || !E->get_scene_file_path().is_empty())) {
+			bool is_instance = (E != edited_scene && !E->get_scene_file_path().is_empty());
+			has_instances = has_instances || is_instance;
+			has_only_instances = has_only_instances && is_instance;
+
+			if (E != edited_scene && E->get_owner() != edited_scene) {
 				can_replace = false;
 				break;
 			}
 		}
+		can_replace = can_replace && (!has_instances || has_only_instances); // Only allow replace if all nodes are instances or all aren't.
 
 		if (can_replace) {
 			add_separator = true;
 			menu->add_icon_shortcut(get_theme_icon(SNAME("Reload"), SNAME("EditorIcons")), ED_GET_SHORTCUT("scene_tree/change_node_type"), TOOL_REPLACE);
+			if (has_instances) {
+				menu->set_item_text(-1, TTR("Change Scene"));
+			}
 		}
 
 		if (scene_tree->get_selected() != edited_scene) {
@@ -3408,6 +3461,7 @@ void SceneTreeDock::_create_remap_for_resource(Ref<Resource> p_resource, HashMap
 
 void SceneTreeDock::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("_set_owners"), &SceneTreeDock::_set_owners);
+	ClassDB::bind_method(D_METHOD("_replace_with_instance"), &SceneTreeDock::_replace_with_instance);
 
 	ClassDB::bind_method(D_METHOD("_update_script_button"), &SceneTreeDock::_update_script_button);
 
@@ -3603,6 +3657,7 @@ SceneTreeDock::SceneTreeDock(Node *p_scene_root, EditorSelection *p_editor_selec
 	quick_open = memnew(EditorQuickOpen);
 	add_child(quick_open);
 	quick_open->connect("quick_open", callable_mp(this, &SceneTreeDock::_quick_open));
+	quick_open->connect("popup_hide", callable_mp(this, &SceneTreeDock::_reset_quick_open), CONNECT_DEFERRED);
 
 	set_process_shortcut_input(true);
 
