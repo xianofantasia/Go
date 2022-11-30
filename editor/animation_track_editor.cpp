@@ -2493,7 +2493,7 @@ String AnimationTrackEdit::get_tooltip(const Point2 &p_pos) const {
 
 			if (rect.has_point(p_pos)) {
 				if (const_cast<AnimationTrackEdit *>(this)->is_key_selectable_by_distance()) {
-					float distance = ABS(offset - p_pos.x);
+					float distance = Math::abs(offset - p_pos.x);
 					if (key_idx == -1 || distance < key_distance) {
 						key_idx = i;
 						key_distance = distance;
@@ -2760,7 +2760,7 @@ void AnimationTrackEdit::gui_input(const Ref<InputEvent> &p_event) {
 
 					if (rect.has_point(pos)) {
 						if (is_key_selectable_by_distance()) {
-							float distance = ABS(offset - pos.x);
+							float distance = Math::abs(offset - pos.x);
 							if (key_idx == -1 || distance < key_distance) {
 								key_idx = i;
 								key_distance = distance;
@@ -2912,7 +2912,7 @@ void AnimationTrackEdit::gui_input(const Ref<InputEvent> &p_event) {
 
 					if (rect.has_point(pos)) {
 						if (is_key_selectable_by_distance()) {
-							const float distance = ABS(offset - pos.x);
+							const float distance = Math::abs(offset - pos.x);
 							if (key_idx == -1 || distance < key_distance) {
 								key_idx = i;
 								key_distance = distance;
@@ -5805,7 +5805,7 @@ void AnimationTrackEditor::_edit_menu_pressed(int p_option) {
 				to_restore.push_back(amr);
 			}
 
-#define NEW_POS(m_ofs) (((s > 0) ? m_ofs : from_t + (len - (m_ofs - from_t))) - pivot) * ABS(s) + from_t
+#define NEW_POS(m_ofs) (((s > 0) ? m_ofs : from_t + (len - (m_ofs - from_t))) - pivot) * Math::abs(s) + from_t
 			// 3 - Move the keys (re insert them).
 			for (RBMap<SelectedKey, KeyInfo>::Element *E = selection.back(); E; E = E->prev()) {
 				float newpos = NEW_POS(E->get().pos);

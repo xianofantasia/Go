@@ -1193,7 +1193,7 @@ void Polygon2DEditor::_uv_draw() {
 
 	uv_hscroll->set_min(rect.position.x);
 	uv_hscroll->set_max(rect.position.x + rect.size.x);
-	if (ABS(rect.position.x - (rect.position.x + rect.size.x)) <= uv_edit_draw->get_size().x) {
+	if (Math::abs(rect.position.x - (rect.position.x + rect.size.x)) <= uv_edit_draw->get_size().x) {
 		uv_hscroll->hide();
 	} else {
 		uv_hscroll->show();
@@ -1203,7 +1203,7 @@ void Polygon2DEditor::_uv_draw() {
 
 	uv_vscroll->set_min(rect.position.y);
 	uv_vscroll->set_max(rect.position.y + rect.size.y);
-	if (ABS(rect.position.y - (rect.position.y + rect.size.y)) <= uv_edit_draw->get_size().y) {
+	if (Math::abs(rect.position.y - (rect.position.y + rect.size.y)) <= uv_edit_draw->get_size().y) {
 		uv_vscroll->hide();
 	} else {
 		uv_vscroll->show();

@@ -1493,7 +1493,7 @@ String String::num(double p_num, int p_decimals) {
 
 	if (p_decimals < 0) {
 		p_decimals = 14;
-		const double abs_num = ABS(p_num);
+		const double abs_num = Math::abs(p_num);
 		if (abs_num > 10) {
 			// We want to align the digits to the above sane default, so we only
 			// need to subtract log10 for numbers with a positive power of ten.
@@ -1594,7 +1594,7 @@ String String::num_int64(int64_t p_num, int base, bool capitalize_hex) {
 	c[chars] = 0;
 	n = p_num;
 	do {
-		int mod = ABS(n % base);
+		int mod = Math::abs(n % base);
 		if (mod >= 10) {
 			char a = (capitalize_hex ? 'A' : 'a');
 			c[--chars] = a + (mod - 10);
@@ -4852,7 +4852,7 @@ String String::sprintf(const Array &values, bool *error) const {
 							break;
 					}
 					// Get basic number.
-					String str = String::num_int64(ABS(value), base, capitalize);
+					String str = String::num_int64(Math::abs(value), base, capitalize);
 					int number_len = str.length();
 
 					// Padding.
@@ -4891,7 +4891,7 @@ String String::sprintf(const Array &values, bool *error) const {
 
 					double value = values[value_index];
 					bool is_negative = (value < 0);
-					String str = String::num(ABS(value), min_decimals);
+					String str = String::num(Math::abs(value), min_decimals);
 					const bool is_finite = Math::is_finite(value);
 
 					// Pad decimals out.
@@ -4953,7 +4953,7 @@ String String::sprintf(const Array &values, bool *error) const {
 					String str = "(";
 					for (int i = 0; i < count; i++) {
 						double val = vec[i];
-						String number_str = String::num(ABS(val), min_decimals);
+						String number_str = String::num(Math::abs(val), min_decimals);
 						const bool is_finite = Math::is_finite(val);
 
 						// Pad decimals out.

@@ -178,7 +178,7 @@ class Delaunay3D {
 
 	static bool simplex_is_coplanar(const Vector3 *p_points, const Simplex &p_simplex) {
 		Plane p(p_points[p_simplex.points[0]], p_points[p_simplex.points[1]], p_points[p_simplex.points[2]]);
-		if (ABS(p.distance_to(p_points[p_simplex.points[3]])) < CMP_EPSILON) {
+		if (Math::abs(p.distance_to(p_points[p_simplex.points[3]])) < CMP_EPSILON) {
 			return true;
 		}
 
@@ -204,7 +204,7 @@ class Delaunay3D {
 		cm.columns[3][2] = 1.0;
 		cm.columns[3][3] = 1.0;
 
-		return ABS(cm.determinant()) <= CMP_EPSILON;
+		return Math::abs(cm.determinant()) <= CMP_EPSILON;
 	}
 
 public:

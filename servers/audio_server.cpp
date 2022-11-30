@@ -278,12 +278,12 @@ void AudioServer::_driver_process(int p_frames, int32_t *p_buffer) {
 				for (int j = 0; j < to_copy; j++) {
 					float l = CLAMP(buf[from + j].l, -1.0, 1.0);
 					int32_t vl = l * ((1 << 20) - 1);
-					int32_t vl2 = (vl < 0 ? -1 : 1) * (ABS(vl) << 11);
+					int32_t vl2 = (vl < 0 ? -1 : 1) * (Math::abs(vl) << 11);
 					p_buffer[(from_buf + j) * (cs * 2) + k * 2 + 0] = vl2;
 
 					float r = CLAMP(buf[from + j].r, -1.0, 1.0);
 					int32_t vr = r * ((1 << 20) - 1);
-					int32_t vr2 = (vr < 0 ? -1 : 1) * (ABS(vr) << 11);
+					int32_t vr2 = (vr < 0 ? -1 : 1) * (Math::abs(vr) << 11);
 					p_buffer[(from_buf + j) * (cs * 2) + k * 2 + 1] = vr2;
 				}
 
@@ -572,11 +572,11 @@ void AudioServer::_mix_step() {
 			for (uint32_t j = 0; j < buffer_size; j++) {
 				buf[j] *= volume;
 
-				float l = ABS(buf[j].l);
+				float l = Math::abs(buf[j].l);
 				if (l > peak.l) {
 					peak.l = l;
 				}
-				float r = ABS(buf[j].r);
+				float r = Math::abs(buf[j].r);
 				if (r > peak.r) {
 					peak.r = r;
 				}
