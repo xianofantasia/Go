@@ -268,6 +268,8 @@ public:
 	void set_auto_height(bool p_enable);
 	bool has_auto_height() const;
 
+	float get_auto_height_value() const;
+
 	Size2 get_minimum_size() const override;
 
 	void set_autoscroll_to_bottom(const bool p_enable);
