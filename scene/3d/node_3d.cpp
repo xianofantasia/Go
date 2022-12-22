@@ -102,10 +102,6 @@ void Node3D::_update_rotation_and_scale() const {
 }
 
 void Node3D::_propagate_transform_changed(Node3D *p_origin) {
-	if (!is_inside_tree()) {
-		return;
-	}
-
 	data.children_lock++;
 
 	for (Node3D *&E : data.children) {
@@ -115,9 +111,9 @@ void Node3D::_propagate_transform_changed(Node3D *p_origin) {
 		E->_propagate_transform_changed(p_origin);
 	}
 #ifdef TOOLS_ENABLED
-	if ((!data.gizmos.is_empty() || data.notify_transform) && !data.ignore_notification && !xform_change.in_list()) {
+	if (is_inside_tree() && (!data.gizmos.is_empty() || data.notify_transform) && !data.ignore_notification && !xform_change.in_list()) {
 #else
-	if (data.notify_transform && !data.ignore_notification && !xform_change.in_list()) {
+	if (is_inside_tree() && data.notify_transform && !data.ignore_notification && !xform_change.in_list()) {
 #endif
 		get_tree()->xform_change_list.add(&xform_change);
 	}
@@ -168,6 +164,9 @@ void Node3D::_notification(int p_what) {
 			data.parent = nullptr;
 			data.C = nullptr;
 			data.top_level_active = false;
+
+			data.dirty |= DIRTY_GLOBAL_TRANSFORM; // In case users want to access the out-of-tree branch transform.
+
 			_update_visibility_parent(true);
 		} break;
 
@@ -304,9 +303,8 @@ Transform3D Node3D::get_transform() const {
 
 	return data.local_transform;
 }
-Transform3D Node3D::get_global_transform() const {
-	ERR_FAIL_COND_V(!is_inside_tree(), Transform3D());
 
+Transform3D Node3D::get_global_transform() const {
 	if (data.dirty & DIRTY_GLOBAL_TRANSFORM) {
 		if (data.dirty & DIRTY_LOCAL_TRANSFORM) {
 			_update_local_transform();
