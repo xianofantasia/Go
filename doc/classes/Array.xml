@@ -62,11 +62,18 @@
 				Creates a typed array from the [param base] array.
 			</description>
 		</constructor>
+		<constructor name="Array" qualifiers="typed">
+			<return type="Array" />
+			<param index="0" name="base" type="Array" />
+			<description>
+				Alias for [code]Array(base, type, class_name, script)[/code]. Implicitly fills type-related parameters from the type provided. Creates a typed array from the [param base] array.
+			</description>
+		</constructor>
 		<constructor name="Array">
 			<return type="Array" />
 			<param index="0" name="from" type="Array" />
 			<description>
-				Returns the same array as [param from]. If you need a copy of the array, use [method duplicate].
+				Returns the same array as [code]from[/code]. If you need a copy of the array, use [method duplicate].
 			</description>
 		</constructor>
 		<constructor name="Array">

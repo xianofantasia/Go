@@ -29,12 +29,14 @@
 /**************************************************************************/
 
 #include "variant_construct.h"
+#include "core/object/object.h"
 
 struct VariantConstructData {
 	void (*construct)(Variant &r_base, const Variant **p_args, Callable::CallError &r_error) = nullptr;
 	Variant::ValidatedConstructor validated_construct = nullptr;
 	Variant::PTRConstructor ptr_construct = nullptr;
 	Variant::Type (*get_argument_type)(int) = nullptr;
+	bool is_container_type_constructor = false;
 	int argument_count = 0;
 	Vector<String> arg_names;
 };
@@ -52,6 +54,7 @@ static void add_constructor(const Vector<String> &arg_names) {
 	cd.get_argument_type = T::get_argument_type;
 	cd.argument_count = T::get_argument_count();
 	cd.arg_names = arg_names;
+	cd.is_container_type_constructor = T::is_typed_constructor();
 	construct_data[T::get_base_type()].push_back(cd);
 }
 
@@ -317,6 +320,12 @@ String Variant::get_constructor_argument_name(Variant::Type p_type, int p_constr
 	return construct_data[p_type][p_constructor].arg_names[p_argument];
 }
 
+bool Variant::is_typed_constructor(Variant::Type p_type, int p_constructor) {
+	ERR_FAIL_INDEX_V(p_type, Variant::VARIANT_MAX, false);
+	ERR_FAIL_INDEX_V(p_constructor, (int)construct_data[p_type].size(), false);
+	return construct_data[p_type][p_constructor].is_container_type_constructor;
+}
+
 void VariantInternal::object_assign(Variant *v, const Object *o) {
 	if (o) {
 		if (o->is_ref_counted()) {
@@ -346,11 +355,15 @@ void Variant::get_constructor_list(Type p_type, List<MethodInfo> *r_list) {
 	for (int i = 0; i < get_constructor_count(p_type); i++) {
 		int ac = get_constructor_argument_count(p_type, i);
 		mi.arguments.clear();
+		mi.flags = METHOD_FLAGS_DEFAULT;
 		for (int j = 0; j < ac; j++) {
 			PropertyInfo arg;
 			arg.name = get_constructor_argument_name(p_type, i, j);
 			arg.type = get_constructor_argument_type(p_type, i, j);
 			mi.arguments.push_back(arg);
+		}
+		if (is_typed_constructor(p_type, i)) {
+			mi.flags |= METHOD_FLAG_ACCEPTS_TYPE;
 		}
 		r_list->push_back(mi);
 	}

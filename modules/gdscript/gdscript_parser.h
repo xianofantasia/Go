@@ -457,6 +457,7 @@ public:
 		Vector<ExpressionNode *> arguments;
 		StringName function_name;
 		bool is_super = false;
+		TypeNode *typed_array_conversion_type = nullptr;
 
 		CallNode() {
 			type = CALL;
