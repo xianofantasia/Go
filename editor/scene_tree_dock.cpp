@@ -112,6 +112,8 @@ void SceneTreeDock::shortcut_input(const Ref<InputEvent> &p_event) {
 		_tool_selected(TOOL_NEW);
 	} else if (ED_IS_SHORTCUT("scene_tree/instantiate_scene", p_event)) {
 		_tool_selected(TOOL_INSTANTIATE);
+	} else if (ED_IS_SHORTCUT("scene_tree/instantiate_script", p_event)) {
+		_tool_selected(TOOL_INSTANTIATE_SCRIPT);
 	} else if (ED_IS_SHORTCUT("scene_tree/expand_collapse_all", p_event)) {
 		_tool_selected(TOOL_EXPAND_COLLAPSE);
 	} else if (ED_IS_SHORTCUT("scene_tree/cut_node", p_event)) {
@@ -190,38 +192,74 @@ void SceneTreeDock::_perform_instantiate_scenes(const Vector<String> &p_files, N
 	Vector<Node *> instances;
 
 	bool error = false;
+	bool is_script = false;
 
 	for (int i = 0; i < p_files.size(); i++) {
-		Ref<PackedScene> sdata = ResourceLoader::load(p_files[i]);
-		if (!sdata.is_valid()) {
-			current_option = -1;
-			accept->set_text(vformat(TTR("Error loading scene from %s"), p_files[i]));
-			accept->popup_centered();
-			error = true;
-			break;
-		}
-
-		Node *instantiated_scene = sdata->instantiate(PackedScene::GEN_EDIT_STATE_INSTANCE);
-		if (!instantiated_scene) {
-			current_option = -1;
-			accept->set_text(vformat(TTR("Error instantiating scene from %s"), p_files[i]));
-			accept->popup_centered();
-			error = true;
-			break;
-		}
-
-		if (!edited_scene->get_scene_file_path().is_empty()) {
-			if (_cyclical_dependency_exists(edited_scene->get_scene_file_path(), instantiated_scene)) {
-				accept->set_text(vformat(TTR("Cannot instantiate the scene '%s' because the current scene exists within one of its nodes."), p_files[i]));
+		if (ResourceLoader::get_resource_type(p_files[i]) == "PackedScene") {
+			Ref<PackedScene> sdata = ResourceLoader::load(p_files[i]);
+			if (!sdata.is_valid()) {
+				current_option = -1;
+				accept->set_text(vformat(TTR("Error loading scene from %s"), p_files[i]));
 				accept->popup_centered();
 				error = true;
 				break;
 			}
+
+			Node *instantiated_scene = sdata->instantiate(PackedScene::GEN_EDIT_STATE_INSTANCE);
+			if (!instantiated_scene) {
+				current_option = -1;
+				accept->set_text(vformat(TTR("Error instantiating scene from %s"), p_files[i]));
+				accept->popup_centered();
+				error = true;
+				break;
+			}
+
+			if (!edited_scene->get_scene_file_path().is_empty()) {
+				if (_cyclical_dependency_exists(edited_scene->get_scene_file_path(), instantiated_scene)) {
+					accept->set_text(vformat(TTR("Cannot instantiate the scene '%s' because the current scene exists within one of its nodes."), p_files[i]));
+					accept->popup_centered();
+					error = true;
+					break;
+				}
+			}
+
+			instantiated_scene->set_scene_file_path(ProjectSettings::get_singleton()->localize_path(p_files[i]));
+			instances.push_back(instantiated_scene);
+		} else {
+			Ref<Script> scr = ResourceLoader::load(p_files[i]);
+			if (!scr.is_valid()) {
+				current_option = -1;
+				accept->set_text(vformat(TTR("Error loading script from %s"), p_files[i]));
+				accept->popup_centered();
+				error = true;
+				break;
+			}
+			is_script = true;
+
+			Object *instantiated_object = ClassDB::instantiate(scr->get_instance_base_type());
+			if (!instantiated_object) {
+				current_option = -1;
+				accept->set_text(vformat(TTR("Error instantiating node from %s"), p_files[i]));
+				accept->popup_centered();
+				error = true;
+				break;
+			}
+
+			Node *instantiated_node = Object::cast_to<Node>(instantiated_object);
+			if (!instantiated_node) {
+				accept->set_text(vformat(TTR("Cannot instantiate the script '%s' because it doesn't extend a Node-derived type."), p_files[i]));
+				accept->popup_centered();
+				error = true;
+				if (!instantiated_object->is_ref_counted()) {
+					memdelete(instantiated_object);
+				}
+				break;
+			}
+
+			instantiated_node->set_name(Node::adjust_name_casing(scr->get_path().get_file().get_basename()));
+			instantiated_node->set_script(scr);
+			instances.append(instantiated_node);
 		}
-
-		instantiated_scene->set_scene_file_path(ProjectSettings::get_singleton()->localize_path(p_files[i]));
-
-		instances.push_back(instantiated_scene);
 	}
 
 	if (error) {
@@ -232,7 +270,11 @@ void SceneTreeDock::_perform_instantiate_scenes(const Vector<String> &p_files, N
 	}
 
 	Ref<EditorUndoRedoManager> &undo_redo = EditorNode::get_undo_redo();
-	undo_redo->create_action(TTR("Instantiate Scene(s)"));
+	if (is_script) {
+		undo_redo->create_action(TTR("Instantiate Script(s)"));
+	} else {
+		undo_redo->create_action(TTR("Instantiate Scene(s)"));
+	}
 
 	for (int i = 0; i < instances.size(); i++) {
 		Node *instantiated_scene = instances[i];
@@ -434,6 +476,17 @@ void SceneTreeDock::_tool_selected(int p_tool, bool p_confirm_override) {
 
 			quick_open->popup_dialog("PackedScene", true);
 			quick_open->set_title(TTR("Instantiate Child Scene"));
+			if (!p_confirm_override) {
+				emit_signal(SNAME("add_node_used"));
+			}
+		} break;
+		case TOOL_INSTANTIATE_SCRIPT: {
+			if (!profile_allow_editing) {
+				break;
+			}
+
+			quick_open->popup_dialog("Script", true);
+			quick_open->set_title(TTR("Instantiate Script"));
 			if (!p_confirm_override) {
 				emit_signal(SNAME("add_node_used"));
 			}
@@ -2620,31 +2673,7 @@ void SceneTreeDock::_script_dropped(String p_file, NodePath p_to) {
 
 	Ref<EditorUndoRedoManager> &undo_redo = EditorNode::get_undo_redo();
 	if (Input::get_singleton()->is_key_pressed(Key::CTRL)) {
-		Object *obj = ClassDB::instantiate(scr->get_instance_base_type());
-		ERR_FAIL_NULL(obj);
-
-		Node *new_node = Object::cast_to<Node>(obj);
-		if (!new_node) {
-			if (!obj->is_ref_counted()) {
-				memdelete(obj);
-			}
-			ERR_FAIL_MSG("Script does not extend Node-derived type.");
-		}
-		new_node->set_name(Node::adjust_name_casing(p_file.get_file().get_basename()));
-		new_node->set_script(scr);
-
-		undo_redo->create_action(TTR("Instantiate Script"));
-		undo_redo->add_do_method(n, "add_child", new_node, true);
-		undo_redo->add_do_method(new_node, "set_owner", edited_scene);
-		undo_redo->add_do_method(editor_selection, "clear");
-		undo_redo->add_do_method(editor_selection, "add_node", new_node);
-		undo_redo->add_do_reference(new_node);
-		undo_redo->add_undo_method(n, "remove_child", new_node);
-
-		EditorDebuggerNode *ed = EditorDebuggerNode::get_singleton();
-		undo_redo->add_do_method(ed, "live_debug_create_node", edited_scene->get_path_to(n), new_node->get_class(), new_node->get_name());
-		undo_redo->add_undo_method(ed, "live_debug_remove_node", NodePath(String(edited_scene->get_path_to(n)).path_join(new_node->get_name())));
-		undo_redo->commit_action();
+		_perform_instantiate_scenes({ scr->get_path() }, n, -1);
 	} else {
 		undo_redo->create_action(TTR("Attach Script"), UndoRedo::MERGE_DISABLE, n);
 		undo_redo->add_do_method(InspectorDock::get_singleton(), "store_script_properties", n);
@@ -2730,6 +2759,7 @@ void SceneTreeDock::_tree_rmb(const Vector2 &p_menu_pos) {
 		if (profile_allow_editing) {
 			menu->add_icon_shortcut(get_theme_icon(SNAME("Add"), SNAME("EditorIcons")), ED_GET_SHORTCUT("scene_tree/add_child_node"), TOOL_NEW);
 			menu->add_icon_shortcut(get_theme_icon(SNAME("Instance"), SNAME("EditorIcons")), ED_GET_SHORTCUT("scene_tree/instantiate_scene"), TOOL_INSTANTIATE);
+			menu->add_icon_shortcut(get_theme_icon(SNAME("Script"), SNAME("EditorIcons")), ED_GET_SHORTCUT("scene_tree/instantiate_script"), TOOL_INSTANTIATE_SCRIPT);
 		}
 
 		menu->reset_size();
@@ -2763,6 +2793,7 @@ void SceneTreeDock::_tree_rmb(const Vector2 &p_menu_pos) {
 
 			menu->add_icon_shortcut(get_theme_icon(SNAME("Add"), SNAME("EditorIcons")), ED_GET_SHORTCUT("scene_tree/add_child_node"), TOOL_NEW);
 			menu->add_icon_shortcut(get_theme_icon(SNAME("Instance"), SNAME("EditorIcons")), ED_GET_SHORTCUT("scene_tree/instantiate_scene"), TOOL_INSTANTIATE);
+			menu->add_icon_shortcut(get_theme_icon(SNAME("Script"), SNAME("EditorIcons")), ED_GET_SHORTCUT("scene_tree/instantiate_script"), TOOL_INSTANTIATE_SCRIPT);
 		}
 		menu->add_icon_shortcut(get_theme_icon(SNAME("Collapse"), SNAME("EditorIcons")), ED_GET_SHORTCUT("scene_tree/expand_collapse_all"), TOOL_EXPAND_COLLAPSE);
 		menu->add_separator();
@@ -3490,6 +3521,7 @@ SceneTreeDock::SceneTreeDock(Node *p_scene_root, EditorSelection *p_editor_selec
 
 	ED_SHORTCUT("scene_tree/add_child_node", TTR("Add Child Node"), KeyModifierMask::CMD_OR_CTRL | Key::A);
 	ED_SHORTCUT("scene_tree/instantiate_scene", TTR("Instantiate Child Scene"), KeyModifierMask::CMD_OR_CTRL | KeyModifierMask::SHIFT | Key::A);
+	ED_SHORTCUT("scene_tree/instantiate_script", TTR("Instantiate Script"), KeyModifierMask::CMD_OR_CTRL | KeyModifierMask::ALT | Key::A);
 	ED_SHORTCUT("scene_tree/expand_collapse_all", TTR("Expand/Collapse Branch"));
 	ED_SHORTCUT("scene_tree/cut_node", TTR("Cut"), KeyModifierMask::CMD_OR_CTRL | Key::X);
 	ED_SHORTCUT("scene_tree/copy_node", TTR("Copy"), KeyModifierMask::CMD_OR_CTRL | Key::C);
