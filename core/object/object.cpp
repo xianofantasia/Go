@@ -1183,6 +1183,12 @@ Error Object::emit_signalp(const StringName &p_name, const Variant **p_args, int
 		const Callable &callable = slot_callables[i];
 		const uint32_t &flags = slot_flags[i];
 
+#ifdef TOOLS_ENABLED
+		if (flags & CONNECT_NO_EDITOR && Engine::get_singleton()->is_editor_hint()) {
+			continue;
+		}
+#endif
+
 		if (!callable.is_valid()) {
 			// Target might have been deleted during signal callback, this is expected and OK.
 			continue;
@@ -1807,6 +1813,7 @@ void Object::_bind_methods() {
 	BIND_ENUM_CONSTANT(CONNECT_PERSIST);
 	BIND_ENUM_CONSTANT(CONNECT_ONE_SHOT);
 	BIND_ENUM_CONSTANT(CONNECT_REFERENCE_COUNTED);
+	BIND_ENUM_CONSTANT(CONNECT_NO_EDITOR);
 }
 
 void Object::set_deferred(const StringName &p_property, const Variant &p_value) {

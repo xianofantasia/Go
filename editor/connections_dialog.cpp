@@ -619,6 +619,10 @@ bool ConnectDialog::get_one_shot() const {
 	return one_shot->is_pressed();
 }
 
+bool ConnectDialog::get_no_editor() const {
+	return no_editor->is_pressed();
+}
+
 /*
  * Returns true if ConnectDialog is being used to edit an existing connection.
  */
@@ -660,11 +664,13 @@ void ConnectDialog::init(const ConnectionData &p_cd, const PackedStringArray &p_
 
 	_update_ok_enabled();
 
-	bool b_deferred = (p_cd.flags & CONNECT_DEFERRED) == CONNECT_DEFERRED;
-	bool b_oneshot = (p_cd.flags & CONNECT_ONE_SHOT) == CONNECT_ONE_SHOT;
+	bool b_deferred = p_cd.flags & CONNECT_DEFERRED;
+	bool b_oneshot = p_cd.flags & CONNECT_ONE_SHOT;
+	bool b_noeditor = p_cd.flags & CONNECT_NO_EDITOR;
 
 	deferred->set_pressed(b_deferred);
 	one_shot->set_pressed(b_oneshot);
+	no_editor->set_pressed(b_noeditor);
 
 	unbind_count->set_max(p_signal_args.size());
 
@@ -890,6 +896,12 @@ ConnectDialog::ConnectDialog() {
 	one_shot->set_tooltip_text(TTR("Disconnects the signal after its first emission."));
 	hbox->add_child(one_shot);
 
+	no_editor = memnew(CheckBox);
+	no_editor->set_h_size_flags(0);
+	no_editor->set_text(TTR("No Editor"));
+	no_editor->set_tooltip_text(TTR("The callback will not be called inside the editor."));
+	hbox->add_child(no_editor);
+
 	cdbinds = memnew(ConnectDialogBinds);
 
 	error = memnew(AcceptDialog);
@@ -946,7 +958,8 @@ void ConnectionsDock::_make_or_edit_connection() {
 	}
 	bool b_deferred = connect_dialog->get_deferred();
 	bool b_oneshot = connect_dialog->get_one_shot();
-	cd.flags = CONNECT_PERSIST | (b_deferred ? CONNECT_DEFERRED : 0) | (b_oneshot ? CONNECT_ONE_SHOT : 0);
+	bool b_noeditor = connect_dialog->get_no_editor();
+	cd.flags = CONNECT_PERSIST | (b_deferred ? CONNECT_DEFERRED : 0) | (b_oneshot ? CONNECT_ONE_SHOT : 0) | (b_noeditor ? CONNECT_NO_EDITOR : 0);
 
 	// If the function is found in target's own script, check the editor setting
 	// to determine if the script should be opened.
@@ -1141,6 +1154,7 @@ void ConnectionsDock::_open_connection_dialog(TreeItem &p_item) {
 	cd.signal = StringName(signal_name);
 	cd.target = dst_node;
 	cd.method = ConnectDialog::generate_method_callback_name(cd.source, signal_name, cd.target);
+	cd.flags = CONNECT_NO_EDITOR; // Always enable when connecting from the editor.
 	connect_dialog->init(cd, signal_args);
 	connect_dialog->set_title(TTR("Connect a Signal to a Method"));
 	connect_dialog->popup_dialog(signal_name + "(" + String(", ").join(signal_args) + ")");
