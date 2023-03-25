@@ -2003,6 +2003,7 @@ String Node::get_editor_description() const {
 	return data.editor_description;
 }
 
+#ifdef TOOLS_ENABLED
 void Node::set_editable_instance(Node *p_node, bool p_editable) {
 	ERR_FAIL_NULL(p_node);
 	ERR_FAIL_COND(!is_ancestor_of(p_node));
@@ -2042,7 +2043,6 @@ Node *Node::get_deepest_editable_node(Node *p_start_node) const {
 	return node;
 }
 
-#ifdef TOOLS_ENABLED
 void Node::set_property_pinned(const String &p_property, bool p_pinned) {
 	bool current_pinned = false;
 	Array pinned = get_meta("_edit_pinned_properties_", Array());
@@ -2159,7 +2159,9 @@ Node *Node::_duplicate(int p_flags, HashMap<const Node *, Node *> *r_duplimap) c
 
 	if (!get_scene_file_path().is_empty()) { //an instance
 		node->set_scene_file_path(get_scene_file_path());
+#ifdef TOOLS_ENABLED
 		node->data.editable_instance = data.editable_instance;
+#endif
 	}
 
 	StringName script_property_name = CoreStringNames::get_singleton()->_script;
@@ -2769,6 +2771,7 @@ bool Node::is_owned_by_parent() const {
 	return data.parent_owned;
 }
 
+#ifdef TOOLS_ENABLED
 void Node::set_display_folded(bool p_folded) {
 	data.display_folded = p_folded;
 }
@@ -2776,6 +2779,7 @@ void Node::set_display_folded(bool p_folded) {
 bool Node::is_displayed_folded() const {
 	return data.display_folded;
 }
+#endif
 
 void Node::request_ready() {
 	data.ready_first = true;

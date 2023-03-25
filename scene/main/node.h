@@ -116,6 +116,8 @@ private:
 		bool ready_first = true;
 #ifdef TOOLS_ENABLED
 		NodePath import_path; // Path used when imported, used by scene editors to keep tracking.
+		bool display_folded = false;
+		bool editable_instance = false;
 #endif
 		String editor_description;
 
@@ -148,9 +150,6 @@ private:
 		bool parent_owned = false;
 		bool in_constructor = true;
 		bool use_placeholder = false;
-
-		bool display_folded = false;
-		bool editable_instance = false;
 
 		mutable NodePath *path_cache = nullptr;
 
@@ -374,14 +373,17 @@ public:
 	void set_editor_description(const String &p_editor_description);
 	String get_editor_description() const;
 
+#ifdef TOOLS_ENABLED
 	void set_editable_instance(Node *p_node, bool p_editable);
 	bool is_editable_instance(const Node *p_node) const;
 	Node *get_deepest_editable_node(Node *p_start_node) const;
 
-#ifdef TOOLS_ENABLED
 	void set_property_pinned(const String &p_property, bool p_pinned);
 	bool is_property_pinned(const StringName &p_property) const;
 	virtual StringName get_property_store_alias(const StringName &p_property) const;
+#else
+	void set_editable_instance(Node *p_node, bool p_editable){};
+	bool is_editable_instance(const Node *p_node) const { return false; }
 #endif
 	void get_storable_properties(HashSet<StringName> &r_storable_properties) const;
 
@@ -487,8 +489,13 @@ public:
 
 	void update_configuration_warnings();
 
+#ifdef TOOLS_ENABLED
 	void set_display_folded(bool p_folded);
 	bool is_displayed_folded() const;
+#else
+	void set_display_folded(bool p_folded){};
+	bool is_displayed_folded() const { return false; }
+#endif
 	/* NETWORK */
 
 	virtual void set_multiplayer_authority(int p_peer_id, bool p_recursive = true);
