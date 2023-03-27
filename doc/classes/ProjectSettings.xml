@@ -2231,6 +2231,11 @@
 		</member>
 		<member name="rendering/limits/time/time_rollover_secs" type="float" setter="" getter="" default="3600">
 		</member>
+		<member name="rendering/measure_render_time" type="bool" setter="" getter="" default="false">
+			If [code]true[/code], enables CPU/GPU render time measurements on the root viewport using [method RenderingServer.viewport_get_measured_render_time_cpu] and [method RenderingServer.viewport_get_measured_render_time_gpu]. Internally, this calls [method RenderingServer.viewport_set_measure_render_time] with the root viewport's RID as an argument (obtained using [method Viewport.get_viewport_rid]).
+			[b]Note:[/b] Only enable [member rendering/measure_render_time] if you actually need to query render time, as it has a performance overhead even if the value is never queried. If you only display measurements in a debug menu, consider using [method RenderingServer.viewport_set_measure_render_time] to toggle this value at run-time on the root viewport while leaving [member rendering/measure_render_time] to [code]false[/code].
+			[b]Note:[/b] This property is only read when the project starts. To toggle render time measurements at runtime, use [method RenderingServer.viewport_set_measure_render_time] on the root [Viewport].
+		</member>
 		<member name="rendering/mesh_lod/lod_change/threshold_pixels" type="float" setter="" getter="" default="1.0">
 			The automatic LOD bias to use for meshes rendered within the [ReflectionProbe]. Higher values will use less detailed versions of meshes that have LOD variations generated. If set to [code]0.0[/code], automatic LOD is disabled. Increase [member rendering/mesh_lod/lod_change/threshold_pixels] to improve performance at the cost of geometry detail.
 			[b]Note:[/b] [member rendering/mesh_lod/lod_change/threshold_pixels] does not affect [GeometryInstance3D] visibility ranges (also known as "manual" LOD or hierarchical LOD).
