@@ -1480,7 +1480,28 @@ String Viewport::_gui_get_tooltip(Control *p_control, const Vector2 &p_pos, Cont
 	return tooltip;
 }
 
+void Viewport::cancel_tooltip() {
+	_gui_cancel_tooltip();
+}
+
+void Viewport::show_tooltip(Control *p_control) {
+	if (!p_control) {
+		return;
+	}
+
+	if (gui.tooltip_timer.is_valid()) {
+		gui.tooltip_timer->release_connections();
+		gui.tooltip_timer = Ref<SceneTreeTimer>();
+	}
+	gui.tooltip_control = p_control;
+	_gui_show_tooltip_at(p_control->get_size() / 2);
+}
+
 void Viewport::_gui_show_tooltip() {
+	_gui_show_tooltip_at(gui.last_mouse_pos);
+}
+
+void Viewport::_gui_show_tooltip_at(const Point2i &p_pos) {
 	if (!gui.tooltip_control) {
 		return;
 	}
@@ -2179,6 +2200,17 @@ void Viewport::_gui_input_event(Ref<InputEvent> p_event) {
 		}
 
 		Control *from = gui.key_focus ? gui.key_focus : nullptr;
+		if (!from) {
+			for (int i = 0; i < get_child_count(true); i++) {
+				Control *c = Object::cast_to<Control>(get_child(i, true));
+				if (!c || !c->is_visible_in_tree() || c->is_set_as_top_level()) {
+					continue;
+				}
+
+				from = c;
+				break;
+			}
+		}
 
 		if (from && p_event->is_pressed()) {
 			Control *next = nullptr;

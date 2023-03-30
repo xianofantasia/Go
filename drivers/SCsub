@@ -27,6 +27,10 @@ if env["xaudio2"]:
         Exit(255)
     SConscript("xaudio2/SCsub")
 
+# Accessibility
+if env["platform"] in ["macos", "windows", "linuxbsd"]:
+    SConscript("accesskit/SCsub")
+
 # Midi drivers
 SConscript("alsamidi/SCsub")
 SConscript("coremidi/SCsub")

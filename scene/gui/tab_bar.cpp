@@ -380,6 +380,43 @@ void TabBar::_notification(int p_what) {
 			}
 		} break;
 
+		case NOTIFICATION_EXIT_TREE:
+		case NOTIFICATION_ACCESSIBILITY_INVALIDATE: {
+			for (int i = 0; i < tabs.size(); i++) {
+				tabs.write[i].accessibility_item_element = RID();
+			}
+		} break;
+
+		case NOTIFICATION_ACCESSIBILITY_UPDATE: {
+			RID ae = get_accessibility_element();
+			ERR_FAIL_COND(ae.is_null());
+
+			DisplayServer::get_singleton()->accessibility_update_set_role(ae, DisplayServer::AccessibilityRole::ROLE_TAB_BAR);
+			DisplayServer::get_singleton()->accessibility_update_set_list_item_count(ae, tabs.size());
+
+			for (int i = 0; i < tabs.size(); i++) {
+				const Tab &item = tabs[i];
+
+				if (item.accessibility_item_element.is_null()) {
+					item.accessibility_item_element = DisplayServer::get_singleton()->accessibility_create_sub_element(ae, DisplayServer::AccessibilityRole::ROLE_TAB);
+					item.accessibility_item_dirty = true;
+				}
+
+				if (item.accessibility_item_dirty) {
+					DisplayServer::get_singleton()->accessibility_update_set_list_item_index(item.accessibility_item_element, i);
+					DisplayServer::get_singleton()->accessibility_update_set_list_item_level(item.accessibility_item_element, 0);
+					DisplayServer::get_singleton()->accessibility_update_set_name(item.accessibility_item_element, item.text);
+					DisplayServer::get_singleton()->accessibility_update_set_flag(item.accessibility_item_element, DisplayServer::AccessibilityFlags::FLAG_DISABLED, item.disabled);
+					DisplayServer::get_singleton()->accessibility_update_set_flag(item.accessibility_item_element, DisplayServer::AccessibilityFlags::FLAG_HIDDEN, item.hidden);
+					DisplayServer::get_singleton()->accessibility_update_set_tooltip(item.accessibility_item_element, item.tooltip);
+
+					DisplayServer::get_singleton()->accessibility_update_set_bounds(item.accessibility_item_element, Rect2(Point2(item.ofs_cache, 0), Size2(item.size_cache, get_size().height)));
+
+					item.accessibility_item_dirty = false;
+				}
+			}
+		} break;
+
 		case NOTIFICATION_LAYOUT_DIRECTION_CHANGED: {
 			queue_redraw();
 		} break;
@@ -390,6 +427,7 @@ void TabBar::_notification(int p_what) {
 				_shape(i);
 			}
 
+			queue_accessibility_update();
 			queue_redraw();
 			update_minimum_size();
 
@@ -633,6 +671,15 @@ void TabBar::set_tab_count(int p_count) {
 	}
 
 	ERR_FAIL_COND(p_count < 0);
+
+	if (tabs.size() > p_count) {
+		for (int i = p_count; i < tabs.size(); i++) {
+			if (tabs[i].accessibility_item_element.is_valid()) {
+				DisplayServer::get_singleton()->accessibility_free_element(tabs.write[i].accessibility_item_element);
+				tabs.write[i].accessibility_item_element = RID();
+			}
+		}
+	}
 	tabs.resize(p_count);
 
 	if (p_count == 0) {
@@ -663,6 +710,7 @@ void TabBar::set_tab_count(int p_count) {
 		}
 	}
 
+	queue_accessibility_update();
 	queue_redraw();
 	update_minimum_size();
 	notify_property_list_changed();
@@ -698,6 +746,7 @@ void TabBar::set_current_tab(int p_current) {
 	if (scroll_to_selected) {
 		ensure_tab_visible(current);
 	}
+	queue_accessibility_update();
 	queue_redraw();
 
 	emit_signal(SNAME("tab_changed"), p_current);
@@ -746,6 +795,7 @@ void TabBar::set_tab_offset(int p_offset) {
 	ERR_FAIL_INDEX(p_offset, tabs.size());
 	offset = p_offset;
 	_update_cache();
+	queue_accessibility_update();
 	queue_redraw();
 }
 
@@ -772,6 +822,7 @@ void TabBar::set_tab_title(int p_tab, const String &p_title) {
 	if (scroll_to_selected) {
 		ensure_tab_visible(current);
 	}
+	queue_accessibility_update();
 	queue_redraw();
 	update_minimum_size();
 }
@@ -784,6 +835,7 @@ String TabBar::get_tab_title(int p_tab) const {
 void TabBar::set_tab_tooltip(int p_tab, const String &p_tooltip) {
 	ERR_FAIL_INDEX(p_tab, tabs.size());
 	tabs.write[p_tab].tooltip = p_tooltip;
+	queue_accessibility_update();
 }
 
 String TabBar::get_tab_tooltip(int p_tab) const {
@@ -797,7 +849,9 @@ void TabBar::set_tab_text_direction(int p_tab, Control::TextDirection p_text_dir
 
 	if (tabs[p_tab].text_direction != p_text_direction) {
 		tabs.write[p_tab].text_direction = p_text_direction;
+
 		_shape(p_tab);
+		queue_accessibility_update();
 		queue_redraw();
 	}
 }
@@ -812,12 +866,14 @@ void TabBar::set_tab_language(int p_tab, const String &p_language) {
 
 	if (tabs[p_tab].language != p_language) {
 		tabs.write[p_tab].language = p_language;
+
 		_shape(p_tab);
 		_update_cache();
 		_ensure_no_over_offset();
 		if (scroll_to_selected) {
 			ensure_tab_visible(current);
 		}
+		queue_accessibility_update();
 		queue_redraw();
 		update_minimum_size();
 	}
@@ -888,6 +944,7 @@ void TabBar::set_tab_disabled(int p_tab, bool p_disabled) {
 	if (scroll_to_selected) {
 		ensure_tab_visible(current);
 	}
+	queue_accessibility_update();
 	queue_redraw();
 	update_minimum_size();
 }
@@ -911,6 +968,7 @@ void TabBar::set_tab_hidden(int p_tab, bool p_hidden) {
 	if (scroll_to_selected) {
 		ensure_tab_visible(current);
 	}
+	queue_accessibility_update();
 	queue_redraw();
 	update_minimum_size();
 }
@@ -1072,6 +1130,8 @@ void TabBar::_update_cache(bool p_update_hover) {
 				max_drawn_tab--;
 			}
 		}
+
+		tabs.write[i].accessibility_item_dirty = true;
 	}
 
 	missing_right = max_drawn_tab < tabs.size() - 1;
@@ -1126,6 +1186,7 @@ void TabBar::add_tab(const String &p_str, const Ref<Texture2D> &p_icon) {
 	if (scroll_to_selected) {
 		ensure_tab_visible(current);
 	}
+	queue_accessibility_update();
 	queue_redraw();
 	update_minimum_size();
 
@@ -1144,12 +1205,19 @@ void TabBar::clear_tabs() {
 		return;
 	}
 
+	for (int i = 0; i < tabs.size(); i++) {
+		if (tabs[i].accessibility_item_element.is_valid()) {
+			DisplayServer::get_singleton()->accessibility_free_element(tabs.write[i].accessibility_item_element);
+			tabs.write[i].accessibility_item_element = RID();
+		}
+	}
 	tabs.clear();
 	offset = 0;
 	max_drawn_tab = 0;
 	current = -1;
 	previous = -1;
 
+	queue_accessibility_update();
 	queue_redraw();
 	update_minimum_size();
 	notify_property_list_changed();
@@ -1157,6 +1225,11 @@ void TabBar::clear_tabs() {
 
 void TabBar::remove_tab(int p_idx) {
 	ERR_FAIL_INDEX(p_idx, tabs.size());
+
+	if (tabs[p_idx].accessibility_item_element.is_valid()) {
+		DisplayServer::get_singleton()->accessibility_free_element(tabs.write[p_idx].accessibility_item_element);
+		tabs.write[p_idx].accessibility_item_element = RID();
+	}
 	tabs.remove_at(p_idx);
 
 	bool is_tab_changing = current == p_idx;
@@ -1206,6 +1279,7 @@ void TabBar::remove_tab(int p_idx) {
 		}
 	}
 
+	queue_accessibility_update();
 	queue_redraw();
 	update_minimum_size();
 	notify_property_list_changed();
@@ -1362,6 +1436,8 @@ void TabBar::_handle_drop_data(const String &p_type, const Point2 &p_point, cons
 
 void TabBar::_move_tab_from(TabBar *p_from_tabbar, int p_from_index, int p_to_index) {
 	Tab moving_tab = p_from_tabbar->tabs[p_from_index];
+	moving_tab.accessibility_item_element = RID();
+	moving_tab.accessibility_item_dirty = true;
 	p_from_tabbar->remove_tab(p_from_index);
 	tabs.insert(p_to_index, moving_tab);
 
@@ -1381,6 +1457,7 @@ void TabBar::_move_tab_from(TabBar *p_from_tabbar, int p_from_index, int p_to_in
 		queue_redraw();
 	}
 
+	queue_accessibility_update();
 	update_minimum_size();
 }
 
@@ -1452,6 +1529,8 @@ void TabBar::move_tab(int p_from, int p_to) {
 	ERR_FAIL_INDEX(p_to, tabs.size());
 
 	Tab tab_from = tabs[p_from];
+	tab_from.accessibility_item_dirty = true;
+
 	tabs.remove_at(p_from);
 	tabs.insert(p_to, tab_from);
 
@@ -1476,6 +1555,7 @@ void TabBar::move_tab(int p_from, int p_to) {
 	if (scroll_to_selected) {
 		ensure_tab_visible(current);
 	}
+	queue_accessibility_update();
 	queue_redraw();
 	notify_property_list_changed();
 }
@@ -1889,6 +1969,7 @@ void TabBar::_bind_methods() {
 }
 
 TabBar::TabBar() {
+	set_focus_mode(FOCUS_ACCESSIBILITY);
 	set_size(Size2(get_size().width, get_minimum_size().height));
 	set_focus_mode(FOCUS_ALL);
 	connect(SceneStringName(mouse_exited), callable_mp(this, &TabBar::_on_mouse_exited));

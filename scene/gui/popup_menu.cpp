@@ -473,9 +473,11 @@ void PopupMenu::_input_from_window_internal(const Ref<InputEvent> &p_event) {
 			bool match_found = false;
 			for (int i = search_from; i < items.size(); i++) {
 				if (!items[i].separator && !items[i].disabled) {
+					prev_mouse_over = mouse_over;
 					mouse_over = i;
 					emit_signal(SNAME("id_focused"), items[i].id);
 					scroll_to_item(i);
+					queue_accessibility_update();
 					control->queue_redraw();
 					set_input_as_handled();
 					match_found = true;
@@ -487,9 +489,11 @@ void PopupMenu::_input_from_window_internal(const Ref<InputEvent> &p_event) {
 				// If the last item is not selectable, try re-searching from the start.
 				for (int i = 0; i < search_from; i++) {
 					if (!items[i].separator && !items[i].disabled) {
+						prev_mouse_over = mouse_over;
 						mouse_over = i;
 						emit_signal(SNAME("id_focused"), items[i].id);
 						scroll_to_item(i);
+						queue_accessibility_update();
 						control->queue_redraw();
 						set_input_as_handled();
 						break;
@@ -511,9 +515,11 @@ void PopupMenu::_input_from_window_internal(const Ref<InputEvent> &p_event) {
 			bool match_found = false;
 			for (int i = search_from; i >= 0; i--) {
 				if (!items[i].separator && !items[i].disabled) {
+					prev_mouse_over = mouse_over;
 					mouse_over = i;
 					emit_signal(SNAME("id_focused"), items[i].id);
 					scroll_to_item(i);
+					queue_accessibility_update();
 					control->queue_redraw();
 					set_input_as_handled();
 					match_found = true;
@@ -525,9 +531,11 @@ void PopupMenu::_input_from_window_internal(const Ref<InputEvent> &p_event) {
 				// If the first item is not selectable, try re-searching from the end.
 				for (int i = items.size() - 1; i >= search_from; i--) {
 					if (!items[i].separator && !items[i].disabled) {
+						prev_mouse_over = mouse_over;
 						mouse_over = i;
 						emit_signal(SNAME("id_focused"), items[i].id);
 						scroll_to_item(i);
+						queue_accessibility_update();
 						control->queue_redraw();
 						set_input_as_handled();
 						break;
@@ -691,9 +699,11 @@ void PopupMenu::_input_from_window_internal(const Ref<InputEvent> &p_event) {
 			}
 
 			if (items[i].text.findn(search_string) == 0) {
+				prev_mouse_over = mouse_over;
 				mouse_over = i;
 				emit_signal(SNAME("id_focused"), items[i].id);
 				scroll_to_item(i);
+				queue_accessibility_update();
 				control->queue_redraw();
 				set_input_as_handled();
 				break;
@@ -708,6 +718,7 @@ void PopupMenu::_mouse_over_update(const Point2 &p_over) {
 
 	if (id < 0) {
 		mouse_over = -1;
+		queue_accessibility_update();
 		control->queue_redraw();
 		return;
 	}
@@ -719,6 +730,7 @@ void PopupMenu::_mouse_over_update(const Point2 &p_over) {
 
 	if (over != mouse_over) {
 		mouse_over = over;
+		queue_accessibility_update();
 		control->queue_redraw();
 	}
 }
@@ -1006,8 +1018,105 @@ void PopupMenu::remove_child_notify(Node *p_child) {
 	_menu_changed();
 }
 
+void PopupMenu::_accessibility_action_click(const Variant &p_data, int p_idx) {
+	activate_item(p_idx);
+}
+
+RID PopupMenu::get_focused_accessibility_element() const {
+	if (mouse_over == -1) {
+		return get_accessibility_element();
+	} else {
+		const Item &item = items[mouse_over];
+		return item.accessibility_item_element;
+	}
+}
+
 void PopupMenu::_notification(int p_what) {
 	switch (p_what) {
+		case NOTIFICATION_EXIT_TREE: {
+			if (system_menu_id != NativeMenu::INVALID_MENU_ID) {
+				unbind_global_menu();
+			}
+			[[fallthrough]];
+		}
+
+		case NOTIFICATION_ACCESSIBILITY_INVALIDATE: {
+			for (int i = 0; i < items.size(); i++) {
+				items.write[i].accessibility_item_element = RID();
+			}
+			accessibility_scroll_element = RID();
+		} break;
+
+		case NOTIFICATION_ACCESSIBILITY_UPDATE: {
+			RID ae = get_accessibility_element();
+			ERR_FAIL_COND(ae.is_null());
+
+			if (has_meta("_menu_name")) {
+				DisplayServer::get_singleton()->accessibility_update_set_name(ae, get_meta("_menu_name", get_name()));
+			}
+			DisplayServer::get_singleton()->accessibility_update_set_role(ae, DisplayServer::AccessibilityRole::ROLE_MENU);
+			DisplayServer::get_singleton()->accessibility_update_set_list_item_count(ae, items.size());
+
+			if (accessibility_scroll_element.is_null()) {
+				accessibility_scroll_element = DisplayServer::get_singleton()->accessibility_create_sub_element(ae, DisplayServer::AccessibilityRole::ROLE_CONTAINER);
+			}
+
+			Transform2D scroll_xform;
+			scroll_xform.set_origin(Vector2i(0, -scroll_container->get_v_scroll_bar()->get_value()));
+			DisplayServer::get_singleton()->accessibility_update_set_transform(accessibility_scroll_element, scroll_xform);
+			DisplayServer::get_singleton()->accessibility_update_set_bounds(accessibility_scroll_element, Rect2(0, 0, get_size().x, scroll_container->get_v_scroll_bar()->get_max()));
+
+			float scroll_width = scroll_container->get_v_scroll_bar()->is_visible_in_tree() ? scroll_container->get_v_scroll_bar()->get_size().width : 0;
+			float display_width = control->get_size().width - scroll_width;
+			Point2 ofs;
+
+			for (int i = 0; i < items.size(); i++) {
+				const Item &item = items.write[i];
+
+				ofs.y += i > 0 ? theme_cache.v_separation : (float)theme_cache.v_separation / 2;
+
+				Point2 item_ofs = ofs;
+				if (item.accessibility_item_element.is_null()) {
+					item.accessibility_item_element = DisplayServer::get_singleton()->accessibility_create_sub_element(accessibility_scroll_element, DisplayServer::AccessibilityRole::ROLE_MENU_ITEM);
+					item.accessibility_item_dirty = true;
+				}
+
+				item_ofs.x += item.indent * theme_cache.indent;
+				float h = _get_item_height(i);
+
+				if (item.accessibility_item_dirty || i == prev_mouse_over || i == mouse_over) {
+					switch (item.checkable_type) {
+						case Item::CHECKABLE_TYPE_NONE: {
+							DisplayServer::get_singleton()->accessibility_update_set_role(item.accessibility_item_element, DisplayServer::AccessibilityRole::ROLE_MENU_ITEM);
+						} break;
+						case Item::CHECKABLE_TYPE_CHECK_BOX: {
+							DisplayServer::get_singleton()->accessibility_update_set_role(item.accessibility_item_element, DisplayServer::AccessibilityRole::ROLE_MENU_ITEM_CHECK_BOX);
+							DisplayServer::get_singleton()->accessibility_update_set_checked(item.accessibility_item_element, item.checked);
+						} break;
+						case Item::CHECKABLE_TYPE_RADIO_BUTTON: {
+							DisplayServer::get_singleton()->accessibility_update_set_role(item.accessibility_item_element, DisplayServer::AccessibilityRole::ROLE_MENU_ITEM_RADIO);
+							DisplayServer::get_singleton()->accessibility_update_set_checked(item.accessibility_item_element, item.checked);
+						} break;
+					}
+
+					DisplayServer::get_singleton()->accessibility_update_add_action(item.accessibility_item_element, DisplayServer::AccessibilityAction::ACTION_CLICK, callable_mp(this, &PopupMenu::_accessibility_action_click).bind(i));
+					DisplayServer::get_singleton()->accessibility_update_set_list_item_index(item.accessibility_item_element, i);
+					DisplayServer::get_singleton()->accessibility_update_set_list_item_level(item.accessibility_item_element, 0);
+					DisplayServer::get_singleton()->accessibility_update_set_list_item_selected(item.accessibility_item_element, i == mouse_over);
+					DisplayServer::get_singleton()->accessibility_update_set_name(item.accessibility_item_element, item.xl_text);
+					DisplayServer::get_singleton()->accessibility_update_set_flag(item.accessibility_item_element, DisplayServer::AccessibilityFlags::FLAG_DISABLED, item.disabled);
+					DisplayServer::get_singleton()->accessibility_update_set_tooltip(item.accessibility_item_element, item.tooltip);
+
+					DisplayServer::get_singleton()->accessibility_update_set_bounds(item.accessibility_item_element, Rect2(item_ofs, Size2(display_width, h + theme_cache.v_separation)));
+
+					item.accessibility_item_dirty = false;
+				}
+				ofs.y += h;
+			}
+			prev_mouse_over = -1;
+
+		} break;
+
 		case NOTIFICATION_ENTER_TREE: {
 			PopupMenu *pm = Object::cast_to<PopupMenu>(get_parent());
 			if (pm) {
@@ -1017,12 +1126,6 @@ void PopupMenu::_notification(int p_what) {
 			}
 			if (system_menu_id != NativeMenu::INVALID_MENU_ID) {
 				bind_global_menu();
-			}
-		} break;
-
-		case NOTIFICATION_EXIT_TREE: {
-			if (system_menu_id != NativeMenu::INVALID_MENU_ID) {
-				unbind_global_menu();
 			}
 		} break;
 
@@ -1045,7 +1148,9 @@ void PopupMenu::_notification(int p_what) {
 				if (is_global) {
 					nmenu->set_item_text(global_menu, i, item.xl_text);
 				}
+				item.accessibility_item_dirty = true;
 				_shape_item(i);
+				queue_accessibility_update();
 			}
 
 			child_controls_changed();
@@ -1060,6 +1165,7 @@ void PopupMenu::_notification(int p_what) {
 		case NOTIFICATION_WM_MOUSE_EXIT: {
 			if (mouse_over >= 0 && (!items[mouse_over].submenu || submenu_over != -1)) {
 				mouse_over = -1;
+				queue_accessibility_update();
 				control->queue_redraw();
 			}
 		} break;
@@ -1164,7 +1270,9 @@ void PopupMenu::_notification(int p_what) {
 		case NOTIFICATION_VISIBILITY_CHANGED: {
 			if (!is_visible()) {
 				if (mouse_over >= 0) {
+					prev_mouse_over = mouse_over;
 					mouse_over = -1;
+					queue_accessibility_update();
 					control->queue_redraw();
 				}
 
@@ -1209,6 +1317,7 @@ void PopupMenu::add_item(const String &p_label, int p_id, Key p_accel) {
 	}
 
 	_shape_item(items.size() - 1);
+	queue_accessibility_update();
 	control->queue_redraw();
 
 	child_controls_changed();
@@ -1232,6 +1341,7 @@ void PopupMenu::add_icon_item(const Ref<Texture2D> &p_icon, const String &p_labe
 	}
 
 	_shape_item(items.size() - 1);
+	queue_accessibility_update();
 	control->queue_redraw();
 
 	child_controls_changed();
@@ -1255,6 +1365,7 @@ void PopupMenu::add_check_item(const String &p_label, int p_id, Key p_accel) {
 	}
 
 	_shape_item(items.size() - 1);
+	queue_accessibility_update();
 	control->queue_redraw();
 
 	child_controls_changed();
@@ -1280,6 +1391,7 @@ void PopupMenu::add_icon_check_item(const Ref<Texture2D> &p_icon, const String &
 	}
 
 	_shape_item(items.size() - 1);
+	queue_accessibility_update();
 	control->queue_redraw();
 
 	child_controls_changed();
@@ -1303,6 +1415,7 @@ void PopupMenu::add_radio_check_item(const String &p_label, int p_id, Key p_acce
 	}
 
 	_shape_item(items.size() - 1);
+	queue_accessibility_update();
 	control->queue_redraw();
 
 	child_controls_changed();
@@ -1328,6 +1441,7 @@ void PopupMenu::add_icon_radio_check_item(const Ref<Texture2D> &p_icon, const St
 	}
 
 	_shape_item(items.size() - 1);
+	queue_accessibility_update();
 	control->queue_redraw();
 
 	child_controls_changed();
@@ -1353,6 +1467,7 @@ void PopupMenu::add_multistate_item(const String &p_label, int p_max_states, int
 	}
 
 	_shape_item(items.size() - 1);
+	queue_accessibility_update();
 	control->queue_redraw();
 
 	child_controls_changed();
@@ -1390,6 +1505,7 @@ void PopupMenu::add_shortcut(const Ref<Shortcut> &p_shortcut, int p_id, bool p_g
 	}
 
 	_shape_item(items.size() - 1);
+	queue_accessibility_update();
 	control->queue_redraw();
 
 	child_controls_changed();
@@ -1419,6 +1535,7 @@ void PopupMenu::add_icon_shortcut(const Ref<Texture2D> &p_icon, const Ref<Shortc
 	}
 
 	_shape_item(items.size() - 1);
+	queue_accessibility_update();
 	control->queue_redraw();
 
 	child_controls_changed();
@@ -1448,6 +1565,7 @@ void PopupMenu::add_check_shortcut(const Ref<Shortcut> &p_shortcut, int p_id, bo
 	}
 
 	_shape_item(items.size() - 1);
+	queue_accessibility_update();
 	control->queue_redraw();
 
 	child_controls_changed();
@@ -1479,6 +1597,7 @@ void PopupMenu::add_icon_check_shortcut(const Ref<Texture2D> &p_icon, const Ref<
 	}
 
 	_shape_item(items.size() - 1);
+	queue_accessibility_update();
 	control->queue_redraw();
 
 	child_controls_changed();
@@ -1508,6 +1627,7 @@ void PopupMenu::add_radio_check_shortcut(const Ref<Shortcut> &p_shortcut, int p_
 	}
 
 	_shape_item(items.size() - 1);
+	queue_accessibility_update();
 	control->queue_redraw();
 
 	child_controls_changed();
@@ -1539,6 +1659,7 @@ void PopupMenu::add_icon_radio_check_shortcut(const Ref<Texture2D> &p_icon, cons
 	}
 
 	_shape_item(items.size() - 1);
+	queue_accessibility_update();
 	control->queue_redraw();
 
 	child_controls_changed();
@@ -1565,6 +1686,7 @@ void PopupMenu::add_submenu_node_item(const String &p_label, PopupMenu *p_submen
 	item.text = p_label;
 	item.xl_text = atr(p_label);
 	item.id = p_id == -1 ? items.size() : p_id;
+	item.accessibility_item_dirty = true;
 	item.submenu = p_submenu;
 	item.submenu_name = p_submenu->get_name();
 	items.push_back(item);
@@ -1578,6 +1700,7 @@ void PopupMenu::add_submenu_node_item(const String &p_label, PopupMenu *p_submen
 	}
 
 	_shape_item(items.size() - 1);
+	queue_accessibility_update();
 	control->queue_redraw();
 
 	child_controls_changed();
@@ -1601,13 +1724,16 @@ void PopupMenu::set_item_text(int p_idx, const String &p_text) {
 	items.write[p_idx].text = p_text;
 	items.write[p_idx].xl_text = atr(p_text);
 	items.write[p_idx].dirty = true;
+	items.write[p_idx].accessibility_item_dirty = true;
 
 	if (global_menu.is_valid()) {
 		NativeMenu::get_singleton()->set_item_text(global_menu, p_idx, items[p_idx].xl_text);
 	}
-	_shape_item(p_idx);
 
+	_shape_item(p_idx);
+	queue_accessibility_update();
 	control->queue_redraw();
+
 	child_controls_changed();
 	_menu_changed();
 }
@@ -1618,9 +1744,14 @@ void PopupMenu::set_item_text_direction(int p_idx, Control::TextDirection p_text
 	}
 	ERR_FAIL_INDEX(p_idx, items.size());
 	ERR_FAIL_COND((int)p_text_direction < -1 || (int)p_text_direction > 3);
+
 	if (items[p_idx].text_direction != p_text_direction) {
 		items.write[p_idx].text_direction = p_text_direction;
 		items.write[p_idx].dirty = true;
+		items.write[p_idx].accessibility_item_dirty = true;
+
+		_shape_item(p_idx);
+		queue_accessibility_update();
 		control->queue_redraw();
 	}
 }
@@ -1633,6 +1764,10 @@ void PopupMenu::set_item_language(int p_idx, const String &p_language) {
 	if (items[p_idx].language != p_language) {
 		items.write[p_idx].language = p_language;
 		items.write[p_idx].dirty = true;
+		items.write[p_idx].accessibility_item_dirty = true;
+
+		_shape_item(p_idx);
+		queue_accessibility_update();
 		control->queue_redraw();
 	}
 }
@@ -1700,11 +1835,13 @@ void PopupMenu::set_item_checked(int p_idx, bool p_checked) {
 	}
 
 	items.write[p_idx].checked = p_checked;
+	items.write[p_idx].accessibility_item_dirty = true;
 
 	if (global_menu.is_valid()) {
 		NativeMenu::get_singleton()->set_item_checked(global_menu, p_idx, p_checked);
 	}
 
+	queue_accessibility_update();
 	control->queue_redraw();
 	child_controls_changed();
 	_menu_changed();
@@ -1743,11 +1880,13 @@ void PopupMenu::set_item_accelerator(int p_idx, Key p_accel) {
 
 	items.write[p_idx].accel = p_accel;
 	items.write[p_idx].dirty = true;
+	items.write[p_idx].accessibility_item_dirty = true;
 
 	if (global_menu.is_valid()) {
 		NativeMenu::get_singleton()->set_item_accelerator(global_menu, p_idx, p_accel);
 	}
 
+	queue_accessibility_update();
 	control->queue_redraw();
 	child_controls_changed();
 	_menu_changed();
@@ -1779,11 +1918,13 @@ void PopupMenu::set_item_disabled(int p_idx, bool p_disabled) {
 	}
 
 	items.write[p_idx].disabled = p_disabled;
+	items.write[p_idx].accessibility_item_dirty = true;
 
 	if (global_menu.is_valid()) {
 		NativeMenu::get_singleton()->set_item_disabled(global_menu, p_idx, p_disabled);
 	}
 
+	queue_accessibility_update();
 	control->queue_redraw();
 	child_controls_changed();
 	_menu_changed();
@@ -1847,11 +1988,13 @@ void PopupMenu::set_item_submenu_node(int p_idx, PopupMenu *p_submenu) {
 void PopupMenu::toggle_item_checked(int p_idx) {
 	ERR_FAIL_INDEX(p_idx, items.size());
 	items.write[p_idx].checked = !items[p_idx].checked;
+	items.write[p_idx].accessibility_item_dirty = true;
 
 	if (global_menu.is_valid()) {
 		NativeMenu::get_singleton()->set_item_checked(global_menu, p_idx, items[p_idx].checked);
 	}
 
+	queue_accessibility_update();
 	control->queue_redraw();
 	child_controls_changed();
 	_menu_changed();
@@ -1983,6 +2126,9 @@ void PopupMenu::set_item_as_separator(int p_idx, bool p_separator) {
 	}
 
 	items.write[p_idx].separator = p_separator;
+	items.write[p_idx].accessibility_item_dirty = true;
+
+	queue_accessibility_update();
 	control->queue_redraw();
 }
 
@@ -2003,11 +2149,13 @@ void PopupMenu::set_item_as_checkable(int p_idx, bool p_checkable) {
 	}
 
 	items.write[p_idx].checkable_type = p_checkable ? Item::CHECKABLE_TYPE_CHECK_BOX : Item::CHECKABLE_TYPE_NONE;
+	items.write[p_idx].accessibility_item_dirty = true;
 
 	if (global_menu.is_valid()) {
 		NativeMenu::get_singleton()->set_item_checkable(global_menu, p_idx, p_checkable);
 	}
 
+	queue_accessibility_update();
 	control->queue_redraw();
 	_menu_changed();
 }
@@ -2024,11 +2172,13 @@ void PopupMenu::set_item_as_radio_checkable(int p_idx, bool p_radio_checkable) {
 	}
 
 	items.write[p_idx].checkable_type = p_radio_checkable ? Item::CHECKABLE_TYPE_RADIO_BUTTON : Item::CHECKABLE_TYPE_NONE;
+	items.write[p_idx].accessibility_item_dirty = true;
 
 	if (global_menu.is_valid()) {
 		NativeMenu::get_singleton()->set_item_radio_checkable(global_menu, p_idx, p_radio_checkable);
 	}
 
+	queue_accessibility_update();
 	control->queue_redraw();
 	_menu_changed();
 }
@@ -2044,11 +2194,13 @@ void PopupMenu::set_item_tooltip(int p_idx, const String &p_tooltip) {
 	}
 
 	items.write[p_idx].tooltip = p_tooltip;
+	items.write[p_idx].accessibility_item_dirty = true;
 
 	if (global_menu.is_valid()) {
 		NativeMenu::get_singleton()->set_item_tooltip(global_menu, p_idx, p_tooltip);
 	}
 
+	queue_accessibility_update();
 	control->queue_redraw();
 	_menu_changed();
 }
@@ -2148,11 +2300,13 @@ void PopupMenu::set_item_multistate(int p_idx, int p_state) {
 	}
 
 	items.write[p_idx].state = p_state;
+	items.write[p_idx].accessibility_item_dirty = true;
 
 	if (global_menu.is_valid()) {
 		NativeMenu::get_singleton()->set_item_state(global_menu, p_idx, p_state);
 	}
 
+	queue_accessibility_update();
 	control->queue_redraw();
 	_menu_changed();
 }
@@ -2197,11 +2351,13 @@ void PopupMenu::toggle_item_multistate(int p_idx) {
 	if (items.write[p_idx].max_states <= items[p_idx].state) {
 		items.write[p_idx].state = 0;
 	}
+	items.write[p_idx].accessibility_item_dirty = true;
 
 	if (global_menu.is_valid()) {
 		NativeMenu::get_singleton()->set_item_state(global_menu, p_idx, items[p_idx].state);
 	}
 
+	queue_accessibility_update();
 	control->queue_redraw();
 	_menu_changed();
 }
@@ -2235,11 +2391,12 @@ void PopupMenu::set_focused_item(int p_idx) {
 		return;
 	}
 
+	prev_mouse_over = mouse_over;
 	mouse_over = p_idx;
 	if (mouse_over != -1) {
 		scroll_to_item(mouse_over);
 	}
-
+	queue_accessibility_update();
 	control->queue_redraw();
 }
 
@@ -2261,6 +2418,10 @@ void PopupMenu::set_item_count(int p_count) {
 	if (is_global && prev_size > p_count) {
 		for (int i = prev_size - 1; i >= p_count; i--) {
 			nmenu->remove_item(global_menu, i);
+			if (items[i].accessibility_item_element.is_valid()) {
+				DisplayServer::get_singleton()->accessibility_free_element(items.write[i].accessibility_item_element);
+				items.write[i].accessibility_item_element = RID();
+			}
 		}
 	}
 
@@ -2441,6 +2602,10 @@ void PopupMenu::activate_item(int p_idx) {
 void PopupMenu::remove_item(int p_idx) {
 	ERR_FAIL_INDEX(p_idx, items.size());
 
+	if (items[p_idx].accessibility_item_element.is_valid()) {
+		DisplayServer::get_singleton()->accessibility_free_element(items.write[p_idx].accessibility_item_element);
+		items.write[p_idx].accessibility_item_element = RID();
+	}
 	if (items[p_idx].shortcut.is_valid()) {
 		_unref_shortcut(items[p_idx].shortcut);
 	}
@@ -2460,6 +2625,7 @@ void PopupMenu::add_separator(const String &p_text, int p_id) {
 	Item sep;
 	sep.separator = true;
 	sep.id = p_id;
+	sep.accessibility_item_dirty = true;
 	if (!p_text.is_empty()) {
 		sep.text = p_text;
 		sep.xl_text = atr(p_text);
@@ -2475,7 +2641,11 @@ void PopupMenu::add_separator(const String &p_text, int p_id) {
 }
 
 void PopupMenu::clear(bool p_free_submenus) {
-	for (const Item &I : items) {
+	for (Item &I : items) {
+		if (I.accessibility_item_element.is_valid()) {
+			DisplayServer::get_singleton()->accessibility_free_element(I.accessibility_item_element);
+			I.accessibility_item_element = RID();
+		}
 		if (I.shortcut.is_valid()) {
 			_unref_shortcut(I.shortcut);
 		}
@@ -2499,7 +2669,9 @@ void PopupMenu::clear(bool p_free_submenus) {
 	}
 	items.clear();
 
+	prev_mouse_over = -1;
 	mouse_over = -1;
+	queue_accessibility_update();
 	control->queue_redraw();
 	child_controls_changed();
 	notify_property_list_changed();
@@ -2832,7 +3004,11 @@ void PopupMenu::popup(const Rect2i &p_bounds) {
 	if (native) {
 		NativeMenu::get_singleton()->popup(global_menu, (p_bounds != Rect2i()) ? p_bounds.position : get_position());
 	} else {
-		set_flag(FLAG_NO_FOCUS, !is_embedded());
+		if (is_inside_tree()) {
+			// Note: Native popup menus need keyboard focus to work with screen reader.
+			set_flag(FLAG_POPUP, !get_tree()->is_accessibility_enabled());
+			set_flag(FLAG_NO_FOCUS, !is_embedded() && !get_tree()->is_accessibility_enabled());
+		}
 
 		moved = Vector2();
 		popup_time_msec = OS::get_singleton()->get_ticks_msec();
@@ -2861,7 +3037,11 @@ void PopupMenu::set_visible(bool p_visible) {
 			NativeMenu::get_singleton()->popup(global_menu, get_position());
 		}
 	} else {
-		set_flag(FLAG_NO_FOCUS, !is_embedded());
+		if (is_inside_tree()) {
+			// Note: Native popup menus need keyboard focus to work with screen reader.
+			set_flag(FLAG_POPUP, !get_tree()->is_accessibility_enabled());
+			set_flag(FLAG_NO_FOCUS, !is_embedded() && !get_tree()->is_accessibility_enabled());
+		}
 
 		Popup::set_visible(p_visible);
 	}

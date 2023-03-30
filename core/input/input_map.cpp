@@ -344,6 +344,7 @@ static const _BuiltinActionDisplayName _builtin_action_display_names[] = {
     { "ui_cut",                                        TTRC("Cut") },
     { "ui_copy",                                       TTRC("Copy") },
     { "ui_paste",                                      TTRC("Paste") },
+	{ "ui_focus_mode",                                 TTRC("Toggle Tab Focus Mode") },
     { "ui_undo",                                       TTRC("Undo") },
     { "ui_redo",                                       TTRC("Redo") },
     { "ui_text_completion_query",                      TTRC("Completion Query") },
@@ -397,6 +398,8 @@ static const _BuiltinActionDisplayName _builtin_action_display_names[] = {
     { "ui_text_submit",                                TTRC("Submit Text") },
     { "ui_graph_duplicate",                            TTRC("Duplicate Nodes") },
     { "ui_graph_delete",                               TTRC("Delete Nodes") },
+	{ "ui_graph_follow_left",                          TTRC("Follow Input Port Connection") },
+	{ "ui_graph_follow_right",                         TTRC("Follow Output Port Connection") },
     { "ui_filedialog_up_one_level",                    TTRC("Go Up One Level") },
     { "ui_filedialog_refresh",                         TTRC("Refresh") },
     { "ui_filedialog_show_hidden",                     TTRC("Show Hidden") },
@@ -498,6 +501,10 @@ const HashMap<String, List<Ref<InputEvent>>> &InputMap::get_builtins() {
 	inputs.push_back(InputEventKey::create_reference(Key::C | KeyModifierMask::CMD_OR_CTRL));
 	inputs.push_back(InputEventKey::create_reference(Key::INSERT | KeyModifierMask::CMD_OR_CTRL));
 	default_builtin_cache.insert("ui_copy", inputs);
+
+	inputs = List<Ref<InputEvent>>();
+	inputs.push_back(InputEventKey::create_reference(Key::M | KeyModifierMask::CTRL));
+	default_builtin_cache.insert("ui_focus_mode", inputs);
 
 	inputs = List<Ref<InputEvent>>();
 	inputs.push_back(InputEventKey::create_reference(Key::V | KeyModifierMask::CMD_OR_CTRL));
@@ -771,6 +778,22 @@ const HashMap<String, List<Ref<InputEvent>>> &InputMap::get_builtins() {
 	inputs = List<Ref<InputEvent>>();
 	inputs.push_back(InputEventKey::create_reference(Key::KEY_DELETE));
 	default_builtin_cache.insert("ui_graph_delete", inputs);
+
+	inputs = List<Ref<InputEvent>>();
+	inputs.push_back(InputEventKey::create_reference(Key::LEFT | KeyModifierMask::CMD_OR_CTRL));
+	default_builtin_cache.insert("ui_graph_follow_left", inputs);
+
+	inputs = List<Ref<InputEvent>>();
+	inputs.push_back(InputEventKey::create_reference(Key::LEFT | KeyModifierMask::ALT));
+	default_builtin_cache.insert("ui_graph_follow_left.macos", inputs);
+
+	inputs = List<Ref<InputEvent>>();
+	inputs.push_back(InputEventKey::create_reference(Key::RIGHT | KeyModifierMask::CMD_OR_CTRL));
+	default_builtin_cache.insert("ui_graph_follow_right", inputs);
+
+	inputs = List<Ref<InputEvent>>();
+	inputs.push_back(InputEventKey::create_reference(Key::RIGHT | KeyModifierMask::ALT));
+	default_builtin_cache.insert("ui_graph_follow_right.macos", inputs);
 
 	// ///// UI File Dialog Shortcuts /////
 	inputs = List<Ref<InputEvent>>();

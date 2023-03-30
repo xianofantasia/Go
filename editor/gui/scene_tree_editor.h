@@ -126,6 +126,7 @@ class SceneTreeEditor : public Control {
 	Node *revoke_node = nullptr;
 
 	bool auto_expand_selected = true;
+	bool accessibility_warnings = false;
 	bool connect_to_script_mode = false;
 	bool connecting_signal = false;
 	bool update_when_invisible = true;
@@ -135,6 +136,7 @@ class SceneTreeEditor : public Control {
 	void _compute_hash(Node *p_node, uint64_t &hash);
 	void _reset();
 	PackedStringArray _get_node_configuration_warnings(Node *p_node);
+	PackedStringArray _get_node_accessibility_configuration_warnings(Node *p_node);
 
 	void _update_node_path(Node *p_node, bool p_recursive = true);
 	void _update_node_subtree(Node *p_node, TreeItem *p_parent, bool p_force = false);
@@ -246,6 +248,7 @@ public:
 	void update_tree() { _update_tree(); }
 
 	void set_auto_expand_selected(bool p_auto, bool p_update_settings);
+	void set_accessibility_warnings(bool p_enable, bool p_update_settings);
 	void set_connect_to_script_mode(bool p_enable);
 	void set_connecting_signal(bool p_enable);
 	void set_update_when_invisible(bool p_enable);

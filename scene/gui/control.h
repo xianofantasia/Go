@@ -65,7 +65,8 @@ public:
 	enum FocusMode {
 		FOCUS_NONE,
 		FOCUS_CLICK,
-		FOCUS_ALL
+		FOCUS_ALL,
+		FOCUS_ACCESSIBILITY,
 	};
 
 	enum SizeFlags {
@@ -327,8 +328,6 @@ private:
 
 	static int root_layout_direction;
 
-	String get_tooltip_text() const;
-
 protected:
 	// Dynamic properties.
 
@@ -352,6 +351,12 @@ protected:
 
 	void _notification(int p_notification);
 	static void _bind_methods();
+
+	void _accessibility_action_foucs(const Variant &p_data);
+	void _accessibility_action_blur(const Variant &p_data);
+	void _accessibility_action_show_tooltip(const Variant &p_data);
+	void _accessibility_action_hide_tooltip(const Variant &p_data);
+	void _accessibility_action_scroll_into_view(const Variant &p_data);
 
 	// Exposed virtual methods.
 
@@ -420,6 +425,7 @@ public:
 	static void set_root_layout_direction(int p_root_dir);
 
 	PackedStringArray get_configuration_warnings() const override;
+	PackedStringArray get_accessibility_configuration_warnings() const override;
 #ifdef TOOLS_ENABLED
 	virtual void get_argument_options(const StringName &p_function, int p_idx, List<String> *r_options) const override;
 #endif //TOOLS_ENABLED
@@ -648,6 +654,7 @@ public:
 
 	// Extra properties.
 
+	String get_tooltip_text() const;
 	void set_tooltip_text(const String &text);
 	virtual String get_tooltip(const Point2 &p_pos) const;
 	virtual Control *make_custom_tooltip(const String &p_text) const;

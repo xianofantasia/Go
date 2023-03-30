@@ -195,6 +195,7 @@ Error EditorExportPlatformWindows::export_project(const Ref<EditorExportPreset> 
 		}
 	}
 
+	Ref<DirAccess> da = DirAccess::create(DirAccess::ACCESS_FILESYSTEM);
 	int export_angle = p_preset->get("application/export_angle");
 	bool include_angle_libs = false;
 	if (export_angle == 0) {
@@ -203,13 +204,15 @@ Error EditorExportPlatformWindows::export_project(const Ref<EditorExportPreset> 
 		include_angle_libs = true;
 	}
 	if (include_angle_libs) {
-		Ref<DirAccess> da = DirAccess::create(DirAccess::ACCESS_FILESYSTEM);
 		if (da->file_exists(template_path.get_base_dir().path_join("libEGL." + arch + ".dll"))) {
 			da->copy(template_path.get_base_dir().path_join("libEGL." + arch + ".dll"), p_path.get_base_dir().path_join("libEGL.dll"), get_chmod_flags());
 		}
 		if (da->file_exists(template_path.get_base_dir().path_join("libGLESv2." + arch + ".dll"))) {
 			da->copy(template_path.get_base_dir().path_join("libGLESv2." + arch + ".dll"), p_path.get_base_dir().path_join("libGLESv2.dll"), get_chmod_flags());
 		}
+	}
+	if (da->file_exists(template_path.get_base_dir().path_join("accesskit." + arch + ".dll"))) {
+		da->copy(template_path.get_base_dir().path_join("accesskit." + arch + ".dll"), p_path.get_base_dir().path_join("accesskit." + arch + ".dll"), get_chmod_flags());
 	}
 
 	int export_d3d12 = p_preset->get("application/export_d3d12");
@@ -221,7 +224,6 @@ Error EditorExportPlatformWindows::export_project(const Ref<EditorExportPreset> 
 		include_d3d12_extra_libs = true;
 	}
 	if (include_d3d12_extra_libs) {
-		Ref<DirAccess> da = DirAccess::create(DirAccess::ACCESS_FILESYSTEM);
 		if (da->file_exists(template_path.get_base_dir().path_join("D3D12Core." + arch + ".dll"))) {
 			if (agility_sdk_multiarch) {
 				da->make_dir_recursive(p_path.get_base_dir().path_join(arch));
