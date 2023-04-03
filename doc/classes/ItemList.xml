@@ -57,6 +57,13 @@
 				Ensure current selection is visible, adjusting the scroll position as necessary.
 			</description>
 		</method>
+		<method name="get_auto_height_value" qualifiers="const">
+			<return type="float" />
+			<description>
+				Returns the calculated minimum height of the list according to its items if [member auto_height] is [code]true[/code], excluding [member Control.custom_minimum_size]. If [member auto_height] is [code]true[/code], this returns the last auto height value.
+				See [method update_auto_height] for updating the value before the next draw.
+			</description>
+		</method>
 		<method name="get_item_at_position" qualifiers="const">
 			<return type="int" />
 			<param index="0" name="position" type="Vector2" />
@@ -331,6 +338,14 @@
 			<return type="void" />
 			<description>
 				Sorts items in the list by their text.
+			</description>
+		</method>
+		<method name="update_auto_height">
+			<return type="void" />
+			<description>
+				Updates the list's auto height value based on its items. If [member auto_height] is [code]true[/code], [method Control.get_minimum_size] may return the auto height if [member Control.custom_minimum_size] is less than the auto height.
+				Scrollbar is adjusted accordingly if neccessary.
+				See [method get_auto_height_value].
 			</description>
 		</method>
 	</methods>
