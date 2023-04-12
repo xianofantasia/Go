@@ -29,6 +29,7 @@
 /**************************************************************************/
 
 #include "project_settings.h"
+#include "project_settings.compat.inc"
 
 #include "core/core_bind.h" // For Compression enum.
 #include "core/core_string_names.h"
@@ -467,12 +468,12 @@ void ProjectSettings::_emit_changed() {
 	emit_signal("settings_changed");
 }
 
-bool ProjectSettings::_load_resource_pack(const String &p_pack, bool p_replace_files, int p_offset) {
+bool ProjectSettings::_load_resource_pack(const String &p_pack, bool p_replace_files, int p_offset, bool p_require_encryption) {
 	if (PackedData::get_singleton()->is_disabled()) {
 		return false;
 	}
 
-	bool ok = PackedData::get_singleton()->add_pack(p_pack, p_replace_files, p_offset) == OK;
+	bool ok = PackedData::get_singleton()->add_pack(p_pack, p_replace_files, p_offset, p_require_encryption) == OK;
 
 	if (!ok) {
 		return false;
@@ -536,10 +537,16 @@ Error ProjectSettings::_setup(const String &p_path, const String &p_main_pack, b
 		}
 	}
 
-	// Attempt with a user-defined main pack first
+#if defined(PCK_ENCRYPTION_ENABLED) && !defined(TOOLS_ENABLED)
+	// PCK encryption is enabled, load only from encrypted pack.
+	bool require_encryption = true;
+#else
+	bool require_encryption = false;
+#endif
 
+	// Attempt with a user-defined (or Android OBB) main pack first
 	if (!p_main_pack.is_empty()) {
-		bool ok = _load_resource_pack(p_main_pack);
+		bool ok = _load_resource_pack(p_main_pack, true, 0, require_encryption);
 		ERR_FAIL_COND_V_MSG(!ok, ERR_CANT_OPEN, "Cannot open resource pack '" + p_main_pack + "'.");
 
 		Error err = _load_settings_text_or_binary("res://project.godot", "res://project.binary");
@@ -558,7 +565,7 @@ Error ProjectSettings::_setup(const String &p_path, const String &p_main_pack, b
 		// and if so, we attempt loading it at the end.
 
 		// Attempt with PCK bundled into executable.
-		bool found = _load_resource_pack(exec_path);
+		bool found = _load_resource_pack(exec_path, true, 0, require_encryption);
 
 		// Attempt with exec_name.pck.
 		// (This is the usual case when distributing a Godot game.)
@@ -574,26 +581,26 @@ Error ProjectSettings::_setup(const String &p_path, const String &p_main_pack, b
 #ifdef MACOS_ENABLED
 		if (!found) {
 			// Attempt to load PCK from macOS .app bundle resources.
-			found = _load_resource_pack(OS::get_singleton()->get_bundle_resource_dir().path_join(exec_basename + ".pck")) || _load_resource_pack(OS::get_singleton()->get_bundle_resource_dir().path_join(exec_filename + ".pck"));
+			found = _load_resource_pack(OS::get_singleton()->get_bundle_resource_dir().path_join(exec_basename + ".pck"), true, 0, require_encryption) || _load_resource_pack(OS::get_singleton()->get_bundle_resource_dir().path_join(exec_filename + ".pck"), true, 0, require_encryption);
 		}
 #endif
 
 		if (!found) {
 			// Try to load data pack at the location of the executable.
 			// As mentioned above, we have two potential names to attempt.
-			found = _load_resource_pack(exec_dir.path_join(exec_basename + ".pck")) || _load_resource_pack(exec_dir.path_join(exec_filename + ".pck"));
+			found = _load_resource_pack(exec_dir.path_join(exec_basename + ".pck"), true, 0, require_encryption) || _load_resource_pack(exec_dir.path_join(exec_filename + ".pck"), true, 0, require_encryption);
 		}
 
 		if (!found) {
 			// If we couldn't find them next to the executable, we attempt
 			// the current working directory. Same story, two tests.
-			found = _load_resource_pack(exec_basename + ".pck") || _load_resource_pack(exec_filename + ".pck");
+			found = _load_resource_pack(exec_basename + ".pck", true, 0, require_encryption) || _load_resource_pack(exec_filename + ".pck", true, 0, require_encryption);
 		}
 
 		// If we opened our package, try and load our project.
 		if (found) {
 			Error err = _load_settings_text_or_binary("res://project.godot", "res://project.binary");
-			if (err == OK && !p_ignore_override) {
+			if (!require_encryption && err == OK && !p_ignore_override) {
 				// Load overrides from the PCK and the executable location.
 				// Optional, we don't mind if either fails.
 				_load_settings_text("res://override.cfg");
@@ -603,62 +610,68 @@ Error ProjectSettings::_setup(const String &p_path, const String &p_main_pack, b
 		}
 	}
 
+#ifdef ANDROID_ENABLED
 	// Try to use the filesystem for files, according to OS.
-	// (Only Android -when reading from pck- and iOS use this.)
+	// (Only Android -when reading from APK- uses this.)
 
 	if (!OS::get_singleton()->get_resource_dir().is_empty()) {
 		Error err = _load_settings_text_or_binary("res://project.godot", "res://project.binary");
-		if (err == OK && !p_ignore_override) {
+		if (!require_encryption && err == OK && !p_ignore_override) {
 			// Optional, we don't mind if it fails.
 			_load_settings_text("res://override.cfg");
 		}
 		return err;
 	}
+#endif
 
-	// Nothing was found, try to find a project file in provided path (`p_path`)
-	// or, if requested (`p_upwards`) in parent directories.
+	if (require_encryption) {
+		return ERR_CANT_OPEN;
+	} else {
+		// Nothing was found, try to find a project file in provided path (`p_path`)
+		// or, if requested (`p_upwards`) in parent directories.
 
-	Ref<DirAccess> d = DirAccess::create(DirAccess::ACCESS_FILESYSTEM);
-	ERR_FAIL_COND_V_MSG(d.is_null(), ERR_CANT_CREATE, "Cannot create DirAccess for path '" + p_path + "'.");
-	d->change_dir(p_path);
+		Ref<DirAccess> d = DirAccess::create(DirAccess::ACCESS_FILESYSTEM);
+		ERR_FAIL_COND_V_MSG(d.is_null(), ERR_CANT_CREATE, "Cannot create DirAccess for path '" + p_path + "'.");
+		d->change_dir(p_path);
 
-	String current_dir = d->get_current_dir();
-	bool found = false;
-	Error err;
+		String current_dir = d->get_current_dir();
+		bool found = false;
+		Error err;
 
-	while (true) {
-		// Set the resource path early so things can be resolved when loading.
-		resource_path = current_dir;
-		resource_path = resource_path.replace("\\", "/"); // Windows path to Unix path just in case.
-		err = _load_settings_text_or_binary(current_dir.path_join("project.godot"), current_dir.path_join("project.binary"));
-		if (err == OK && !p_ignore_override) {
-			// Optional, we don't mind if it fails.
-			_load_settings_text(current_dir.path_join("override.cfg"));
-			found = true;
-			break;
-		}
-
-		if (p_upwards) {
-			// Try to load settings ascending through parent directories
-			d->change_dir("..");
-			if (d->get_current_dir() == current_dir) {
-				break; // not doing anything useful
+		while (true) {
+			// Set the resource path early so things can be resolved when loading.
+			resource_path = current_dir;
+			resource_path = resource_path.replace("\\", "/"); // Windows path to Unix path just in case.
+			err = _load_settings_text_or_binary(current_dir.path_join("project.godot"), current_dir.path_join("project.binary"));
+			if (err == OK && !p_ignore_override) {
+				// Optional, we don't mind if it fails.
+				_load_settings_text(current_dir.path_join("override.cfg"));
+				found = true;
+				break;
 			}
-			current_dir = d->get_current_dir();
-		} else {
-			break;
+
+			if (p_upwards) {
+				// Try to load settings ascending through parent directories
+				d->change_dir("..");
+				if (d->get_current_dir() == current_dir) {
+					break; // not doing anything useful
+				}
+				current_dir = d->get_current_dir();
+			} else {
+				break;
+			}
 		}
-	}
 
-	if (!found) {
-		return err;
-	}
+		if (!found) {
+			return err;
+		}
 
-	if (resource_path.length() && resource_path[resource_path.length() - 1] == '/') {
-		resource_path = resource_path.substr(0, resource_path.length() - 1); // Chop end.
-	}
+		if (resource_path.length() && resource_path[resource_path.length() - 1] == '/') {
+			resource_path = resource_path.substr(0, resource_path.length() - 1); // Chop end.
+		}
 
-	return OK;
+		return OK;
+	}
 }
 
 Error ProjectSettings::setup(const String &p_path, const String &p_main_pack, bool p_upwards, bool p_ignore_override) {
@@ -1356,7 +1369,7 @@ void ProjectSettings::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("localize_path", "path"), &ProjectSettings::localize_path);
 	ClassDB::bind_method(D_METHOD("globalize_path", "path"), &ProjectSettings::globalize_path);
 	ClassDB::bind_method(D_METHOD("save"), &ProjectSettings::save);
-	ClassDB::bind_method(D_METHOD("load_resource_pack", "pack", "replace_files", "offset"), &ProjectSettings::_load_resource_pack, DEFVAL(true), DEFVAL(0));
+	ClassDB::bind_method(D_METHOD("load_resource_pack", "pack", "replace_files", "offset", "require_encryption"), &ProjectSettings::_load_resource_pack, DEFVAL(true), DEFVAL(0), DEFVAL(false));
 
 	ClassDB::bind_method(D_METHOD("save_custom", "file"), &ProjectSettings::_save_custom_bnd);
 

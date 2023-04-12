@@ -40,6 +40,8 @@
 
 // Godot's packed file magic header ("GDPC" in ASCII).
 #define PACK_HEADER_MAGIC 0x43504447
+// Godot's packed file standalone directory magic header ("GDDR" in ASCII).
+#define DIR_HEADER_MAGIC 0x52444447
 // The current packed file format version number.
 #define PACK_FORMAT_VERSION 2
 
@@ -96,6 +98,7 @@ private:
 		}
 	};
 
+	static HashSet<String> require_encryption;
 	HashMap<PathMD5, PackedFile, PathMD5> files;
 
 	Vector<PackSource *> sources;
@@ -108,6 +111,8 @@ private:
 	void _free_packed_dirs(PackedDir *p_dir);
 
 public:
+	static bool file_requires_encryption(const String &p_name);
+
 	void add_pack_source(PackSource *p_source);
 	void add_path(const String &p_pkg_path, const String &p_path, uint64_t p_ofs, uint64_t p_size, const uint8_t *p_md5, PackSource *p_src, bool p_replace_files, bool p_encrypted = false); // for PackSource
 
@@ -115,7 +120,7 @@ public:
 	_FORCE_INLINE_ bool is_disabled() const { return disabled; }
 
 	static PackedData *get_singleton() { return singleton; }
-	Error add_pack(const String &p_path, bool p_replace_files, uint64_t p_offset);
+	Error add_pack(const String &p_path, bool p_replace_files, uint64_t p_offset, bool p_require_encryption = false);
 
 	_FORCE_INLINE_ Ref<FileAccess> try_open_path(const String &p_path);
 	_FORCE_INLINE_ bool has_path(const String &p_path);
@@ -129,14 +134,14 @@ public:
 
 class PackSource {
 public:
-	virtual bool try_open_pack(const String &p_path, bool p_replace_files, uint64_t p_offset) = 0;
+	virtual bool try_open_pack(const String &p_path, bool p_replace_files, uint64_t p_offset, bool p_require_encryption) = 0;
 	virtual Ref<FileAccess> get_file(const String &p_path, PackedData::PackedFile *p_file) = 0;
 	virtual ~PackSource() {}
 };
 
 class PackedSourcePCK : public PackSource {
 public:
-	virtual bool try_open_pack(const String &p_path, bool p_replace_files, uint64_t p_offset) override;
+	virtual bool try_open_pack(const String &p_path, bool p_replace_files, uint64_t p_offset, bool p_require_encryption) override;
 	virtual Ref<FileAccess> get_file(const String &p_path, PackedData::PackedFile *p_file) override;
 };
 

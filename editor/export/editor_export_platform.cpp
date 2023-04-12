@@ -34,7 +34,6 @@
 #include "core/crypto/crypto_core.h"
 #include "core/extension/gdextension.h"
 #include "core/io/file_access_encrypted.h"
-#include "core/io/file_access_pack.h" // PACK_HEADER_MAGIC, PACK_FORMAT_VERSION
 #include "core/io/zip_io.h"
 #include "core/version.h"
 #include "editor/editor_file_system.h"
@@ -48,16 +47,6 @@
 #include "editor_export_plugin.h"
 #include "scene/resources/image_texture.h"
 #include "scene/resources/packed_scene.h"
-
-static int _get_pad(int p_alignment, int p_n) {
-	int rest = p_n % p_alignment;
-	int pad = 0;
-	if (rest > 0) {
-		pad = p_alignment - rest;
-	};
-
-	return pad;
-}
 
 #define PCK_PADDING 16
 
@@ -230,18 +219,8 @@ Error EditorExportPlatform::_save_pack_file(void *p_userdata, const String &p_pa
 	sd.size = p_data.size();
 	sd.encrypted = false;
 
-	for (int i = 0; i < p_enc_in_filters.size(); ++i) {
-		if (p_path.matchn(p_enc_in_filters[i]) || p_path.replace("res://", "").matchn(p_enc_in_filters[i])) {
-			sd.encrypted = true;
-			break;
-		}
-	}
-
-	for (int i = 0; i < p_enc_ex_filters.size(); ++i) {
-		if (p_path.matchn(p_enc_ex_filters[i]) || p_path.replace("res://", "").matchn(p_enc_ex_filters[i])) {
-			sd.encrypted = false;
-			break;
-		}
+	if (!p_key.is_empty()) {
+		sd.encrypted = file_requires_encryption(p_path, p_enc_in_filters, p_enc_ex_filters);
 	}
 
 	Ref<FileAccessEncrypted> fae;
@@ -1609,26 +1588,25 @@ Error EditorExportPlatform::save_pack(const Ref<EditorExportPreset> &p_preset, b
 
 	uint32_t pack_flags = 0;
 	bool enc_pck = p_preset->get_enc_pck();
-	bool enc_directory = p_preset->get_enc_directory();
-	if (enc_pck && enc_directory) {
+	if (enc_pck) {
 		pack_flags |= PACK_DIR_ENCRYPTED;
 	}
-	f->store_32(pack_flags); // flags
+	f->store_32(pack_flags); // Flags.
 
 	uint64_t file_base_ofs = f->get_position();
-	f->store_64(0); // files base
+	f->store_64(0); // Files base offset.
 
 	for (int i = 0; i < 16; i++) {
-		//reserved
+		// Reserved.
 		f->store_32(0);
 	}
 
-	f->store_32(pd.file_ofs.size()); //amount of files
+	f->store_32(pd.file_ofs.size()); // Amount of files.
 
 	Ref<FileAccessEncrypted> fae;
 	Ref<FileAccess> fhead = f;
 
-	if (enc_pck && enc_directory) {
+	if (enc_pck) {
 		String script_key = _get_script_encryption_key(p_preset);
 		Vector<uint8_t> key;
 		key.resize(32);

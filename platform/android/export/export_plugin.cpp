@@ -30,6 +30,7 @@
 
 #include "export_plugin.h"
 
+#include "encryption_export_util.h"
 #include "gradle_export_util.h"
 #include "logo_svg.gen.h"
 #include "run_icon_svg.gen.h"
@@ -772,9 +773,24 @@ Error EditorExportPlatformAndroid::save_apk_so(void *p_userdata, const SharedObj
 
 Error EditorExportPlatformAndroid::save_apk_file(void *p_userdata, const String &p_path, const Vector<uint8_t> &p_data, int p_file, int p_total, const Vector<String> &p_enc_in_filters, const Vector<String> &p_enc_ex_filters, const Vector<uint8_t> &p_key) {
 	APKExportData *ed = static_cast<APKExportData *>(p_userdata);
-	String dst_path = p_path.replace_first("res://", "assets/");
+	bool encrypted = ed->enc_pack;
+	if (encrypted && !p_key.is_empty()) {
+		encrypted = file_requires_encryption(p_path, p_enc_in_filters, p_enc_ex_filters);
+	}
 
-	store_in_apk(ed, dst_path, p_data, _should_compress_asset(p_path, p_data) ? Z_DEFLATED : 0);
+	if (encrypted) {
+		Vector<uint8_t> enc_data;
+		String id = encrypt_file(enc_data, ed->ids, ed->directory, p_path, p_data, p_key);
+		if (id.is_empty()) {
+			return ERR_SKIP;
+		}
+
+		store_in_apk(ed, "assets/encrypted/" + id, enc_data, 0);
+	} else {
+		String dst_path = p_path.replace_first("res://", "assets/");
+
+		store_in_apk(ed, dst_path, p_data, _should_compress_asset(p_path, p_data) ? Z_DEFLATED : 0);
+	}
 	return OK;
 }
 
@@ -3081,15 +3097,28 @@ Error EditorExportPlatformAndroid::export_project_helper(const Ref<EditorExportP
 		String gdextension_libs_path = gradle_build_directory.path_join(GDEXTENSION_LIBS_PATH);
 		_remove_copied_libs(gdextension_libs_path);
 		if (!apk_expansion) {
+			bool enc_pck = p_preset->get_enc_pck();
+
 			print_verbose("Exporting project files...");
 			CustomExportData user_data;
 			user_data.assets_directory = assets_directory;
 			user_data.libs_directory = gradle_build_directory.path_join("libs");
 			user_data.debug = p_debug;
+			user_data.enc_pack = enc_pck;
 			if (p_flags & DEBUG_FLAG_DUMB_CLIENT) {
 				err = export_project_files(p_preset, p_debug, ignore_apk_file, &user_data, copy_gradle_so);
 			} else {
 				err = export_project_files(p_preset, p_debug, rename_and_store_file_in_gradle_project, &user_data, copy_gradle_so);
+
+				if (!user_data.directory.is_empty() && enc_pck) {
+					Vector<uint8_t> dir_data;
+					err = encrypt_directory(user_data.directory, _get_script_encryption_key(p_preset), dir_data);
+					if (err != OK) {
+						add_message(EXPORT_MESSAGE_ERROR, TTR("Export"), TTR("Can't create encrypted file."));
+						return err;
+					}
+					store_file_at_path(assets_directory + "/encrypted/directory", dir_data);
+				}
 			}
 			if (err != OK) {
 				add_message(EXPORT_MESSAGE_ERROR, TTR("Export"), TTR("Could not export project files to gradle project."));
@@ -3483,10 +3512,23 @@ Error EditorExportPlatformAndroid::export_project_helper(const Ref<EditorExportP
 				return err;
 			}
 		} else {
+			bool enc_pck = p_preset->get_enc_pck();
+
 			APKExportData ed;
 			ed.ep = &ep;
 			ed.apk = unaligned_apk;
+			ed.enc_pack = enc_pck;
 			err = export_project_files(p_preset, p_debug, save_apk_file, &ed, save_apk_so);
+
+			if (!ed.directory.is_empty() && enc_pck) {
+				Vector<uint8_t> dir_data;
+				err = encrypt_directory(ed.directory, _get_script_encryption_key(p_preset), dir_data);
+				if (err != OK) {
+					add_message(EXPORT_MESSAGE_ERROR, TTR("Save APK"), TTR("Can't create encrypted file."));
+					return err;
+				}
+				store_in_apk(&ed, "assets/encrypted/directory", dir_data, 0);
+			}
 		}
 	}
 

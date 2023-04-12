@@ -29,6 +29,7 @@
 /**************************************************************************/
 
 #include "gradle_export_util.h"
+#include "encryption_export_util.h"
 
 #include "core/config/project_settings.h"
 
@@ -168,10 +169,30 @@ Error store_string_at_path(const String &p_path, const String &p_data) {
 // It's functionality mirrors that of the method save_apk_file.
 // This method will be called ONLY when gradle build is enabled.
 Error rename_and_store_file_in_gradle_project(void *p_userdata, const String &p_path, const Vector<uint8_t> &p_data, int p_file, int p_total, const Vector<String> &p_enc_in_filters, const Vector<String> &p_enc_ex_filters, const Vector<uint8_t> &p_key) {
-	CustomExportData *export_data = static_cast<CustomExportData *>(p_userdata);
-	String dst_path = p_path.replace_first("res://", export_data->assets_directory + "/");
-	print_verbose("Saving project files from " + p_path + " into " + dst_path);
-	Error err = store_file_at_path(dst_path, p_data);
+	CustomExportData *ed = static_cast<CustomExportData *>(p_userdata);
+
+	Error err = OK;
+	bool encrypted = ed->enc_pack;
+	if (encrypted && !p_key.is_empty()) {
+		encrypted = EditorExportPlatform::file_requires_encryption(p_path, p_enc_in_filters, p_enc_ex_filters);
+	}
+
+	if (encrypted) {
+		Vector<uint8_t> enc_data;
+		String id = encrypt_file(enc_data, ed->ids, ed->directory, p_path, p_data, p_key);
+		if (id.is_empty()) {
+			return ERR_SKIP;
+		}
+
+		String dst_path = ed->assets_directory + "/encrypted/" + id;
+		print_verbose("Saving project files from " + p_path + " into " + dst_path);
+		err = store_file_at_path(dst_path, enc_data);
+	} else {
+		String dst_path = p_path.replace_first("res://", ed->assets_directory + "/");
+		print_verbose("Saving project files from " + p_path + " into " + dst_path);
+		err = store_file_at_path(dst_path, p_data);
+	}
+
 	return err;
 }
 
