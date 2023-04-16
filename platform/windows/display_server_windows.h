@@ -83,6 +83,8 @@
 
 #define CXO_MESSAGES 0x0004
 #define PK_STATUS 0x0002
+#define PK_X 0x0080
+#define PK_Y 0x0100
 #define PK_NORMAL_PRESSURE 0x0400
 #define PK_TANGENT_PRESSURE 0x0800
 #define PK_ORIENTATION 0x1000
@@ -141,6 +143,8 @@ typedef struct tagORIENTATION {
 
 typedef struct tagPACKET {
 	int pkStatus;
+	LONG pkX;
+	LONG pkY;
 	int pkNormalPressure;
 	int pkTangentPressure;
 	ORIENTATION pkOrientation;
@@ -260,6 +264,7 @@ typedef struct tagPOINTER_PEN_INFO {
 typedef BOOL(WINAPI *GetPointerTypePtr)(uint32_t p_id, POINTER_INPUT_TYPE *p_type);
 typedef BOOL(WINAPI *GetPointerPenInfoPtr)(uint32_t p_id, POINTER_PEN_INFO *p_pen_info);
 typedef BOOL(WINAPI *LogicalToPhysicalPointForPerMonitorDPIPtr)(HWND hwnd, LPPOINT lpPoint);
+typedef BOOL(WINAPI *PhysicalToLogicalPointForPerMonitorDPIPtr)(HWND hwnd, LPPOINT lpPoint);
 
 typedef struct {
 	BYTE bWidth; // Width, in pixels, of the image
@@ -308,6 +313,7 @@ class DisplayServerWindows : public DisplayServer {
 
 	// DPI conversion API
 	static LogicalToPhysicalPointForPerMonitorDPIPtr win81p_LogicalToPhysicalPointForPerMonitorDPI;
+	static PhysicalToLogicalPointForPerMonitorDPIPtr win81p_PhysicalToLogicalPointForPerMonitorDPI;
 
 	void _update_tablet_ctx(const String &p_old_driver, const String &p_new_driver);
 	String tablet_driver;
