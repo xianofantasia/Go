@@ -56,9 +56,11 @@ static const char *token_names[] = {
 	// Logical
 	"and", // AND,
 	"or", // OR,
+	"xor", // XOR,
 	"not", // NOT,
 	"&&", // AMPERSAND_AMPERSAND,
 	"||", // PIPE_PIPE,
+	"^^", // CARET_CARET,
 	"!", // BANG,
 	// Bitwise
 	"&", // AMPERSAND,
@@ -222,6 +224,7 @@ bool GDScriptTokenizer::Token::is_node_name() const {
 		case VAR:
 		case VOID:
 		case WHILE:
+		case XOR:
 		case YIELD:
 			return true;
 		default:
@@ -511,6 +514,8 @@ GDScriptTokenizer::Token GDScriptTokenizer::annotation() {
 	KEYWORD("void", Token::VOID)             \
 	KEYWORD_GROUP('w')                       \
 	KEYWORD("while", Token::WHILE)           \
+	KEYWORD_GROUP('x')                       \
+	KEYWORD("xor", Token::XOR)               \
 	KEYWORD_GROUP('y')                       \
 	KEYWORD("yield", Token::YIELD)           \
 	KEYWORD_GROUP('I')                       \
@@ -1474,7 +1479,10 @@ GDScriptTokenizer::Token GDScriptTokenizer::scan() {
 				return make_token(Token::PERCENT);
 			}
 		case '^':
-			if (_peek() == '=') {
+			if (_peek() == '^') {
+				_advance();
+				return make_token(Token::CARET_CARET);
+			} else if (_peek() == '=') {
 				_advance();
 				return make_token(Token::CARET_EQUAL);
 			} else if (_peek() == '"' || _peek() == '\'') {
