@@ -394,6 +394,7 @@ void EditorHelp::_add_method(const DocData::MethodDoc &p_method, bool p_overview
 	method_line[p_method.name] = class_desc->get_paragraph_count() - 2; // Gets overridden if description
 
 	const bool is_vararg = p_method.qualifiers.contains("vararg");
+	const bool is_typed_container_constructor = p_method.qualifiers.contains("typed");
 
 	if (p_overview) {
 		class_desc->push_cell();
@@ -403,6 +404,11 @@ void EditorHelp::_add_method(const DocData::MethodDoc &p_method, bool p_overview
 	}
 
 	_add_type(p_method.return_type, p_method.return_enum);
+	if (is_typed_container_constructor) {
+		class_desc->push_hint(TTR("Returns a typed Array."));
+		class_desc->add_text("[Variant]");
+		class_desc->pop();
+	}
 
 	if (p_overview) {
 		class_desc->pop(); // align
@@ -419,6 +425,11 @@ void EditorHelp::_add_method(const DocData::MethodDoc &p_method, bool p_overview
 	class_desc->push_color(theme_cache.headline_color);
 	_add_text(p_method.name);
 	class_desc->pop();
+	if (is_typed_container_constructor) {
+		class_desc->push_hint(TTR("Converts `base` array to a new typed array."));
+		class_desc->add_text("[Variant]");
+		class_desc->pop();
+	}
 
 	if (p_overview && !p_method.description.strip_edges().is_empty()) {
 		class_desc->pop(); // meta
@@ -477,6 +488,8 @@ void EditorHelp::_add_method(const DocData::MethodDoc &p_method, bool p_overview
 				hint = TTR("This method has no side effects.\nIt does not modify the object in any way.");
 			} else if (qualifier == "static") {
 				hint = TTR("This method does not need an instance to be called.\nIt can be called directly using the class name.");
+			} else if (qualifier == "typed") {
+				hint = TTR("This method can recieve a type.");
 			}
 
 			class_desc->add_text(" ");

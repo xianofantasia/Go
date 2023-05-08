@@ -123,10 +123,11 @@ void DocTools::merge_from(const DocTools &p_data) {
 							}
 						}
 					}
-					bool not_the_same = false;
+					bool not_the_same = cf.constructors[j].qualifiers != m.qualifiers;
 					for (int l = 0; l < arg_count; ++l) {
 						if (!arg_used[l]) { // at least one of the arguments was different
 							not_the_same = true;
+							break;
 						}
 					}
 					if (not_the_same) {
@@ -824,6 +825,16 @@ void DocTools::generate(bool p_basic_types) {
 			}
 
 			if (method.name == cname) {
+				// Duplicate the constructor for typed constructors
+				// true if METHOD_FLAG_ACCEPTS_TYPE and the method contains type information arguments.
+				if ((mi.flags & METHOD_FLAG_ACCEPTS_TYPE) && method.arguments.size() >= 3) {
+					DocData::MethodDoc typed_converter_constructor = method;
+					typed_converter_constructor.qualifiers += "typed";
+					// Removes `type`, `class_name`, and `script` arguments from doc
+					int arg_count = typed_converter_constructor.arguments.size();
+					typed_converter_constructor.arguments.resize(arg_count - 3);
+					c.constructors.push_back(typed_converter_constructor);
+				}
 				c.constructors.push_back(method);
 			} else if (method.name.begins_with("operator")) {
 				c.operators.push_back(method);
