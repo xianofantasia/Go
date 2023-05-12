@@ -1383,6 +1383,18 @@ void Window::_window_input(const Ref<InputEvent> &p_ev) {
 		emit_signal(SceneStringNames::get_singleton()->window_input, p_ev);
 	}
 
+	print_line(flags[FLAG_FULLSCREEN_TOGGLE_ENABLED]);
+	if (flags[FLAG_FULLSCREEN_TOGGLE_ENABLED] && p_ev->is_action_pressed("ui_toggle_fullscreen")) {
+		if (mode == MODE_FULLSCREEN || mode == MODE_EXCLUSIVE_FULLSCREEN) {
+			print_line("Going to previous mode: ", itos(toggle_fullscreen_previous_mode));
+			set_mode(toggle_fullscreen_previous_mode);
+		} else {
+			print_line("Going fullscreen");
+			toggle_fullscreen_previous_mode = mode;
+			set_mode(MODE_FULLSCREEN);
+		}
+	}
+
 	if (is_inside_tree()) {
 		push_input(p_ev);
 	}
@@ -2456,6 +2468,7 @@ void Window::_bind_methods() {
 	ADD_PROPERTYI(PropertyInfo(Variant::BOOL, "popup_window"), "set_flag", "get_flag", FLAG_POPUP);
 	ADD_PROPERTYI(PropertyInfo(Variant::BOOL, "extend_to_title"), "set_flag", "get_flag", FLAG_EXTEND_TO_TITLE);
 	ADD_PROPERTYI(PropertyInfo(Variant::BOOL, "mouse_passthrough"), "set_flag", "get_flag", FLAG_MOUSE_PASSTHROUGH);
+	ADD_PROPERTYI(PropertyInfo(Variant::BOOL, "fullscreen_shortcut_enabled"), "set_flag", "get_flag", FLAG_FULLSCREEN_TOGGLE_ENABLED);
 
 	ADD_GROUP("Limits", "");
 	ADD_PROPERTY(PropertyInfo(Variant::VECTOR2I, "min_size", PROPERTY_HINT_NONE, "suffix:px"), "set_min_size", "get_min_size");
@@ -2505,6 +2518,7 @@ void Window::_bind_methods() {
 	BIND_ENUM_CONSTANT(FLAG_POPUP);
 	BIND_ENUM_CONSTANT(FLAG_EXTEND_TO_TITLE);
 	BIND_ENUM_CONSTANT(FLAG_MOUSE_PASSTHROUGH);
+	BIND_ENUM_CONSTANT(FLAG_FULLSCREEN_TOGGLE_ENABLED);
 	BIND_ENUM_CONSTANT(FLAG_MAX);
 
 	BIND_ENUM_CONSTANT(CONTENT_SCALE_MODE_DISABLED);

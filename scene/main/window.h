@@ -60,6 +60,7 @@ public:
 		FLAG_POPUP = DisplayServer::WINDOW_FLAG_POPUP,
 		FLAG_EXTEND_TO_TITLE = DisplayServer::WINDOW_FLAG_EXTEND_TO_TITLE,
 		FLAG_MOUSE_PASSTHROUGH = DisplayServer::WINDOW_FLAG_MOUSE_PASSTHROUGH,
+		FLAG_FULLSCREEN_TOGGLE_ENABLED = DisplayServer::WINDOW_FLAG_FULLSCREEN_TOGGLE_ENABLED,
 		FLAG_MAX = DisplayServer::WINDOW_FLAG_MAX,
 	};
 
@@ -109,12 +110,14 @@ private:
 	mutable Size2i max_size;
 	mutable Vector<Vector2> mpath;
 	mutable Mode mode = MODE_WINDOWED;
+	mutable Mode toggle_fullscreen_previous_mode = mode;
 	mutable bool flags[FLAG_MAX] = {};
 	bool visible = true;
 	bool focused = false;
 	WindowInitialPosition initial_position = WINDOW_INITIAL_POSITION_ABSOLUTE;
 
 	bool use_font_oversampling = false;
+	bool fullscreen_shortcut_enabled = false;
 	bool transient = false;
 	bool exclusive = false;
 	bool wrap_controls = false;

@@ -1746,6 +1746,9 @@ Error Main::setup(const char *execpath, int argc, char *argv[], bool p_second_ph
 			}
 		}
 
+		if (!bool(GLOBAL_GET("display/window/size/enable_toggle_fullscreen_shortcut"))) {
+			window_flags |= DisplayServer::WINDOW_FLAG_FULLSCREEN_TOGGLE_ENABLED_BIT;
+		}
 		if (!bool(GLOBAL_GET("display/window/size/resizable"))) {
 			window_flags |= DisplayServer::WINDOW_FLAG_RESIZE_DISABLED_BIT;
 		}
