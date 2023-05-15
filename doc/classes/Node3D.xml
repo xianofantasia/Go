@@ -279,7 +279,8 @@
 			Helper property to access [member global_rotation] in degrees instead of radians.
 		</member>
 		<member name="global_transform" type="Transform3D" setter="set_global_transform" getter="get_global_transform">
-			World3D space (global) [Transform3D] of this node.
+			World space (global) [Transform3D] of this node, i.e. the combined transform up to the topmost [Node3D] node. The topmost item is a [Node3D] that either has no parent, has non-[Node3D] parent or it has [member top_level] enabled.
+			[b]Note:[/b] If the node is not inside the currently playing scene, the value returned will not be global with regard to the playing scene's world origin, but only relative to the topmost item of its out-of-tree branch.
 		</member>
 		<member name="position" type="Vector3" setter="set_position" getter="get_position" default="Vector3(0, 0, 0)">
 			Local position or translation of this node relative to the parent. This is equivalent to [code]transform.origin[/code].
