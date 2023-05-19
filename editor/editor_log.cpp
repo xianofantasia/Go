@@ -32,6 +32,7 @@
 
 #include "core/object/undo_redo.h"
 #include "core/os/keyboard.h"
+#include "core/os/time.h"
 #include "core/version.h"
 #include "editor/editor_node.h"
 #include "editor/editor_paths.h"
@@ -125,6 +126,11 @@ void EditorLog::_update_theme() {
 	theme_cache.warning_color = get_theme_color(SNAME("warning_color"), EditorStringName(Editor));
 	theme_cache.warning_icon = get_editor_theme_icon(SNAME("Warning"));
 	theme_cache.message_color = get_theme_color(SNAME("font_color"), EditorStringName(Editor)) * Color(1, 1, 1, 0.6);
+	theme_cache.timestamp_color = get_theme_color(SNAME("font_color"), EditorStringName(Editor)).lerp(get_theme_color(SNAME("accent_color"), EditorStringName(Editor)), 0.5) * Color(1, 1, 1, 0.6);
+}
+
+void EditorLog::_update_settings() {
+	show_timestamps = EDITOR_GET("run/output/show_timestamps");
 }
 
 void EditorLog::_notification(int p_what) {
@@ -132,6 +138,10 @@ void EditorLog::_notification(int p_what) {
 		case NOTIFICATION_ENTER_TREE: {
 			_update_theme();
 			_load_state();
+		} break;
+
+		case EditorSettings::NOTIFICATION_EDITOR_SETTINGS_CHANGED: {
+			_update_settings();
 		} break;
 
 		case NOTIFICATION_THEME_CHANGED: {
@@ -309,6 +319,13 @@ void EditorLog::_add_log_line(LogMessage &p_message, bool p_replace_previous) {
 		log->remove_paragraph(log->get_paragraph_count() - 2);
 	}
 
+	if (show_timestamps) {
+		log->push_color(theme_cache.timestamp_color);
+		log->add_text(Time::get_singleton()->get_datetime_string_from_system(false, true) + " |");
+		log->pop();
+		log->add_text(" ");
+	}
+
 	switch (p_message.type) {
 		case MSG_TYPE_STD: {
 		} break;
@@ -391,6 +408,8 @@ EditorLog::EditorLog() {
 	save_state_timer->set_one_shot(true);
 	save_state_timer->connect("timeout", callable_mp(this, &EditorLog::_save_state));
 	add_child(save_state_timer);
+
+	_update_settings();
 
 	HBoxContainer *hb = this;
 
