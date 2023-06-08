@@ -3013,7 +3013,8 @@ ProjectManager::ProjectManager() {
 
 		for (int i = 0; i < editor_languages.size(); i++) {
 			String lang = editor_languages[i];
-			String lang_name = TranslationServer::get_singleton()->get_locale_name(lang);
+			// Use native locale names, as the user may not understand language names in English.
+			String lang_name = TranslationServer::get_singleton()->get_native_locale_name(lang);
 			language_btn->add_item(vformat("[%s] %s", lang, lang_name), i);
 			language_btn->set_item_metadata(i, lang);
 			if (current_lang == lang) {

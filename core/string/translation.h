@@ -105,6 +105,7 @@ class TranslationServer : public Object {
 	static TranslationServer *singleton;
 	bool _load_translations(const String &p_from);
 	String _standardize_locale(const String &p_locale, bool p_add_defaults) const;
+	String _get_locale_name(const String &p_locale, bool p_native) const;
 
 	StringName _get_message_from_translations(const StringName &p_message, const StringName &p_context, const String &p_locale, bool plural, const String &p_message_plural = "", int p_n = 0) const;
 
@@ -119,6 +120,7 @@ class TranslationServer : public Object {
 	static Vector<LocaleScriptInfo> locale_script_info;
 
 	static HashMap<String, String> language_map;
+	static HashMap<String, String> native_language_map;
 	static HashMap<String, String> script_map;
 	static HashMap<String, String> locale_rename_map;
 	static HashMap<String, String> country_name_map;
@@ -139,6 +141,7 @@ public:
 
 	Vector<String> get_all_languages() const;
 	String get_language_name(const String &p_language) const;
+	String get_native_language_name(const String &p_language) const;
 
 	Vector<String> get_all_scripts() const;
 	String get_script_name(const String &p_script) const;
@@ -147,6 +150,7 @@ public:
 	String get_country_name(const String &p_country) const;
 
 	String get_locale_name(const String &p_locale) const;
+	String get_native_locale_name(const String &p_locale) const;
 
 	PackedStringArray get_loaded_locales() const;
 
