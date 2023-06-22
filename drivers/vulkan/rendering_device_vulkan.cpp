@@ -3635,8 +3635,10 @@ VkRenderPass RenderingDeviceVulkan::_render_pass_create(const Vector<AttachmentF
 			int last_pass = p_passes.size() - 1;
 
 			if (is_depth) {
-				// Likely missing depth resolve?
 				if (p_passes[last_pass].depth_attachment == i) {
+					used_last = true;
+				}
+				if (p_passes[last_pass].depth_resolve_attachment == i) {
 					used_last = true;
 				}
 			} else if (is_vrs) {
@@ -3757,20 +3759,24 @@ VkRenderPass RenderingDeviceVulkan::_render_pass_create(const Vector<AttachmentF
 	}
 
 	LocalVector<VkSubpassDescription2KHR> subpasses;
+	LocalVector<VkSubpassDescriptionDepthStencilResolveKHR> depth_stencil_resolve_array;
 	LocalVector<LocalVector<VkAttachmentReference2KHR>> color_reference_array;
 	LocalVector<LocalVector<VkAttachmentReference2KHR>> input_reference_array;
 	LocalVector<LocalVector<VkAttachmentReference2KHR>> resolve_reference_array;
 	LocalVector<LocalVector<uint32_t>> preserve_reference_array;
 	LocalVector<VkAttachmentReference2KHR> depth_reference_array;
+	LocalVector<VkAttachmentReference2KHR> depth_resolve_reference_array;
 	LocalVector<VkAttachmentReference2KHR> vrs_reference_array;
 	LocalVector<VkFragmentShadingRateAttachmentInfoKHR> vrs_attachment_info_array;
 
 	subpasses.resize(p_passes.size());
+	depth_stencil_resolve_array.resize(p_passes.size());
 	color_reference_array.resize(p_passes.size());
 	input_reference_array.resize(p_passes.size());
 	resolve_reference_array.resize(p_passes.size());
 	preserve_reference_array.resize(p_passes.size());
 	depth_reference_array.resize(p_passes.size());
+	depth_resolve_reference_array.resize(p_passes.size());
 	vrs_reference_array.resize(p_passes.size());
 	vrs_attachment_info_array.resize(p_passes.size());
 
@@ -3906,13 +3912,38 @@ VkRenderPass RenderingDeviceVulkan::_render_pass_create(const Vector<AttachmentF
 
 			VkFragmentShadingRateAttachmentInfoKHR &vrs_attachment_info = vrs_attachment_info_array[i];
 			vrs_attachment_info.sType = VK_STRUCTURE_TYPE_FRAGMENT_SHADING_RATE_ATTACHMENT_INFO_KHR;
-			vrs_attachment_info.pNext = nullptr;
+			vrs_attachment_info.pNext = subpass_nextptr;
 			vrs_attachment_info.pFragmentShadingRateAttachment = &vrs_reference;
 			vrs_attachment_info.shadingRateAttachmentTexelSize = { uint32_t(texel_size.x), uint32_t(texel_size.y) };
 
 			attachment_last_pass[attachment] = i;
 
 			subpass_nextptr = &vrs_attachment_info;
+		}
+
+		if (pass->depth_resolve_attachment != FramebufferPass::ATTACHMENT_UNUSED && context->is_device_extension_enabled(VK_KHR_DEPTH_STENCIL_RESOLVE_EXTENSION_NAME)) {
+			int32_t attachment = pass->depth_resolve_attachment;
+			ERR_FAIL_INDEX_V_MSG(attachment, p_attachments.size(), VK_NULL_HANDLE, "Invalid framebuffer depth resolve format attachment(" + itos(attachment) + "), in pass (" + itos(i) + "), depth resolve attachment.");
+			ERR_FAIL_COND_V_MSG(!(p_attachments[attachment].usage_flags & TEXTURE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT), VK_NULL_HANDLE, "Invalid framebuffer depth resolve format attachment(" + itos(attachment) + "), in pass (" + itos(i) + ").");
+			ERR_FAIL_COND_V_MSG(attachment_last_pass[attachment] == i, VK_NULL_HANDLE, "Invalid framebuffer depth resolve attachment(" + itos(attachment) + "), in pass (" + itos(i) + "), it already was used for something else before in this pass.");
+
+			VkAttachmentReference2KHR &resolve_reference = depth_resolve_reference_array[i];
+			resolve_reference.sType = VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_2_KHR;
+			resolve_reference.pNext = nullptr;
+			resolve_reference.attachment = attachment_remap[attachment];
+			resolve_reference.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+			resolve_reference.aspectMask = VK_IMAGE_ASPECT_NONE;
+
+			VkSubpassDescriptionDepthStencilResolveKHR &depth_stencil_resolve = depth_stencil_resolve_array[i];
+
+			depth_stencil_resolve.sType = VK_STRUCTURE_TYPE_SUBPASS_DESCRIPTION_DEPTH_STENCIL_RESOLVE;
+			depth_stencil_resolve.pNext = subpass_nextptr;
+			depth_stencil_resolve.depthResolveMode = VK_RESOLVE_MODE_MAX_BIT_KHR;
+			depth_stencil_resolve.stencilResolveMode = VK_RESOLVE_MODE_NONE_KHR; // we don't resolve our stencil (for now)
+			depth_stencil_resolve.pDepthStencilResolveAttachment = &resolve_reference;
+
+			attachment_last_pass[attachment] = i;
+			subpass_nextptr = &depth_stencil_resolve;
 		}
 
 		LocalVector<uint32_t> &preserve_references = preserve_reference_array[i];

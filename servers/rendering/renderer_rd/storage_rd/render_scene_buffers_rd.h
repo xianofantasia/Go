@@ -232,6 +232,7 @@ public:
 	}
 
 	bool has_depth_texture();
+	bool depth_texture_is_overridden();
 	RID get_depth_texture();
 	RID get_depth_texture(const uint32_t p_layer);
 
