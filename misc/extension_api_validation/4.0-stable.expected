@@ -443,3 +443,9 @@ Validate extension JSON: API was removed: classes/SystemFont/properties/fallback
 
 The property was moved to their common base class Font.
 The setters and getters were already in Font, so this shouldn't affect compatibility.
+
+GH-80519
+--------
+Validate extension JSON: Error: Field 'classes/EditorPlugin/methods/add_autoload_singleton/arguments': size changed value in new API, from 2 to 3.
+
+Added optional argument. Compatibility method registered.
