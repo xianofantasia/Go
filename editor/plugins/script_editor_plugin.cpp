@@ -4320,6 +4320,67 @@ void ScriptEditorPlugin::edited_scene_changed() {
 	script_editor->edited_scene_changed();
 }
 
+void ScriptEditorPlugin::_user_changed_setting(const String &p_full_name) {
+	if (p_full_name == "text_editor/external/exec_preset") {
+		String new_preset = EditorSettings::get_singleton()->get("text_editor/external/exec_preset");
+
+		if (new_preset != "Custom") {
+			// The preset has changed to something other than Custom: use the values for that preset
+			String path;
+			String flags;
+			_get_external_editor_preset(new_preset, path, flags);
+
+			if (!path.is_empty()) {
+				EditorSettings::get_singleton()->set("text_editor/external/exec_path", path);
+			}
+			if (!flags.is_empty()) {
+				EditorSettings::get_singleton()->set("text_editor/external/exec_flags", flags);
+			}
+		}
+	} else if (p_full_name == "text_editor/external/exec_path" || p_full_name == "text_editor/external/exec_flags") {
+		String preset = EditorSettings::get_singleton()->get("text_editor/external/exec_preset");
+
+		if (preset != "Custom") {
+			// The settings have been updated and we're using a preset. If the user changed the exec path or flags, set preset setting back to Custom.
+			String preset_path;
+			String preset_flags;
+			_get_external_editor_preset(preset, preset_path, preset_flags);
+
+			String path = EditorSettings::get_singleton()->get("text_editor/external/exec_path");
+			String flags = EditorSettings::get_singleton()->get("text_editor/external/exec_flags");
+
+			if ((!preset_path.is_empty() || !preset_flags.is_empty()) && (preset_path != path || preset_flags != flags)) {
+				EditorSettings::get_singleton()->set("text_editor/external/exec_preset", "Custom");
+			}
+		}
+	}
+}
+
+void ScriptEditorPlugin::_get_external_editor_preset(const String p_preset, String &r_path, String &r_flags) {
+	if (p_preset == "Atom") {
+		r_path = "atom";
+		r_flags = "{file}:{line}:{col}";
+	} else if (p_preset == "Geany") {
+		r_path = "geany";
+		r_flags = "{file} --line {line} --column {col}";
+	} else if (p_preset == "JetBrains Rider") {
+		r_path = "rider";
+		r_flags = "--line {line} --column {col} {file}";
+	} else if (p_preset == "Kate") {
+		r_path = "kate";
+		r_flags = "--line {line} --column {col} {file}";
+	} else if (p_preset == "Sublime Text") {
+		r_path = "subl";
+		r_flags = "--project {project} {file}:{line}:{col}";
+	} else if (p_preset == "Vim (gVim)") {
+		r_path = "vim";
+		r_flags = "\"+call cursor({line}, {col})\" {file}";
+	} else if (p_preset == "Visual Studio Code") {
+		r_path = "code";
+		r_flags = "{project} --goto {file}:{line}:{col}";
+	}
+}
+
 ScriptEditorPlugin::ScriptEditorPlugin() {
 	window_wrapper = memnew(WindowWrapper);
 	window_wrapper->set_window_title(vformat(TTR("%s - Godot Engine"), TTR("Script Editor")));
@@ -4338,7 +4399,12 @@ ScriptEditorPlugin::ScriptEditorPlugin() {
 	ScriptServer::set_reload_scripts_on_save(EDITOR_DEF("text_editor/behavior/files/auto_reload_and_parse_scripts_on_save", true));
 	EDITOR_DEF("text_editor/behavior/files/open_dominant_script_on_scene_change", true);
 	EDITOR_DEF("text_editor/external/use_external_editor", false);
+	EDITOR_DEF("text_editor/external/exec_preset", "Custom");
+	EditorSettings::get_singleton()->add_property_hint(PropertyInfo(Variant::STRING, "text_editor/external/exec_preset", PROPERTY_HINT_ENUM, "Custom,Atom,Geany,JetBrains Rider,Kate,Sublime Text,Vim (gVim),Visual Studio Code", PROPERTY_USAGE_DEFAULT));
 	EDITOR_DEF("text_editor/external/exec_path", "");
+	EditorSettings::get_singleton()->add_property_hint(PropertyInfo(Variant::STRING, "text_editor/external/exec_path", PROPERTY_HINT_GLOBAL_FILE));
+	EDITOR_DEF("text_editor/external/exec_flags", "{file}");
+	EditorSettings::get_singleton()->add_property_hint(PropertyInfo(Variant::STRING, "text_editor/external/exec_flags", PROPERTY_HINT_PLACEHOLDER_TEXT, "Call flags with placeholders: {project}, {file}, {col}, {line}."));
 	EDITOR_DEF("text_editor/script_list/script_temperature_enabled", true);
 	EDITOR_DEF("text_editor/script_list/script_temperature_history_size", 15);
 	EDITOR_DEF("text_editor/script_list/group_help_pages", true);
@@ -4346,12 +4412,11 @@ ScriptEditorPlugin::ScriptEditorPlugin() {
 	EDITOR_DEF("text_editor/script_list/sort_scripts_by", 0);
 	EditorSettings::get_singleton()->add_property_hint(PropertyInfo(Variant::INT, "text_editor/script_list/list_script_names_as", PROPERTY_HINT_ENUM, "Name,Parent Directory And Name,Full Path"));
 	EDITOR_DEF("text_editor/script_list/list_script_names_as", 0);
-	EditorSettings::get_singleton()->add_property_hint(PropertyInfo(Variant::STRING, "text_editor/external/exec_path", PROPERTY_HINT_GLOBAL_FILE));
-	EDITOR_DEF("text_editor/external/exec_flags", "{file}");
-	EditorSettings::get_singleton()->add_property_hint(PropertyInfo(Variant::STRING, "text_editor/external/exec_flags", PROPERTY_HINT_PLACEHOLDER_TEXT, "Call flags with placeholders: {project}, {file}, {col}, {line}."));
 
 	ED_SHORTCUT("script_editor/reopen_closed_script", TTR("Reopen Closed Script"), KeyModifierMask::CMD_OR_CTRL | KeyModifierMask::SHIFT | Key::T);
 	ED_SHORTCUT("script_editor/clear_recent", TTR("Clear Recent Scripts"));
+
+	EditorNode::get_singleton()->connect_user_changed_setting(callable_mp(this, &ScriptEditorPlugin::_user_changed_setting));
 }
 
 ScriptEditorPlugin::~ScriptEditorPlugin() {

@@ -568,6 +568,9 @@ class ScriptEditorPlugin : public EditorPlugin {
 protected:
 	void _notification(int p_what);
 
+	void _user_changed_setting(const String &p_name);
+	static void _get_external_editor_preset(const String p_preset, String &r_path, String &r_flags);
+
 public:
 	virtual String get_name() const override { return "Script"; }
 	bool has_main_screen() const override { return true; }
