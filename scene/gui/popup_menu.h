@@ -97,6 +97,7 @@ class PopupMenu : public Popup {
 	Vector<Item> items;
 	BitField<MouseButtonMask> initial_button_mask;
 	bool during_grabbed_click = false;
+	bool is_mouse_pressed = false;
 	int mouse_over = -1;
 	int submenu_over = -1;
 	String _get_accel_text(const Item &p_item) const;
@@ -141,6 +142,7 @@ class PopupMenu : public Popup {
 	struct ThemeCache {
 		Ref<StyleBox> panel_style;
 		Ref<StyleBox> hover_style;
+		Ref<StyleBox> pressed_style;
 
 		Ref<StyleBox> separator_style;
 		Ref<StyleBox> labeled_separator_left;
@@ -172,6 +174,7 @@ class PopupMenu : public Popup {
 
 		Color font_color;
 		Color font_hover_color;
+		Color font_pressed_color;
 		Color font_disabled_color;
 		Color font_accelerator_color;
 		int font_outline_size = 0;
