@@ -530,7 +530,7 @@ void GraphEdit::_notification(int p_what) {
 				for (int i = from_pos.x; i < from_pos.x + len.x; i++) {
 					Color color;
 
-					if (ABS(i) % GRID_MINOR_STEPS_PER_MAJOR_LINE == 0) {
+					if (Math::abs(i) % GRID_MINOR_STEPS_PER_MAJOR_LINE == 0) {
 						color = grid_major;
 					} else {
 						color = grid_minor;
@@ -543,7 +543,7 @@ void GraphEdit::_notification(int p_what) {
 				for (int i = from_pos.y; i < from_pos.y + len.y; i++) {
 					Color color;
 
-					if (ABS(i) % GRID_MINOR_STEPS_PER_MAJOR_LINE == 0) {
+					if (Math::abs(i) % GRID_MINOR_STEPS_PER_MAJOR_LINE == 0) {
 						color = grid_major;
 					} else {
 						color = grid_minor;

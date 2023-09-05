@@ -204,7 +204,7 @@ String RichTextLabel::_letters(int p_num, bool p_capitalize) const {
 	c[chars] = 0;
 	n = p_num;
 	do {
-		int mod = ABS(n % 24);
+		int mod = Math::abs(n % 24);
 		char a = (p_capitalize ? 'A' : 'a');
 		c[--chars] = a + mod - 1;
 

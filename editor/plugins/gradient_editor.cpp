@@ -58,7 +58,7 @@ int GradientEditor::_get_point_from_pos(int x) {
 	float min_distance = 1e20;
 	for (int i = 0; i < points.size(); i++) {
 		// Check if we clicked at point.
-		float distance = ABS(x - points[i].offset * total_w);
+		float distance = Math::abs(x - points[i].offset * total_w);
 		float min = handle_width * 0.85; // Allow the mouse to be more than half a handle width away for ease of grabbing.
 		if (distance <= min && distance < min_distance) {
 			result = i;
@@ -321,7 +321,7 @@ void GradientEditor::gui_input(const Ref<InputEvent> &p_event) {
 			int nearest_point = 0;
 			for (int i = 0; i < points.size(); ++i) {
 				if (i != grabbed) {
-					float temp_ofs = ABS(points[i].offset - newofs);
+					float temp_ofs = Math::abs(points[i].offset - newofs);
 					if (temp_ofs < smallest_ofs) {
 						smallest_ofs = temp_ofs;
 						nearest_point = i;

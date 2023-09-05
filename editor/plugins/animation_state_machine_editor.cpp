@@ -333,8 +333,8 @@ void AnimationNodeStateMachineEditor::_state_machine_gui_input(const Ref<InputEv
 		box_selecting_from = box_selecting_to = state_machine_draw->get_local_mouse_position();
 		box_selecting_rect = Rect2(MIN(box_selecting_from.x, box_selecting_to.x),
 				MIN(box_selecting_from.y, box_selecting_to.y),
-				ABS(box_selecting_from.x - box_selecting_to.x),
-				ABS(box_selecting_from.y - box_selecting_to.y));
+				Math::abs(box_selecting_from.x - box_selecting_to.x),
+				Math::abs(box_selecting_from.y - box_selecting_to.y));
 
 		if (mb->is_ctrl_pressed() || mb->is_shift_pressed()) {
 			previous_selected = selected_nodes;
@@ -394,14 +394,14 @@ void AnimationNodeStateMachineEditor::_state_machine_gui_input(const Ref<InputEv
 				}
 				Vector2 npos = state_machine->get_node_position(E);
 
-				float d_x = ABS(npos.x - cpos.x);
+				float d_x = Math::abs(npos.x - cpos.x);
 				if (d_x < MIN(5, best_d_x)) {
 					drag_ofs.x -= cpos.x - npos.x;
 					best_d_x = d_x;
 					snap_x = E;
 				}
 
-				float d_y = ABS(npos.y - cpos.y);
+				float d_y = Math::abs(npos.y - cpos.y);
 				if (d_y < MIN(5, best_d_y)) {
 					drag_ofs.y -= cpos.y - npos.y;
 					best_d_y = d_y;
@@ -419,8 +419,8 @@ void AnimationNodeStateMachineEditor::_state_machine_gui_input(const Ref<InputEv
 
 		box_selecting_rect = Rect2(MIN(box_selecting_from.x, box_selecting_to.x),
 				MIN(box_selecting_from.y, box_selecting_to.y),
-				ABS(box_selecting_from.x - box_selecting_to.x),
-				ABS(box_selecting_from.y - box_selecting_to.y));
+				Math::abs(box_selecting_from.x - box_selecting_to.x),
+				Math::abs(box_selecting_from.y - box_selecting_to.y));
 
 		for (int i = 0; i < node_rects.size(); i++) {
 			bool in_box = node_rects[i].node.intersects(box_selecting_rect);

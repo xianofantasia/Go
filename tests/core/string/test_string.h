@@ -478,7 +478,7 @@ TEST_CASE("[String] String to float") {
 	static const double num[4] = { -12348298412.2, 0.05, 2.0002, -0.0001 };
 
 	for (int i = 0; i < 4; i++) {
-		CHECK(!(ABS(String(nums[i]).to_float() - num[i]) > 0.00001));
+		CHECK(!(Math::abs(String(nums[i]).to_float() - num[i]) > 0.00001));
 	}
 }
 
@@ -540,7 +540,7 @@ TEST_CASE("[String] Splitting") {
 	d_arr = s.split_floats(";");
 	CHECK(d_arr.size() == 2);
 	for (int i = 0; i < d_arr.size(); i++) {
-		CHECK(ABS(d_arr[i] - slices_d[i]) <= 0.00001);
+		CHECK(Math::abs(d_arr[i] - slices_d[i]) <= 0.00001);
 	}
 
 	Vector<String> keys;
@@ -551,7 +551,7 @@ TEST_CASE("[String] Splitting") {
 	f_arr = s.split_floats_mk(keys);
 	CHECK(f_arr.size() == 3);
 	for (int i = 0; i < f_arr.size(); i++) {
-		CHECK(ABS(f_arr[i] - slices_d[i]) <= 0.00001);
+		CHECK(Math::abs(f_arr[i] - slices_d[i]) <= 0.00001);
 	}
 
 	s = "1;2 4";
