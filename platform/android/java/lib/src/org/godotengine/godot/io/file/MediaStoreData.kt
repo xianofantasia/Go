@@ -45,6 +45,7 @@ import java.io.FileInputStream
 import java.io.FileNotFoundException
 import java.io.FileOutputStream
 import java.nio.channels.FileChannel
+import java.net.URI;
 
 /**
  * Implementation of [DataAccess] which handles access and interactions with file and data
@@ -240,8 +241,8 @@ internal class MediaStoreData(context: Context, filePath: String, accessFlag: Fi
 		val contentResolver = context.contentResolver
 		val dataItems = queryByPath(context, filePath)
 
-		val dataItem = when (accessFlag) {
-			FileAccessFlags.READ -> {
+		val dataItem = when (accessFlag.shouldCreate()) {
+			false -> {
 				// The file should already exist
 				if (dataItems.isEmpty()) {
 					throw FileNotFoundException("Unable to access file $filePath")
@@ -251,7 +252,7 @@ internal class MediaStoreData(context: Context, filePath: String, accessFlag: Fi
 				dataItem
 			}
 
-			FileAccessFlags.WRITE, FileAccessFlags.READ_WRITE, FileAccessFlags.WRITE_READ -> {
+			true -> {
 				// Create the file if it doesn't exist
 				val dataItem = if (dataItems.isEmpty()) {
 					addFile(context, filePath)
@@ -279,6 +280,15 @@ internal class MediaStoreData(context: Context, filePath: String, accessFlag: Fi
 
 		if (accessFlag.shouldTruncate()) {
 			fileChannel.truncate(0)
+		}
+		if (accessFlag.shouldRemove()) {
+			//!TODO Verify.
+			// I found that a call to the File.deleteOnExit() would suffice for ensuring file deletion, even on exit due to an exception.
+			// However, I'm not sure this is the best way to get a Java file instance from the DataItem struct.
+			// I didn't find a way to get a Java File class instance from the already opened Android ParcelFileDescriptor, so hopefully this works as intended.
+			val j_uri:URI = URI(uri.toString())
+			val file:File = File(j_uri)
+			file.deleteOnExit()
 		}
 	}
 }
