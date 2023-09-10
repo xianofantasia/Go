@@ -134,6 +134,7 @@ public:
 
 	virtual void process() = 0;
 	virtual void pre_render(){};
+	virtual Vector3i get_viewport_setup(RID p_render_target) const; /* get our viewport setup. */
 	virtual bool pre_draw_viewport(RID p_render_target) { return true; }; /* inform XR interface we are about to start our viewport draw process */
 	virtual Vector<BlitToScreen> post_draw_viewport(RID p_render_target, const Rect2 &p_screen_rect) = 0; /* inform XR interface we finished our viewport draw process */
 	virtual void end_frame(){};

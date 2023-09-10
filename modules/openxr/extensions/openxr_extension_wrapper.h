@@ -84,8 +84,18 @@ public:
 	// This is when controller data is queried and made available to game logic.
 	virtual void on_process() {}
 	virtual void on_pre_render() {} // `on_pre_render` is called right before we start rendering our XR viewports.
-	virtual void on_pre_draw_viewport(RID p_render_target) {} // `on_pre_draw_viewport` is called right before we start rendering this viewport
-	virtual void on_post_draw_viewport(RID p_render_target) {} // `on_port_draw_viewport` is called right after we start rendering this viewport (note that on Vulkan draw commands may only be queued)
+	virtual void on_end_frame() {} // `on_end_frame` is called after we finished all rendering, just before we submit our images to OpenXR.
+
+	virtual bool owns_viewport(RID p_render_target) { return false; } // override and return true if our wrapper fully handles this viewport.
+	virtual bool on_pre_draw_viewport(RID p_render_target) { return true; } // `on_pre_draw_viewport` is called right before we start rendering this viewport, if we own this viewport, only we receive this. If no extension owns the viewport (e.g. main XR viewport), all extensions receive this.
+	virtual uint32_t get_viewport_view_count() { return 0; } // Only called if we own this viewport, return view count.
+	virtual Size2i get_viewport_size() { return Size2i(); } // Only called if we own this viewport, return viewport size.
+	virtual bool get_view_transform(uint32_t p_view, XrTime p_display_time, Transform3D &r_transform) { return false; } // Only called if we own this viewport, return view transform.
+	virtual bool get_view_projection(uint32_t p_view, double p_z_near, double p_z_far, XrTime p_display_time, Projection &r_projection) { return false; } // Only called if we own this viewport, return view projection.
+	virtual XrSwapchain get_color_swapchain() { return XR_NULL_HANDLE; } // Only called if we own this viewport, return color swapchain.
+	virtual RID get_color_texture() { return RID(); } // Only called if we own this viewport, return color texture.
+	virtual RID get_depth_texture() { return RID(); } // Only called if we own this viewport, return depth texture.
+	virtual void on_post_draw_viewport(RID p_render_target) {} // `on_port_draw_viewport` is called right after we start rendering this viewport (note that on Vulkan draw commands may only be queued).
 
 	virtual void on_state_idle() {} // `on_state_idle` is called when the OpenXR session state is changed to idle.
 	virtual void on_state_ready() {} // `on_state_ready` is called when the OpenXR session state is changed to ready, this means OpenXR is ready to setup our session.
