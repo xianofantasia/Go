@@ -175,11 +175,17 @@ void RenderSceneBuffersRD::configure(const RenderSceneBuffersConfiguration *p_co
 		uint32_t usage_bits = RD::TEXTURE_USAGE_SAMPLING_BIT;
 
 		if (msaa_3d == RS::VIEWPORT_MSAA_DISABLED) {
+			// Need a depth buffer with stencil
 			usage_bits |= RD::TEXTURE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
 			format = RD::get_singleton()->texture_is_format_supported_for_usage(RD::DATA_FORMAT_D24_UNORM_S8_UINT, usage_bits) ? RD::DATA_FORMAT_D24_UNORM_S8_UINT : RD::DATA_FORMAT_D32_SFLOAT_S8_UINT;
-		} else {
+		} else if (can_be_storage) {
+			// We're rendering into an MSAA buffer and then using compute shaders to resolve our depth buffer
 			format = RD::DATA_FORMAT_R32_SFLOAT;
-			usage_bits |= RD::TEXTURE_USAGE_CAN_COPY_TO_BIT | (can_be_storage ? RD::TEXTURE_USAGE_STORAGE_BIT : 0);
+			usage_bits |= RD::TEXTURE_USAGE_CAN_COPY_TO_BIT | RD::TEXTURE_USAGE_STORAGE_BIT;
+		} else {
+			// We're using subpasses
+			usage_bits |= RD::TEXTURE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+			format = RD::get_singleton()->texture_is_format_supported_for_usage(RD::DATA_FORMAT_D24_UNORM_S8_UINT, usage_bits) ? RD::DATA_FORMAT_D24_UNORM_S8_UINT : RD::DATA_FORMAT_D32_SFLOAT_S8_UINT;
 		}
 
 		create_texture(RB_SCOPE_BUFFERS, RB_TEX_DEPTH, format, usage_bits);
@@ -575,6 +581,21 @@ bool RenderSceneBuffersRD::has_depth_texture() {
 		return true;
 	} else {
 		return has_texture(RB_SCOPE_BUFFERS, RB_TEX_DEPTH);
+	}
+}
+
+bool RenderSceneBuffersRD::depth_texture_is_overridden() {
+	if (render_target.is_null()) {
+		// not applicable when there is no render target (likely this is for a reflection probe)
+		return false;
+	}
+
+	RendererRD::TextureStorage *texture_storage = RendererRD::TextureStorage::get_singleton();
+	RID depth = texture_storage->render_target_get_override_depth(render_target);
+	if (depth.is_valid()) {
+		return true;
+	} else {
+		return false;
 	}
 }
 

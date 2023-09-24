@@ -138,7 +138,7 @@ void RenderForwardMobile::RenderBufferDataForwardMobile::configure(RenderSceneBu
 	ERR_FAIL_NULL(render_buffers); // Huh? really?
 }
 
-RID RenderForwardMobile::RenderBufferDataForwardMobile::get_color_fbs(FramebufferConfigType p_config_type) {
+RID RenderForwardMobile::RenderBufferDataForwardMobile::get_color_fbs(FramebufferConfigType p_config_type, bool p_resolve_color, bool p_resolve_depth) {
 	ERR_FAIL_NULL_V(render_buffers, RID());
 
 	RendererRD::TextureStorage *texture_storage = RendererRD::TextureStorage::get_singleton();
@@ -161,16 +161,19 @@ RID RenderForwardMobile::RenderBufferDataForwardMobile::get_color_fbs(Framebuffe
 
 	Vector<RID> textures;
 	int color_buffer_id = 0;
+	int depth_buffer_id = 1;
 	textures.push_back(use_msaa ? render_buffers->get_color_msaa() : render_buffers->get_internal_texture()); // 0 - color buffer
 	textures.push_back(use_msaa ? render_buffers->get_depth_msaa() : render_buffers->get_depth_texture()); // 1 - depth buffer
 	if (vrs_texture.is_valid()) {
 		textures.push_back(vrs_texture); // 2 - vrs texture
 	}
-	if (use_msaa) {
+	if (use_msaa && p_resolve_color) {
 		color_buffer_id = textures.size();
 		textures.push_back(render_buffers->get_internal_texture()); // color buffer for resolve
-
-		// TODO add support for resolving depth buffer!!!
+	}
+	if (use_msaa && p_resolve_depth) {
+		depth_buffer_id = textures.size();
+		textures.push_back(render_buffers->get_depth_texture()); // depth buffer for resolve
 	}
 
 	// Now define our subpasses
@@ -187,9 +190,12 @@ RID RenderForwardMobile::RenderBufferDataForwardMobile::get_color_fbs(Framebuffe
 	switch (p_config_type) {
 		case FB_CONFIG_ONE_PASS: {
 			// just one pass
-			if (use_msaa) {
-				// Add resolve
+			if (use_msaa && p_resolve_color) {
+				// add resolve after this pass finishes
 				pass.resolve_attachments.push_back(color_buffer_id);
+			}
+			if (use_msaa && p_resolve_depth) {
+				pass.depth_resolve_attachment = depth_buffer_id;
 			}
 			passes.push_back(pass);
 
@@ -200,9 +206,12 @@ RID RenderForwardMobile::RenderBufferDataForwardMobile::get_color_fbs(Framebuffe
 			passes.push_back(pass);
 
 			// - add sky pass
-			if (use_msaa) {
-				// add resolve
+			if (use_msaa && p_resolve_color) {
+				// add resolve after this pass finishes
 				pass.resolve_attachments.push_back(color_buffer_id);
+			}
+			if (use_msaa && p_resolve_depth) {
+				pass.depth_resolve_attachment = depth_buffer_id;
 			}
 			passes.push_back(pass);
 
@@ -216,9 +225,12 @@ RID RenderForwardMobile::RenderBufferDataForwardMobile::get_color_fbs(Framebuffe
 			passes.push_back(pass);
 
 			// - add alpha pass
-			if (use_msaa) {
-				// add resolve
+			if (use_msaa && p_resolve_color) {
+				// add resolve after this pass finishes
 				pass.resolve_attachments.push_back(color_buffer_id);
+			}
+			if (use_msaa && p_resolve_depth) {
+				pass.depth_resolve_attachment = depth_buffer_id;
 			}
 			passes.push_back(pass);
 
@@ -238,9 +250,12 @@ RID RenderForwardMobile::RenderBufferDataForwardMobile::get_color_fbs(Framebuffe
 			passes.push_back(pass);
 
 			// - add alpha pass
-			if (use_msaa) {
-				// add resolve
+			if (use_msaa && p_resolve_color) {
+				// add resolve after this pass finishes
 				pass.resolve_attachments.push_back(color_buffer_id);
+			}
+			if (use_msaa && p_resolve_depth) {
+				pass.depth_resolve_attachment = depth_buffer_id;
 			}
 			passes.push_back(pass);
 
@@ -261,6 +276,7 @@ RID RenderForwardMobile::RenderBufferDataForwardMobile::get_color_fbs(Framebuffe
 			RD::FramebufferPass blit_pass;
 			blit_pass.input_attachments.push_back(color_buffer_id); // Read from our (resolved) color buffer
 			blit_pass.color_attachments.push_back(target_buffer_id); // Write into our target buffer
+			blit_pass.preserve_attachments.push_back(depth_buffer_id); // Preserve our (resolved) depth buffer
 			// this doesn't need VRS
 			passes.push_back(blit_pass);
 
@@ -666,10 +682,10 @@ void RenderForwardMobile::_render_scene(RenderDataRD *p_render_data, const Color
 	p_render_data->scene_data->opaque_prepass_threshold = 0.0;
 
 	// We can only use our full subpass approach if we're:
-	// - not reading from SCREEN_TEXTURE/DEPTH_TEXTURE
-	// - not using ssr/sss (currently not supported)
-	// - not using glow or other post effects (can't do 4th subpass)
-	// - rendering to a half sized render buffer (can't do 4th subpass)
+	// - not reading from SCREEN_TEXTURE/DEPTH_TEXTURE (can't do 3rd nor 4th subpass),
+	// - not using ssr/sss (currently not supported),
+	// - not using glow or other post effects (can't do 4th subpass),
+	// - rendering to a half sized render buffer (can't do 4th subpass).
 	// We'll need to restrict how far we're going with subpasses based on this.
 
 	Size2i screen_size;
@@ -677,6 +693,12 @@ void RenderForwardMobile::_render_scene(RenderDataRD *p_render_data, const Color
 	bool reverse_cull = p_render_data->scene_data->cam_transform.basis.determinant() < 0;
 	bool using_subpass_transparent = true;
 	bool using_subpass_post_process = true;
+	bool resolve_depth_buffer = rb->depth_texture_is_overridden();
+
+	if (p_render_data->environment.is_valid() && RSG::camera_attributes->camera_attributes_uses_dof(p_render_data->camera_attributes)) {
+		// DOF requires depth buffer access.
+		resolve_depth_buffer = true;
+	}
 
 	// fill our render lists early so we can find out if we use various features
 	_fill_render_list(RENDER_LIST_OPAQUE, p_render_data, PASS_MODE_COLOR);
@@ -727,10 +749,10 @@ void RenderForwardMobile::_render_scene(RenderDataRD *p_render_data, const Color
 			framebuffer = rb_data->get_color_fbs(RenderBufferDataForwardMobile::FB_CONFIG_FOUR_SUBPASSES);
 		} else if (using_subpass_transparent) {
 			// our tonemap pass is separate
-			framebuffer = rb_data->get_color_fbs(RenderBufferDataForwardMobile::FB_CONFIG_THREE_SUBPASSES);
+			framebuffer = rb_data->get_color_fbs(RenderBufferDataForwardMobile::FB_CONFIG_THREE_SUBPASSES, true, resolve_depth_buffer);
 		} else {
-			// only opaque and sky as subpasses
-			framebuffer = rb_data->get_color_fbs(RenderBufferDataForwardMobile::FB_CONFIG_TWO_SUBPASSES);
+			// only opaque and sky as subpasses, need to resolve early here so we can copy to back buffers
+			framebuffer = rb_data->get_color_fbs(RenderBufferDataForwardMobile::FB_CONFIG_TWO_SUBPASSES, scene_state.used_screen_texture, scene_state.used_depth_texture);
 		}
 	} else {
 		ERR_FAIL(); //bug?
@@ -795,7 +817,7 @@ void RenderForwardMobile::_render_scene(RenderDataRD *p_render_data, const Color
 			} break;
 			case RS::ENV_BG_CANVAS: {
 				if (rb_data.is_valid()) {
-					RID dest_framebuffer = rb_data->get_color_fbs(RenderBufferDataForwardMobile::FB_CONFIG_ONE_PASS);
+					RID dest_framebuffer = rb_data->get_color_fbs(RenderBufferDataForwardMobile::FB_CONFIG_ONE_PASS, false, false);
 					RID texture = RendererRD::TextureStorage::get_singleton()->render_target_get_rd_texture(rb->get_render_target());
 					bool convert_to_linear = !RendererRD::TextureStorage::get_singleton()->render_target_is_using_hdr(rb->get_render_target());
 					copy_effects->copy_to_fb_rect(texture, dest_framebuffer, Rect2i(), false, false, false, false, RID(), false, false, convert_to_linear);
@@ -896,9 +918,6 @@ void RenderForwardMobile::_render_scene(RenderDataRD *p_render_data, const Color
 
 		RID rp_uniform_set = _setup_render_pass_uniform_set(RENDER_LIST_OPAQUE, p_render_data, radiance_texture, true);
 
-		bool can_continue_color = !using_subpass_transparent && !scene_state.used_screen_texture;
-		bool can_continue_depth = !using_subpass_transparent && !scene_state.used_depth_texture;
-
 		{
 			// regular forward for now
 			Vector<Color> c;
@@ -909,7 +928,7 @@ void RenderForwardMobile::_render_scene(RenderDataRD *p_render_data, const Color
 				}
 				c.push_back(cc); // Our render buffer.
 				if (rb_data.is_valid()) {
-					if (p_render_data->render_buffers->get_msaa_3d() != RS::VIEWPORT_MSAA_DISABLED) {
+					if (using_subpass_transparent && p_render_data->render_buffers->get_msaa_3d() != RS::VIEWPORT_MSAA_DISABLED) {
 						c.push_back(clear_color.srgb_to_linear() * inverse_luminance_multiplier); // Our resolve buffer.
 					}
 					if (using_subpass_post_process) {
@@ -925,14 +944,14 @@ void RenderForwardMobile::_render_scene(RenderDataRD *p_render_data, const Color
 				// secondary command buffers need more testing at this time
 				//multi threaded
 				thread_draw_lists.resize(WorkerThreadPool::get_singleton()->get_thread_count());
-				RD::get_singleton()->draw_list_begin_split(framebuffer, thread_draw_lists.size(), thread_draw_lists.ptr(), keep_color ? RD::INITIAL_ACTION_KEEP : RD::INITIAL_ACTION_CLEAR, can_continue_color ? RD::FINAL_ACTION_CONTINUE : RD::FINAL_ACTION_READ, RD::INITIAL_ACTION_CLEAR, can_continue_depth ? RD::FINAL_ACTION_CONTINUE : RD::FINAL_ACTION_READ, c, 1.0, 0);
+				RD::get_singleton()->draw_list_begin_split(framebuffer, thread_draw_lists.size(), thread_draw_lists.ptr(), keep_color ? RD::INITIAL_ACTION_KEEP : RD::INITIAL_ACTION_CLEAR, RD::FINAL_ACTION_READ, RD::INITIAL_ACTION_CLEAR, RD::FINAL_ACTION_READ, c, 1.0, 0);
 
 				WorkerThreadPool::GroupID group_task = WorkerThreadPool::get_singleton()->add_template_group_task(this, &RenderForwardMobile::_render_list_thread_function, &render_list_params, thread_draw_lists.size(), -1, true, SNAME("ForwardMobileRenderList"));
 				WorkerThreadPool::get_singleton()->wait_for_group_task_completion(group_task);
 
 			} else {
 				//single threaded
-				RD::DrawListID draw_list = RD::get_singleton()->draw_list_begin(framebuffer, keep_color ? RD::INITIAL_ACTION_KEEP : RD::INITIAL_ACTION_CLEAR, can_continue_color ? RD::FINAL_ACTION_CONTINUE : RD::FINAL_ACTION_READ, RD::INITIAL_ACTION_CLEAR, can_continue_depth ? RD::FINAL_ACTION_CONTINUE : RD::FINAL_ACTION_READ, c, 1.0, 0);
+				RD::DrawListID draw_list = RD::get_singleton()->draw_list_begin(framebuffer, keep_color ? RD::INITIAL_ACTION_KEEP : RD::INITIAL_ACTION_CLEAR, RD::FINAL_ACTION_READ, RD::INITIAL_ACTION_CLEAR, RD::FINAL_ACTION_READ, c, 1.0, 0);
 				_render_list(draw_list, fb_format, &render_list_params, 0, render_list_params.element_count);
 			}
 		}
@@ -1015,7 +1034,7 @@ void RenderForwardMobile::_render_scene(RenderDataRD *p_render_data, const Color
 			RENDER_TIMESTAMP("Render Transparent");
 
 			if (rb_data.is_valid()) {
-				framebuffer = rb_data->get_color_fbs(RenderBufferDataForwardMobile::FB_CONFIG_ONE_PASS);
+				framebuffer = rb_data->get_color_fbs(RenderBufferDataForwardMobile::FB_CONFIG_ONE_PASS, true, resolve_depth_buffer);
 			}
 
 			// this may be needed if we re-introduced steps that change info, not sure which do so in the previous implementation
@@ -1028,14 +1047,14 @@ void RenderForwardMobile::_render_scene(RenderDataRD *p_render_data, const Color
 				// secondary command buffers need more testing at this time
 				//multi threaded
 				thread_draw_lists.resize(WorkerThreadPool::get_singleton()->get_thread_count());
-				RD::get_singleton()->draw_list_begin_split(framebuffer, thread_draw_lists.size(), thread_draw_lists.ptr(), can_continue_color ? RD::INITIAL_ACTION_CONTINUE : RD::INITIAL_ACTION_KEEP, RD::FINAL_ACTION_READ, can_continue_depth ? RD::INITIAL_ACTION_CONTINUE : RD::INITIAL_ACTION_KEEP, RD::FINAL_ACTION_READ);
+				RD::get_singleton()->draw_list_begin_split(framebuffer, thread_draw_lists.size(), thread_draw_lists.ptr(), RD::INITIAL_ACTION_KEEP, RD::FINAL_ACTION_READ, RD::INITIAL_ACTION_KEEP, RD::FINAL_ACTION_READ);
 				WorkerThreadPool::GroupID group_task = WorkerThreadPool::get_singleton()->add_template_group_task(this, &RenderForwardMobile::_render_list_thread_function, &render_list_params, thread_draw_lists.size(), -1, true, SNAME("ForwardMobileRenderSubpass"));
 				WorkerThreadPool::get_singleton()->wait_for_group_task_completion(group_task);
 
 				RD::get_singleton()->draw_list_end(RD::BARRIER_MASK_ALL_BARRIERS);
 			} else {
 				//single threaded
-				RD::DrawListID draw_list = RD::get_singleton()->draw_list_begin(framebuffer, can_continue_color ? RD::INITIAL_ACTION_CONTINUE : RD::INITIAL_ACTION_KEEP, RD::FINAL_ACTION_READ, can_continue_depth ? RD::INITIAL_ACTION_CONTINUE : RD::INITIAL_ACTION_KEEP, RD::FINAL_ACTION_READ);
+				RD::DrawListID draw_list = RD::get_singleton()->draw_list_begin(framebuffer, RD::INITIAL_ACTION_KEEP, RD::FINAL_ACTION_READ, RD::INITIAL_ACTION_KEEP, RD::FINAL_ACTION_READ);
 				_render_list(draw_list, fb_format, &render_list_params, 0, render_list_params.element_count);
 				RD::get_singleton()->draw_list_end(RD::BARRIER_MASK_ALL_BARRIERS);
 			}
