@@ -63,9 +63,11 @@ public:
 			// Logical
 			AND,
 			OR,
+			XOR,
 			NOT,
 			AMPERSAND_AMPERSAND,
 			PIPE_PIPE,
+			CARET_CARET,
 			BANG,
 			// Bitwise
 			AMPERSAND,

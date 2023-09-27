@@ -2373,6 +2373,7 @@ void GDScriptLanguage::get_reserved_words(List<String> *p_words) const {
 		"in",
 		"not",
 		"or",
+		"xor",
 		// types and values
 		"false",
 		"float",
