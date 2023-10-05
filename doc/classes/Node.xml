@@ -607,7 +607,7 @@
 		<method name="print_tree">
 			<return type="void" />
 			<description>
-				Prints the tree to stdout. Used mainly for debugging purposes. This version displays the path relative to the current node, and is good for copy/pasting into the [method get_node] function.
+				Prints the tree to stdout. Used mainly for debugging purposes. This version displays the path relative to the current node, and is good for copy/pasting into the [method get_node] function. The node's string representation is always displayed on the right of each node path. By default, this displays the node type and unique instance ID. Custom representations can be created by creating a [code]_to_string()[/code] function that returns a [String]. If the custom representation contains BBCode, it is parsed as rich text following [method @GlobalScope.print_rich]'s limitations.
 				[b]Example output:[/b]
 				[codeblock]
 				TheGame
@@ -622,7 +622,7 @@
 		<method name="print_tree_pretty">
 			<return type="void" />
 			<description>
-				Similar to [method print_tree], this prints the tree to stdout. This version displays a more graphical representation similar to what is displayed in the Scene Dock. It is useful for inspecting larger trees.
+				Similar to [method print_tree], this prints the tree to stdout. This version displays a more graphical representation similar to what is displayed in the Scene Dock. It is useful for inspecting larger trees. The node's string representation is always displayed on the right of each node path. By default, this displays the node type and unique instance ID. Custom representations can be created by creating a [code]_to_string()[/code] function that returns a [String]. If the custom representation contains BBCode, it is parsed as rich text following [method @GlobalScope.print_rich]'s limitations.
 				[b]Example output:[/b]
 				[codeblock]
 				 ┖╴TheGame
