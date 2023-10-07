@@ -1916,9 +1916,12 @@ void ScriptTextEditor::drop_data_fw(const Point2 &p_point, const Variant &p_data
 
 	if (d.has("type") && String(d["type"]) == "obj_property") {
 		te->remove_secondary_carets();
-		// It is unclear whether properties may contain single or double quotes.
-		// Assume here that double-quotes may not exist. We are escaping single-quotes if necessary.
-		const String text_to_drop = _quote_drop_data(String(d["property"]));
+		String text_to_drop = String(d["property"]);
+		if (!drop_modifier_pressed) {
+			// It is unclear whether properties may contain single or double quotes.
+			// Assume here that double-quotes may not exist. We are escaping single-quotes if necessary.
+			text_to_drop = _quote_drop_data(text_to_drop);
+		}
 
 		te->set_caret_line(row);
 		te->set_caret_column(col);
