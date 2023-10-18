@@ -1101,8 +1101,6 @@ Ref<Theme> create_editor_theme(const Ref<Theme> p_theme) {
 
 	// ProjectTag
 	{
-		theme->set_type_variation("ProjectTag", "Button");
-
 		Ref<StyleBoxFlat> tag = style_widget->duplicate();
 		tag->set_bg_color(dark_theme ? tag->get_bg_color().lightened(0.2) : tag->get_bg_color().darkened(0.2));
 		tag->set_corner_radius(CORNER_TOP_LEFT, 0);

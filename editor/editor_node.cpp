@@ -5629,6 +5629,11 @@ bool EditorNode::_is_closing_editor() const {
 	return tab_closing_menu_option == FILE_QUIT || tab_closing_menu_option == RUN_PROJECT_MANAGER || tab_closing_menu_option == RELOAD_CURRENT_PROJECT;
 }
 
+void EditorNode::_restart_from_settings() {
+	EditorNode::get_singleton()->save_all_scenes();
+	EditorNode::get_singleton()->restart_editor();
+}
+
 void EditorNode::_scene_tab_closed(int p_tab) {
 	current_menu_option = SCENE_TAB_CLOSE;
 	tab_closing_idx = p_tab;
@@ -7227,6 +7232,7 @@ EditorNode::EditorNode() {
 
 	editor_settings_dialog = memnew(EditorSettingsDialog);
 	gui_base->add_child(editor_settings_dialog);
+	editor_settings_dialog->connect("restart_requested", callable_mp(this, &EditorNode::_restart_from_settings));
 
 	project_settings_editor = memnew(ProjectSettingsEditor(&editor_data));
 	gui_base->add_child(project_settings_editor);

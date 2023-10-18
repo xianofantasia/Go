@@ -40,6 +40,7 @@
 class CheckBox;
 class EditorAssetLibrary;
 class EditorFileDialog;
+class EditorSettingsDialog;
 class HFlowContainer;
 class PanelContainer;
 class ProjectList;
@@ -371,6 +372,7 @@ class ProjectManager : public Control {
 	ConfirmationDialog *ask_full_convert_dialog = nullptr;
 	ConfirmationDialog *ask_update_settings = nullptr;
 	ConfirmationDialog *open_templates = nullptr;
+	EditorSettingsDialog *editor_settings_dialog = nullptr;
 	EditorAbout *about = nullptr;
 
 	HBoxContainer *settings_hb = nullptr;
@@ -410,6 +412,7 @@ class ProjectManager : public Control {
 	void _erase_missing_projects();
 	void _erase_project_confirm();
 	void _erase_missing_projects_confirm();
+	void _show_editor_settings();
 	void _show_about();
 	void _update_project_buttons();
 	void _language_selected(int p_id);

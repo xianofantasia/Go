@@ -99,9 +99,15 @@ void EditorSettingsDialog::popup_edit_settings() {
 	set_process_shortcut_input(true);
 
 	// Restore valid window bounds or pop up at default size.
-	Rect2 saved_size = EditorSettings::get_singleton()->get_project_metadata("dialog_bounds", "editor_settings", Rect2());
+	Rect2 saved_size;
+	if (!_is_in_project_manager()) {
+		saved_size = EditorSettings::get_singleton()->get_project_metadata("dialog_bounds", "editor_settings", Rect2());
+	}
+
 	if (saved_size != Rect2()) {
 		popup(saved_size);
+	} else if (_is_in_project_manager()) {
+		popup_centered_clamped(Size2(800, 600) * EDSCALE, 0.8); // Make it smaller that the default Project Manager size.
 	} else {
 		popup_centered_clamped(Size2(900, 700) * EDSCALE, 0.8);
 	}
@@ -126,13 +132,16 @@ void EditorSettingsDialog::_undo_redo_callback(void *p_self, const String &p_nam
 void EditorSettingsDialog::_notification(int p_what) {
 	switch (p_what) {
 		case NOTIFICATION_VISIBILITY_CHANGED: {
-			if (!is_visible()) {
+			if (!is_visible() && !_is_in_project_manager()) {
 				EditorSettings::get_singleton()->set_project_metadata("dialog_bounds", "editor_settings", Rect2(get_position(), get_size()));
 				set_process_shortcut_input(false);
 			}
 		} break;
 
 		case NOTIFICATION_READY: {
+			if (_is_in_project_manager()) {
+				return;
+			}
 			EditorUndoRedoManager *undo_redo = EditorUndoRedoManager::get_singleton();
 			undo_redo->get_or_create_history(EditorUndoRedoManager::GLOBAL_HISTORY).undo_redo->set_method_notify_callback(EditorDebuggerNode::_method_changeds, nullptr);
 			undo_redo->get_or_create_history(EditorUndoRedoManager::GLOBAL_HISTORY).undo_redo->set_property_notify_callback(EditorDebuggerNode::_property_changeds, nullptr);
@@ -228,6 +237,10 @@ void EditorSettingsDialog::_event_config_confirmed() {
 	} else {
 		_update_shortcut_events(current_edited_identifier, current_events);
 	}
+}
+
+bool EditorSettingsDialog::_is_in_project_manager() const {
+	return !ProjectSettings::get_singleton()->is_project_loaded();
 }
 
 void EditorSettingsDialog::_update_builtin_action(const String &p_name, const Array &p_events) {
@@ -680,8 +693,7 @@ void EditorSettingsDialog::_focus_current_search_box() {
 }
 
 void EditorSettingsDialog::_editor_restart() {
-	EditorNode::get_singleton()->save_all_scenes();
-	EditorNode::get_singleton()->restart_editor();
+	emit_signal("restart_requested");
 }
 
 void EditorSettingsDialog::_editor_restart_request() {
@@ -695,6 +707,8 @@ void EditorSettingsDialog::_editor_restart_close() {
 void EditorSettingsDialog::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("_update_shortcuts"), &EditorSettingsDialog::_update_shortcuts);
 	ClassDB::bind_method(D_METHOD("_settings_changed"), &EditorSettingsDialog::_settings_changed);
+
+	ADD_SIGNAL(MethodInfo("restart_requested"));
 }
 
 EditorSettingsDialog::EditorSettingsDialog() {
@@ -737,7 +751,11 @@ EditorSettingsDialog::EditorSettingsDialog() {
 	restart_icon->set_v_size_flags(Control::SIZE_SHRINK_CENTER);
 	restart_hb->add_child(restart_icon);
 	restart_label = memnew(Label);
-	restart_label->set_text(TTR("The editor must be restarted for changes to take effect."));
+	if (_is_in_project_manager()) {
+		restart_label->set_text(TTR("The Project Manager must be restarted for changes to take effect."));
+	} else {
+		restart_label->set_text(TTR("The editor must be restarted for changes to take effect."));
+	}
 	restart_hb->add_child(restart_label);
 	restart_hb->add_spacer();
 	Button *restart_button = memnew(Button);

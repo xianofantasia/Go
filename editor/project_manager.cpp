@@ -41,9 +41,12 @@
 #include "core/os/os.h"
 #include "core/string/translation.h"
 #include "core/version.h"
+#include "editor/editor_help.h"
 #include "editor/editor_paths.h"
+#include "editor/editor_properties.h"
 #include "editor/editor_scale.h"
 #include "editor/editor_settings.h"
+#include "editor/editor_settings_dialog.h"
 #include "editor/editor_string_names.h"
 #include "editor/editor_themes.h"
 #include "editor/editor_vcs_interface.h"
@@ -1939,8 +1942,31 @@ void ProjectManager::_notification(int p_what) {
 			queue_redraw();
 		} break;
 
+		case EditorSettings::NOTIFICATION_EDITOR_SETTINGS_CHANGED: {
+			bool theme_changed =
+					EditorSettings::get_singleton()->check_changed_settings_in_group("interface/theme") ||
+					EditorSettings::get_singleton()->check_changed_settings_in_group("interface/editor/font") ||
+					EditorSettings::get_singleton()->check_changed_settings_in_group("interface/editor/main_font") ||
+					EditorSettings::get_singleton()->check_changed_settings_in_group("interface/editor/code_font") ||
+					EditorSettings::get_singleton()->check_changed_settings_in_group("text_editor/theme") ||
+					EditorSettings::get_singleton()->check_changed_settings_in_group("text_editor/help/help") ||
+					EditorSettings::get_singleton()->check_changed_settings_in_group("filesystem/file_dialog/thumbnail_size") ||
+					EditorSettings::get_singleton()->check_changed_settings_in_group("run/output/font_size") ||
+					EditorSettings::get_singleton()->check_changed_settings_in_group("interface/touchscreen/increase_scrollbar_touch_area") ||
+					EditorSettings::get_singleton()->check_changed_settings_in_group("interface/touchscreen/scale_gizmo_handles");
+
+			if (!theme_changed) {
+				break;
+			}
+			[[fallthrough]];
+		}
 		case NOTIFICATION_ENTER_TREE: {
 			Engine::get_singleton()->set_editor_hint(false);
+
+			Ref<Theme> theme = create_custom_theme();
+			DisplayServer::set_early_window_clear_color_override(true, theme->get_color(SNAME("background"), EditorStringName(Editor)));
+
+			set_theme(theme);
 		} break;
 
 		case NOTIFICATION_THEME_CHANGED: {
@@ -2598,6 +2624,24 @@ void ProjectManager::_erase_missing_projects_confirm() {
 	_update_project_buttons();
 }
 
+void ProjectManager::_show_editor_settings() {
+	if (!editor_settings_dialog) {
+		EditorHelp::generate_doc();
+
+		Ref<EditorInspectorDefaultPlugin> eidp;
+		eidp.instantiate();
+		EditorInspector::add_inspector_plugin(eidp);
+
+		EditorPropertyNameProcessor *epnp = memnew(EditorPropertyNameProcessor);
+		add_child(epnp);
+
+		editor_settings_dialog = memnew(EditorSettingsDialog);
+		add_child(editor_settings_dialog);
+		editor_settings_dialog->connect("restart_requested", callable_mp(this, &ProjectManager::_restart_confirm));
+	}
+	editor_settings_dialog->popup_edit_settings();
+}
+
 void ProjectManager::_erase_project() {
 	const HashSet<String> &selected_list = _project_list->get_selected_project_keys();
 
@@ -2623,6 +2667,10 @@ void ProjectManager::_erase_missing_projects() {
 }
 
 void ProjectManager::_show_about() {
+	if (!about) {
+		about = memnew(EditorAbout);
+		add_child(about);
+	}
 	about->popup_centered(Size2(780, 500) * EDSCALE);
 }
 
@@ -2845,10 +2893,6 @@ ProjectManager::ProjectManager() {
 	}
 
 	EditorColorMap::create();
-	Ref<Theme> theme = create_custom_theme();
-	DisplayServer::set_early_window_clear_color_override(true, theme->get_color(SNAME("background"), EditorStringName(Editor)));
-
-	set_theme(theme);
 	set_anchors_and_offsets_preset(Control::PRESET_FULL_RECT);
 
 	background_panel = memnew(Panel);
@@ -2991,6 +3035,11 @@ ProjectManager::ProjectManager() {
 		tree_vb->add_child(erase_missing_btn);
 
 		tree_vb->add_spacer();
+
+		Button *editor_settings_btn = memnew(Button);
+		editor_settings_btn->set_text(TTR("Editor Settings"));
+		editor_settings_btn->connect("pressed", callable_mp(this, &ProjectManager::_show_editor_settings));
+		tree_vb->add_child(editor_settings_btn);
 
 		about_btn = memnew(Button);
 		about_btn->set_text(TTR("About"));
@@ -3163,9 +3212,6 @@ ProjectManager::ProjectManager() {
 			open_templates->connect("confirmed", callable_mp(this, &ProjectManager::_open_asset_library));
 			add_child(open_templates);
 		}
-
-		about = memnew(EditorAbout);
-		add_child(about);
 
 		_build_icon_type_cache(get_theme());
 	}
