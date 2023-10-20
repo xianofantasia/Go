@@ -733,6 +733,7 @@ public:
 		ClassNode *outer = nullptr;
 		bool extends_used = false;
 		bool onready_used = false;
+		bool is_abstract = false;
 		bool has_static_data = false;
 		bool annotated_static_unload = false;
 		String extends_path;
@@ -839,6 +840,7 @@ public:
 		TypeNode *return_type = nullptr;
 		SuiteNode *body = nullptr;
 		bool is_static = false;
+		bool is_abstract = false;
 		bool is_coroutine = false;
 		Variant rpc_config;
 		MethodInfo info;
@@ -1463,6 +1465,7 @@ private:
 	void clear_unused_annotations();
 	bool tool_annotation(const AnnotationNode *p_annotation, Node *p_target, ClassNode *p_class);
 	bool icon_annotation(const AnnotationNode *p_annotation, Node *p_target, ClassNode *p_class);
+	bool abstract_annotation(const AnnotationNode *p_annotation, Node *p_target, ClassNode *p_class);
 	bool onready_annotation(const AnnotationNode *p_annotation, Node *p_target, ClassNode *p_class);
 	template <PropertyHint t_hint, Variant::Type t_type>
 	bool export_annotations(const AnnotationNode *p_annotation, Node *p_target, ClassNode *p_class);
