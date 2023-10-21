@@ -634,6 +634,13 @@
 				[b]Note:[/b] [method print_orphan_nodes] only works in debug builds. When called in a project exported in release mode, [method print_orphan_nodes] will not print anything.
 			</description>
 		</method>
+		<method name="list_orphan_nodes" qualifiers="static">
+			<return type="TypedArray<Dictionary>" />
+			<description>
+				Returns instance IDs, paths, classes, and scripts of all orphan nodes (nodes outside the [SceneTree]). Used for debugging.
+				[b]Note:[/b] [method list_orphan_nodes] only works in debug builds. When called in a project exported in release mode, [method list_orphan_nodes] will return an empty array.
+			</description>
+		</method>
 		<method name="print_tree">
 			<return type="void" />
 			<description>
