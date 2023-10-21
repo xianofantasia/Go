@@ -2973,11 +2973,11 @@ static void _print_orphan_nodes_routine(Object *p_obj) {
 	} else {
 		path = String(p->get_name()) + "/" + p->get_path_to(n);
 	}
-    
+
 	String source;
 	Variant script = n->get_script();
 	if (!script.is_null()) {
-		Resource* obj = Object::cast_to<Resource>(script);
+		Resource *obj = Object::cast_to<Resource>(script);
 		source = obj->get_path();
 	} else {
 		source = "";
