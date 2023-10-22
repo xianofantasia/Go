@@ -401,6 +401,13 @@
 				Similar to [method get_node], but does not log an error if [param path] does not point to a valid [Node].
 			</description>
 		</method>
+		<method name="get_orphan_node_ids" qualifiers="static">
+			<return type="int[]" />
+			<description>
+				Returns object IDs of all orphan nodes (nodes outside the [SceneTree]). Used for debugging.
+				[b]Note:[/b] [method list_orphan_nodes] only works in debug builds. When called in a project exported in release mode, [method get_orphan_node_ids] will return an empty array.
+			</description>
+		</method>
 		<method name="get_parent" qualifiers="const">
 			<return type="Node" />
 			<description>
@@ -632,13 +639,6 @@
 			<description>
 				Prints all orphan nodes (nodes outside the [SceneTree]). Used for debugging.
 				[b]Note:[/b] [method print_orphan_nodes] only works in debug builds. When called in a project exported in release mode, [method print_orphan_nodes] will not print anything.
-			</description>
-		</method>
-		<method name="list_orphan_nodes" qualifiers="static">
-			<return type="Dictionary[]" />
-			<description>
-				Returns instance IDs, paths, classes, and scripts of all orphan nodes (nodes outside the [SceneTree]). Used for debugging.
-				[b]Note:[/b] [method list_orphan_nodes] only works in debug builds. When called in a project exported in release mode, [method list_orphan_nodes] will return an empty array.
 			</description>
 		</method>
 		<method name="print_tree">

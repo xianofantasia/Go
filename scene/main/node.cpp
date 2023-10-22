@@ -3008,8 +3008,8 @@ void Node::print_orphan_nodes() {
 	_print_orphan_nodes_map.clear();
 #endif
 }
-TypedArray<Dictionary> Node::list_orphan_nodes() {
-	TypedArray<Dictionary> ret;
+TypedArray<int> Node::get_orphan_node_ids() {
+	TypedArray<int> ret;
 #ifdef DEBUG_ENABLED
 	// Make sure it's empty.
 	_print_orphan_nodes_map.clear();
@@ -3018,12 +3018,7 @@ TypedArray<Dictionary> Node::list_orphan_nodes() {
 	ObjectDB::debug_objects(_print_orphan_nodes_routine);
 
 	for (const KeyValue<ObjectID, List<String>> &E : _print_orphan_nodes_map) {
-		Dictionary dict;
-		dict["instance_id"] = E.key;
-		dict["path"] = E.value[0];
-		dict["class"] = E.value[1];
-		dict["script"] = E.value[2];
-		ret.push_back(dict);
+		ret.push_back(E.key);
 	}
 
 	// Flush it after use.
@@ -3295,7 +3290,7 @@ void Node::_bind_methods() {
 	GLOBAL_DEF(PropertyInfo(Variant::INT, "editor/naming/node_name_casing", PROPERTY_HINT_ENUM, "PascalCase,camelCase,snake_case"), NAME_CASING_PASCAL_CASE);
 
 	ClassDB::bind_static_method("Node", D_METHOD("print_orphan_nodes"), &Node::print_orphan_nodes);
-	ClassDB::bind_static_method("Node", D_METHOD("list_orphan_nodes"), &Node::list_orphan_nodes);
+	ClassDB::bind_static_method("Node", D_METHOD("get_orphan_node_ids"), &Node::get_orphan_node_ids);
 	ClassDB::bind_method(D_METHOD("add_sibling", "sibling", "force_readable_name"), &Node::add_sibling, DEFVAL(false));
 
 	ClassDB::bind_method(D_METHOD("set_name", "name"), &Node::set_name);
