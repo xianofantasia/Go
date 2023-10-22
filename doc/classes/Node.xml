@@ -405,7 +405,7 @@
 			<return type="int[]" />
 			<description>
 				Returns object IDs of all orphan nodes (nodes outside the [SceneTree]). Used for debugging.
-				[b]Note:[/b] [method list_orphan_nodes] only works in debug builds. When called in a project exported in release mode, [method get_orphan_node_ids] will return an empty array.
+				[b]Note:[/b] [method get_orphan_node_ids] only works in debug builds. When called in a project exported in release mode, [method get_orphan_node_ids] will return an empty array.
 			</description>
 		</method>
 		<method name="get_parent" qualifiers="const">
