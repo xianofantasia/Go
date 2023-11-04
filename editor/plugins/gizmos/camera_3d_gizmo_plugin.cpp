@@ -256,7 +256,7 @@ void Camera3DGizmoPlugin::redraw(EditorNode3DGizmo *p_gizmo) {
 
 		case Camera3D::PROJECTION_CUSTOM: {
 			// Show Nothing
-		}
+		} break;
 	}
 
 #undef ADD_TRIANGLE
