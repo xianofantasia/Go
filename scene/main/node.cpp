@@ -2484,7 +2484,7 @@ Node *Node::_duplicate(int p_flags, HashMap<const Node *, Node *> *r_duplimap) c
 	StringName script_property_name = CoreStringNames::get_singleton()->_script;
 
 	List<const Node *> hidden_roots;
-	List<const Node *> node_tree;
+	List<const Node *> node_tree; // Nodes in the tree whose properties need to be copied.
 	node_tree.push_front(this);
 
 	if (instantiated) {
@@ -2504,6 +2504,8 @@ Node *Node::_duplicate(int p_flags, HashMap<const Node *, Node *> *r_duplimap) c
 						hidden_roots.push_back(descendant);
 					}
 					continue;
+				} else if (!descendant->data.owner->data.editable_instance) {
+					continue;
 				}
 
 				node_tree.push_back(descendant);
@@ -2514,6 +2516,8 @@ Node *Node::_duplicate(int p_flags, HashMap<const Node *, Node *> *r_duplimap) c
 			}
 		}
 	}
+
+	HashMap<Node *, HashMap<Ref<Resource>, Ref<Resource>>> resources_local_to_sub_scene; // Record the mappings in sub-scenes.
 
 	for (List<const Node *>::Element *N = node_tree.front(); N; N = N->next()) {
 		Node *current_node = node->get_node(get_path_to(N->get()));
@@ -2541,15 +2545,22 @@ Node *Node::_duplicate(int p_flags, HashMap<const Node *, Node *> *r_duplimap) c
 
 			Variant value = N->get()->get(name).duplicate(true);
 
-			if (E.usage & PROPERTY_USAGE_ALWAYS_DUPLICATE) {
-				Resource *res = Object::cast_to<Resource>(value);
-				if (res) { // Duplicate only if it's a resource
-					current_node->set(name, res->duplicate());
+			Ref<Resource> res = value;
+			if (res.is_valid()) { // Duplicate only if it's a resource.
+				if (instantiated && res->is_local_to_scene()) {
+					Node *local_scene = current_node->get_scene_file_path().is_empty() ? current_node->data.owner : current_node;
+					value = SceneState::get_remap_resource(res, resources_local_to_sub_scene, current_node->get(name), local_scene);
+				} else if (E.usage & PROPERTY_USAGE_ALWAYS_DUPLICATE) {
+					value = res->duplicate();
 				}
-
-			} else {
-				current_node->set(name, value);
 			}
+			current_node->set(name, value);
+		}
+	}
+
+	for (KeyValue<Node *, HashMap<Ref<Resource>, Ref<Resource>>> &E : resources_local_to_sub_scene) {
+		for (KeyValue<Ref<Resource>, Ref<Resource>> &R : E.value) {
+			R.value->setup_local_to_scene(); // Setup may be required for the resource to work properly.
 		}
 	}
 
