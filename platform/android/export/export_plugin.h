@@ -101,16 +101,16 @@ class EditorExportPlatformAndroid : public EditorExportPlatform {
 	static void _check_for_changes_poll_thread(void *ud);
 #endif
 
-	String get_project_name(const String &p_name) const;
+	String get_project_name(const Ref<EditorExportPreset> &p_preset, const String &p_name) const;
 
-	String get_package_name(const String &p_package) const;
+	String get_package_name(const Ref<EditorExportPreset> &p_preset, const String &p_package) const;
 
-	String get_valid_basename() const;
+	String get_valid_basename(const Ref<EditorExportPreset> &p_preset) const;
 
 	String get_assets_directory(const Ref<EditorExportPreset> &p_preset, int p_export_format) const;
 
-	bool is_package_name_valid(const String &p_package, String *r_error = nullptr) const;
-	bool is_project_name_valid() const;
+	bool is_package_name_valid(const Ref<EditorExportPreset> &p_preset, const String &p_package, String *r_error = nullptr) const;
+	bool is_project_name_valid(const Ref<EditorExportPreset> &p_preset) const;
 
 	static bool _should_compress_asset(const String &p_path, const Vector<uint8_t> &p_data);
 
@@ -170,7 +170,7 @@ class EditorExportPlatformAndroid : public EditorExportPlatform {
 
 	void _process_launcher_icons(const String &p_file_name, const Ref<Image> &p_source_image, int dimension, Vector<uint8_t> &p_data);
 
-	String load_splash_refs(Ref<Image> &splash_image, Ref<Image> &splash_bg_color_image);
+	String load_splash_refs(const Ref<EditorExportPreset> &p_preset, Ref<Image> &splash_image, Ref<Image> &splash_bg_color_image);
 
 	void load_icon_refs(const Ref<EditorExportPreset> &p_preset, Ref<Image> &icon, Ref<Image> &foreground, Ref<Image> &background);
 
@@ -188,7 +188,7 @@ class EditorExportPlatformAndroid : public EditorExportPlatform {
 
 	static Vector<ABI> get_enabled_abis(const Ref<EditorExportPreset> &p_preset);
 
-	static bool _uses_vulkan();
+	bool _uses_vulkan(const Ref<EditorExportPreset> &p_preset) const;
 
 public:
 	typedef Error (*EditorExportSaveFunction)(void *p_userdata, const String &p_path, const Vector<uint8_t> &p_data, int p_file, int p_total, const Vector<String> &p_enc_in_filters, const Vector<String> &p_enc_ex_filters, const Vector<uint8_t> &p_key);

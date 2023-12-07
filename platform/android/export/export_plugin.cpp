@@ -34,7 +34,6 @@
 #include "logo_svg.gen.h"
 #include "run_icon_svg.gen.h"
 
-#include "core/config/project_settings.h"
 #include "core/io/dir_access.h"
 #include "core/io/file_access.h"
 #include "core/io/image_loader.h"
@@ -425,12 +424,12 @@ void EditorExportPlatformAndroid::_check_for_changes_poll_thread(void *ud) {
 }
 #endif
 
-String EditorExportPlatformAndroid::get_project_name(const String &p_name) const {
+String EditorExportPlatformAndroid::get_project_name(const Ref<EditorExportPreset> &p_preset, const String &p_name) const {
 	String aname;
 	if (!p_name.is_empty()) {
 		aname = p_name;
 	} else {
-		aname = GLOBAL_GET("application/config/name");
+		aname = get_project_setting(p_preset, "application/config/name");
 	}
 
 	if (aname.is_empty()) {
@@ -440,17 +439,17 @@ String EditorExportPlatformAndroid::get_project_name(const String &p_name) const
 	return aname;
 }
 
-String EditorExportPlatformAndroid::get_package_name(const String &p_package) const {
+String EditorExportPlatformAndroid::get_package_name(const Ref<EditorExportPreset> &p_preset, const String &p_package) const {
 	String pname = p_package;
-	String name = get_valid_basename();
+	String name = get_valid_basename(p_preset);
 	pname = pname.replace("$genname", name);
 	return pname;
 }
 
 // Returns the project name without invalid characters
 // or the "noname" string if all characters are invalid.
-String EditorExportPlatformAndroid::get_valid_basename() const {
-	String basename = GLOBAL_GET("application/config/name");
+String EditorExportPlatformAndroid::get_valid_basename(const Ref<EditorExportPreset> &p_preset) const {
+	String basename = get_project_setting(p_preset, "application/config/name");
 	basename = basename.to_lower();
 
 	String name;
@@ -477,8 +476,8 @@ String EditorExportPlatformAndroid::get_assets_directory(const Ref<EditorExportP
 	return p_export_format == EXPORT_FORMAT_AAB ? AAB_ASSETS_DIRECTORY : APK_ASSETS_DIRECTORY;
 }
 
-bool EditorExportPlatformAndroid::is_package_name_valid(const String &p_package, String *r_error) const {
-	String pname = get_package_name(p_package);
+bool EditorExportPlatformAndroid::is_package_name_valid(const Ref<EditorExportPreset> &p_preset, const String &p_package, String *r_error) const {
+	String pname = get_package_name(p_preset, p_package);
 
 	if (pname.length() == 0) {
 		if (r_error) {
@@ -537,7 +536,7 @@ bool EditorExportPlatformAndroid::is_package_name_valid(const String &p_package,
 		return false;
 	}
 
-	if (p_package.find("$genname") >= 0 && !is_project_name_valid()) {
+	if (p_package.find("$genname") >= 0 && !is_project_name_valid(p_preset)) {
 		if (r_error) {
 			*r_error = TTR("The project name does not meet the requirement for the package name format. Please explicitly specify the package name.");
 		}
@@ -547,12 +546,12 @@ bool EditorExportPlatformAndroid::is_package_name_valid(const String &p_package,
 	return true;
 }
 
-bool EditorExportPlatformAndroid::is_project_name_valid() const {
+bool EditorExportPlatformAndroid::is_project_name_valid(const Ref<EditorExportPreset> &p_preset) const {
 	// Get the original project name and convert to lowercase.
-	String basename = GLOBAL_GET("application/config/name");
+	String basename = get_project_setting(p_preset, "application/config/name");
 	basename = basename.to_lower();
 	// Check if there are invalid characters.
-	if (basename != get_valid_basename()) {
+	if (basename != get_valid_basename(p_preset)) {
 		return false;
 	}
 	return true;
@@ -806,9 +805,9 @@ bool EditorExportPlatformAndroid::_has_manage_external_storage_permission(const 
 	return p_permissions.find("android.permission.MANAGE_EXTERNAL_STORAGE") != -1;
 }
 
-bool EditorExportPlatformAndroid::_uses_vulkan() {
-	String current_renderer = GLOBAL_GET("rendering/renderer/rendering_method.mobile");
-	bool uses_vulkan = (current_renderer == "forward_plus" || current_renderer == "mobile") && GLOBAL_GET("rendering/rendering_device/driver.android") == "vulkan";
+bool EditorExportPlatformAndroid::_uses_vulkan(const Ref<EditorExportPreset> &p_preset) const {
+	String current_renderer = get_project_setting(p_preset, "rendering/renderer/rendering_method.mobile");
+	bool uses_vulkan = (current_renderer == "forward_plus" || current_renderer == "mobile") && get_project_setting(p_preset, "rendering/rendering_device/driver.android") == "vulkan";
 	return uses_vulkan;
 }
 
@@ -856,7 +855,7 @@ void EditorExportPlatformAndroid::_write_tmp_manifest(const Ref<EditorExportPres
 		}
 	}
 
-	if (_uses_vulkan()) {
+	if (_uses_vulkan(p_preset)) {
 		manifest_text += "    <uses-feature tools:node=\"replace\" android:name=\"android.hardware.vulkan.level\" android:required=\"false\" android:version=\"1\" />\n";
 		manifest_text += "    <uses-feature tools:node=\"replace\" android:name=\"android.hardware.vulkan.version\" android:required=\"true\" android:version=\"0x400003\" />\n";
 	}
@@ -910,7 +909,7 @@ void EditorExportPlatformAndroid::_fix_manifest(const Ref<EditorExportPreset> &p
 	String package_name = p_preset->get("package/unique_name");
 
 	const int screen_orientation =
-			_get_android_orientation_value(DisplayServer::ScreenOrientation(int(GLOBAL_GET("display/window/handheld/orientation"))));
+			_get_android_orientation_value(DisplayServer::ScreenOrientation(int(get_project_setting(p_preset, "display/window/handheld/orientation"))));
 
 	bool screen_support_small = p_preset->get("screen/support_small");
 	bool screen_support_normal = p_preset->get("screen/support_normal");
@@ -921,7 +920,7 @@ void EditorExportPlatformAndroid::_fix_manifest(const Ref<EditorExportPreset> &p
 	int app_category = p_preset->get("package/app_category");
 	bool retain_data_on_uninstall = p_preset->get("package/retain_data_on_uninstall");
 	bool exclude_from_recents = p_preset->get("package/exclude_from_recents");
-	bool is_resizeable = bool(GLOBAL_GET("display/window/size/resizable"));
+	bool is_resizeable = bool(get_project_setting(p_preset, "display/window/size/resizable"));
 
 	Vector<String> perms;
 	// Write permissions into the perms variable.
@@ -994,7 +993,7 @@ void EditorExportPlatformAndroid::_fix_manifest(const Ref<EditorExportPreset> &p
 
 					//replace project information
 					if (tname == "manifest" && attrname == "package") {
-						string_table.write[attr_value] = get_package_name(package_name);
+						string_table.write[attr_value] = get_package_name(p_preset, package_name);
 					}
 
 					if (tname == "manifest" && attrname == "versionCode") {
@@ -1042,7 +1041,7 @@ void EditorExportPlatformAndroid::_fix_manifest(const Ref<EditorExportPreset> &p
 					}
 
 					if (tname == "provider" && attrname == "authorities") {
-						string_table.write[attr_value] = get_package_name(package_name) + String(".fileprovider");
+						string_table.write[attr_value] = get_package_name(p_preset, package_name) + String(".fileprovider");
 					}
 
 					if (tname == "supports-screens") {
@@ -1074,7 +1073,7 @@ void EditorExportPlatformAndroid::_fix_manifest(const Ref<EditorExportPreset> &p
 					Vector<bool> feature_required_list;
 					Vector<int> feature_versions;
 
-					if (_uses_vulkan()) {
+					if (_uses_vulkan(p_preset)) {
 						// Require vulkan hardware level 1 support
 						feature_names.push_back("android.hardware.vulkan.level");
 						feature_required_list.push_back(false);
@@ -1430,7 +1429,7 @@ void EditorExportPlatformAndroid::_fix_resources(const Ref<EditorExportPreset> &
 	Vector<String> string_table;
 
 	String package_name = p_preset->get("package/name");
-	Dictionary appnames = GLOBAL_GET("application/config/name_localized");
+	Dictionary appnames = get_project_setting(p_preset, "application/config/name_localized");
 
 	for (uint32_t i = 0; i < string_count; i++) {
 		uint32_t offset = decode_uint32(&r_manifest[string_table_begins + i * 4]);
@@ -1441,14 +1440,14 @@ void EditorExportPlatformAndroid::_fix_resources(const Ref<EditorExportPreset> &
 		if (str.begins_with("godot-project-name")) {
 			if (str == "godot-project-name") {
 				//project name
-				str = get_project_name(package_name);
+				str = get_project_name(p_preset, package_name);
 
 			} else {
 				String lang = str.substr(str.rfind("-") + 1, str.length()).replace("-", "_");
 				if (appnames.has(lang)) {
 					str = appnames[lang];
 				} else {
-					str = get_project_name(package_name);
+					str = get_project_name(p_preset, package_name);
 				}
 			}
 		}
@@ -1539,11 +1538,11 @@ void EditorExportPlatformAndroid::_process_launcher_icons(const String &p_file_n
 	}
 }
 
-String EditorExportPlatformAndroid::load_splash_refs(Ref<Image> &splash_image, Ref<Image> &splash_bg_color_image) {
-	bool scale_splash = GLOBAL_GET("application/boot_splash/fullsize");
-	bool apply_filter = GLOBAL_GET("application/boot_splash/use_filter");
-	bool show_splash_image = GLOBAL_GET("application/boot_splash/show_image");
-	String project_splash_path = GLOBAL_GET("application/boot_splash/image");
+String EditorExportPlatformAndroid::load_splash_refs(const Ref<EditorExportPreset> &p_preset, Ref<Image> &splash_image, Ref<Image> &splash_bg_color_image) {
+	bool scale_splash = get_project_setting(p_preset, "application/boot_splash/fullsize");
+	bool apply_filter = get_project_setting(p_preset, "application/boot_splash/use_filter");
+	bool show_splash_image = get_project_setting(p_preset, "application/boot_splash/show_image");
+	String project_splash_path = get_project_setting(p_preset, "application/boot_splash/image");
 
 	// Setup the splash bg color.
 	bool bg_color_valid = false;
@@ -1577,7 +1576,7 @@ String EditorExportPlatformAndroid::load_splash_refs(Ref<Image> &splash_image, R
 	}
 
 	if (scale_splash) {
-		Size2 screen_size = Size2(GLOBAL_GET("display/window/size/viewport_width"), GLOBAL_GET("display/window/size/viewport_height"));
+		Size2 screen_size = Size2(get_project_setting(p_preset, "display/window/size/viewport_width"), get_project_setting(p_preset, "display/window/size/viewport_height"));
 		int width, height;
 		if (screen_size.width > screen_size.height) {
 			// scale horizontally
@@ -1601,7 +1600,7 @@ String EditorExportPlatformAndroid::load_splash_refs(Ref<Image> &splash_image, R
 }
 
 void EditorExportPlatformAndroid::load_icon_refs(const Ref<EditorExportPreset> &p_preset, Ref<Image> &icon, Ref<Image> &foreground, Ref<Image> &background) {
-	String project_icon_path = GLOBAL_GET("application/config/icon");
+	String project_icon_path = get_project_setting(p_preset, "application/config/icon");
 
 	icon.instantiate();
 	foreground.instantiate();
@@ -1732,7 +1731,7 @@ String EditorExportPlatformAndroid::get_export_option_warning(const EditorExport
 			String pn = p_preset->get("package/unique_name");
 			String pn_err;
 
-			if (!is_package_name_valid(pn, &pn_err)) {
+			if (!is_package_name_valid(Ref<EditorExportPreset>(p_preset), pn, &pn_err)) {
 				return TTR("Invalid package name:") + " " + pn_err;
 			}
 		} else if (p_name == "gradle_build/use_gradle_build") {
@@ -2002,7 +2001,7 @@ Error EditorExportPlatformAndroid::run(const Ref<EditorExportPreset> &p_preset, 
 		args.push_back("-s");
 		args.push_back(devices[p_device].id);
 		args.push_back("uninstall");
-		args.push_back(get_package_name(package_name));
+		args.push_back(get_package_name(p_preset, package_name));
 
 		output.clear();
 		err = OS::get_singleton()->execute(adb, args, &output, &rv, true);
@@ -2100,7 +2099,7 @@ Error EditorExportPlatformAndroid::run(const Ref<EditorExportPreset> &p_preset, 
 	args.push_back("-a");
 	args.push_back("android.intent.action.MAIN");
 	args.push_back("-n");
-	args.push_back(get_package_name(package_name) + "/com.godot.game.GodotApp");
+	args.push_back(get_package_name(p_preset, package_name) + "/com.godot.game.GodotApp");
 
 	output.clear();
 	err = OS::get_singleton()->execute(adb, args, &output, &rv, true);
@@ -2433,14 +2432,14 @@ bool EditorExportPlatformAndroid::has_valid_project_configuration(const Ref<Edit
 		}
 	}
 
-	String current_renderer = GLOBAL_GET("rendering/renderer/rendering_method.mobile");
+	String current_renderer = get_project_setting(p_preset, "rendering/renderer/rendering_method.mobile");
 	if (current_renderer == "forward_plus") {
 		// Warning only, so don't override `valid`.
 		err += vformat(TTR("The \"%s\" renderer is designed for Desktop devices, and is not suitable for Android devices."), current_renderer);
 		err += "\n";
 	}
 
-	if (_uses_vulkan() && min_sdk_int < VULKAN_MIN_SDK_VERSION) {
+	if (_uses_vulkan(p_preset) && min_sdk_int < VULKAN_MIN_SDK_VERSION) {
 		// Warning only, so don't override `valid`.
 		err += vformat(TTR("\"Min SDK\" should be greater or equal to %d for the \"%s\" renderer."), VULKAN_MIN_SDK_VERSION, current_renderer);
 		err += "\n";
@@ -2460,7 +2459,7 @@ List<String> EditorExportPlatformAndroid::get_binary_extensions(const Ref<Editor
 String EditorExportPlatformAndroid::get_apk_expansion_fullpath(const Ref<EditorExportPreset> &p_preset, const String &p_path) {
 	int version_code = p_preset->get("version/code");
 	String package_name = p_preset->get("package/unique_name");
-	String apk_file_name = "main." + itos(version_code) + "." + get_package_name(package_name) + ".obb";
+	String apk_file_name = "main." + itos(version_code) + "." + get_package_name(p_preset, package_name) + ".obb";
 	String fullpath = p_path.get_base_dir().path_join(apk_file_name);
 	return fullpath;
 }
@@ -2806,7 +2805,7 @@ Error EditorExportPlatformAndroid::export_project_helper(const Ref<EditorExportP
 
 	Ref<Image> splash_image;
 	Ref<Image> splash_bg_color_image;
-	String processed_splash_config_xml = load_splash_refs(splash_image, splash_bg_color_image);
+	String processed_splash_config_xml = load_splash_refs(p_preset, splash_image, splash_bg_color_image);
 
 	Ref<Image> main_image;
 	Ref<Image> foreground;
@@ -2860,8 +2859,8 @@ Error EditorExportPlatformAndroid::export_project_helper(const Ref<EditorExportP
 		print_verbose("Android sdk path: " + sdk_path);
 
 		// TODO: should we use "package/name" or "application/config/name"?
-		String project_name = get_project_name(p_preset->get("package/name"));
-		err = _create_project_name_strings_files(p_preset, project_name); //project name localization.
+		String project_name = get_project_name(p_preset, p_preset->get("package/name"));
+		err = _create_project_name_strings_files(p_preset, project_name, get_project_setting(p_preset, "application/config/name_localized")); //project name localization.
 		if (err != OK) {
 			add_message(EXPORT_MESSAGE_ERROR, TTR("Export"), TTR("Unable to overwrite res://android/build/res/*.xml files with project name."));
 		}
@@ -2915,7 +2914,7 @@ Error EditorExportPlatformAndroid::export_project_helper(const Ref<EditorExportP
 		String build_path = ProjectSettings::get_singleton()->get_resource_path().path_join("android/build");
 		build_command = build_path.path_join(build_command);
 
-		String package_name = get_package_name(p_preset->get("package/unique_name"));
+		String package_name = get_package_name(p_preset, p_preset->get("package/unique_name"));
 		String version_code = itos(p_preset->get("version/code"));
 		String version_name = p_preset->get_version("version/name");
 		String min_sdk_version = p_preset->get("gradle_build/min_sdk");

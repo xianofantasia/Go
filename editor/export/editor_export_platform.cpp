@@ -831,13 +831,13 @@ String EditorExportPlatform::_get_script_encryption_key(const Ref<EditorExportPr
 	return p_preset->get_script_encryption_key().to_lower();
 }
 
-Vector<String> EditorExportPlatform::get_forced_export_files() {
+Vector<String> EditorExportPlatform::get_forced_export_files(const Ref<EditorExportPreset> &p_preset) {
 	Vector<String> files;
 
 	files.push_back(ProjectSettings::get_singleton()->get_global_class_list_path());
 
-	String icon = GLOBAL_GET("application/config/icon");
-	String splash = GLOBAL_GET("application/boot_splash/image");
+	String icon = get_project_setting(p_preset, "application/config/icon");
+	String splash = get_project_setting(p_preset, "application/boot_splash/image");
 	if (!icon.is_empty() && FileAccess::exists(icon)) {
 		files.push_back(icon);
 	}
@@ -856,7 +856,7 @@ Vector<String> EditorExportPlatform::get_forced_export_files() {
 
 	// Store text server data if it is supported.
 	if (TS->has_feature(TextServer::FEATURE_USE_SUPPORT_DATA)) {
-		bool use_data = GLOBAL_GET("internationalization/locale/include_text_server_data");
+		bool use_data = get_project_setting(p_preset, "internationalization/locale/include_text_server_data");
 		if (use_data) {
 			// Try using user provided data file.
 			if (!TS->get_support_data_filename().is_empty()) {
@@ -917,7 +917,7 @@ Error EditorExportPlatform::export_project_files(const Ref<EditorExportPreset> &
 				continue;
 			}
 
-			String autoload_path = GLOBAL_GET(pi.name);
+			String autoload_path = get_project_setting(p_preset, pi.name);
 
 			if (autoload_path.begins_with("*")) {
 				autoload_path = autoload_path.substr(1);
@@ -1056,7 +1056,7 @@ Error EditorExportPlatform::export_project_files(const Ref<EditorExportPreset> &
 	HashMap<String, FileExportCache> export_cache;
 	String export_base_path = ProjectSettings::get_singleton()->get_project_data_path().path_join("exported/") + itos(custom_resources_hash);
 
-	bool convert_text_to_binary = GLOBAL_GET("editor/export/convert_text_resources_to_binary");
+	bool convert_text_to_binary = get_project_setting(p_preset, "editor/export/convert_text_resources_to_binary");
 
 	if (convert_text_to_binary || !customize_resources_plugins.is_empty() || !customize_scenes_plugins.is_empty()) {
 		// See if we have something to open
@@ -1356,7 +1356,7 @@ Error EditorExportPlatform::export_project_files(const Ref<EditorExportPreset> &
 		}
 	}
 
-	Vector<String> forced_export = get_forced_export_files();
+	Vector<String> forced_export = get_forced_export_files(p_preset);
 	for (int i = 0; i < forced_export.size(); i++) {
 		Vector<uint8_t> array = FileAccess::get_file_as_bytes(forced_export[i]);
 		err = p_func(p_udata, forced_export[i], array, idx, total, enc_in_filters, enc_ex_filters, key);
@@ -1976,6 +1976,35 @@ Error EditorExportPlatform::ssh_push_to_remote(const String &p_host, const Strin
 		return FAILED;
 	}
 	return OK;
+}
+
+Variant EditorExportPlatform::get_project_setting(const Ref<EditorExportPreset> &p_preset, const StringName &p_name) {
+	if (p_preset.is_valid()) {
+		Ref<EditorExportPlatform> platform = p_preset->get_platform();
+
+		List<String> ftr_list;
+		platform->get_platform_features(&ftr_list);
+		platform->get_preset_features(p_preset, &ftr_list);
+
+		Vector<String> features;
+		for (const String &E : ftr_list) {
+			features.push_back(E);
+		}
+
+		if (!p_preset->get_custom_features().is_empty()) {
+			Vector<String> tmp_custom_list = p_preset->get_custom_features().split(",");
+
+			for (int i = 0; i < tmp_custom_list.size(); i++) {
+				String f = tmp_custom_list[i].strip_edges();
+				if (!f.is_empty()) {
+					features.push_back(f);
+				}
+			}
+		}
+		return ProjectSettings::get_singleton()->get_setting_with_override_with_custom_features(p_name, features);
+	} else {
+		return GLOBAL_GET(p_name);
+	}
 }
 
 void EditorExportPlatform::_bind_methods() {

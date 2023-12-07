@@ -212,8 +212,8 @@ Error EditorExportPlatformWindows::export_project(const Ref<EditorExportPreset> 
 	bool embedded = p_preset->get("binary_format/embed_pck");
 
 	String pkg_name;
-	if (String(ProjectSettings::get_singleton()->get("application/config/name")) != "") {
-		pkg_name = String(ProjectSettings::get_singleton()->get("application/config/name"));
+	if (String(get_project_setting(p_preset, "application/config/name")) != "") {
+		pkg_name = String(get_project_setting(p_preset, "application/config/name"));
 	} else {
 		pkg_name = "Unnamed";
 	}
@@ -434,10 +434,10 @@ Error EditorExportPlatformWindows::_rcedit_add_data(const Ref<EditorExportPreset
 	String icon_path;
 	if (p_preset->get("application/icon") != "") {
 		icon_path = p_preset->get("application/icon");
-	} else if (GLOBAL_GET("application/config/windows_native_icon") != "") {
-		icon_path = GLOBAL_GET("application/config/windows_native_icon");
+	} else if (get_project_setting(p_preset, "application/config/windows_native_icon") != "") {
+		icon_path = get_project_setting(p_preset, "application/config/windows_native_icon");
 	} else {
-		icon_path = GLOBAL_GET("application/config/icon");
+		icon_path = get_project_setting(p_preset, "application/config/icon");
 	}
 	icon_path = ProjectSettings::get_singleton()->globalize_path(icon_path);
 

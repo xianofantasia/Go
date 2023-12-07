@@ -191,10 +191,10 @@ String _android_xml_escape(const String &p_string) {
 }
 
 // Creates strings.xml files inside the gradle project for different locales.
-Error _create_project_name_strings_files(const Ref<EditorExportPreset> &p_preset, const String &project_name) {
-	print_verbose("Creating strings resources for supported locales for project " + project_name);
+Error _create_project_name_strings_files(const Ref<EditorExportPreset> &p_preset, const String &p_project_name, const Dictionary &p_appnames) {
+	print_verbose("Creating strings resources for supported locales for project " + p_project_name);
 	// Stores the string into the default values directory.
-	String processed_default_xml_string = vformat(godot_project_name_xml_string, _android_xml_escape(project_name));
+	String processed_default_xml_string = vformat(godot_project_name_xml_string, _android_xml_escape(p_project_name));
 	store_string_at_path("res://android/build/res/values/godot_project_name_string.xml", processed_default_xml_string);
 
 	// Searches the Gradle project res/ directory to find all supported locales
@@ -206,7 +206,6 @@ Error _create_project_name_strings_files(const Ref<EditorExportPreset> &p_preset
 		return ERR_CANT_OPEN;
 	}
 	da->list_dir_begin();
-	Dictionary appnames = GLOBAL_GET("application/config/name_localized");
 	while (true) {
 		String file = da->get_next();
 		if (file.is_empty()) {
@@ -218,8 +217,8 @@ Error _create_project_name_strings_files(const Ref<EditorExportPreset> &p_preset
 		}
 		String locale = file.replace("values-", "").replace("-r", "_");
 		String locale_directory = "res://android/build/res/" + file + "/godot_project_name_string.xml";
-		if (appnames.has(locale)) {
-			String locale_project_name = appnames[locale];
+		if (p_appnames.has(locale)) {
+			String locale_project_name = p_appnames[locale];
 			String processed_xml_string = vformat(godot_project_name_xml_string, _android_xml_escape(locale_project_name));
 			print_verbose("Storing project name for locale " + locale + " under " + locale_directory);
 			store_string_at_path(locale_directory, processed_xml_string);
@@ -255,7 +254,7 @@ String _get_screen_sizes_tag(const Ref<EditorExportPreset> &p_preset) {
 }
 
 String _get_activity_tag(const Ref<EditorExportPlatform> &p_export_platform, const Ref<EditorExportPreset> &p_preset, bool p_debug) {
-	String orientation = _get_android_orientation_label(DisplayServer::ScreenOrientation(int(GLOBAL_GET("display/window/handheld/orientation"))));
+	String orientation = _get_android_orientation_label(DisplayServer::ScreenOrientation(int(p_export_platform->get_project_setting(p_preset, "display/window/handheld/orientation"))));
 	String manifest_activity_text = vformat(
 			"        <activity android:name=\"com.godot.game.GodotApp\" "
 			"tools:replace=\"android:screenOrientation,android:excludeFromRecents,android:resizeableActivity\" "
@@ -265,7 +264,7 @@ String _get_activity_tag(const Ref<EditorExportPlatform> &p_export_platform, con
 			"android:resizeableActivity=\"%s\">\n",
 			bool_to_string(p_preset->get("package/exclude_from_recents")),
 			orientation,
-			bool_to_string(bool(GLOBAL_GET("display/window/size/resizable"))));
+			bool_to_string(bool(p_export_platform->get_project_setting(p_preset, "display/window/size/resizable"))));
 
 	manifest_activity_text += "            <intent-filter>\n"
 							  "                <action android:name=\"android.intent.action.MAIN\" />\n"
