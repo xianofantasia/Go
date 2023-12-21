@@ -5213,7 +5213,7 @@ void GDScriptAnalyzer::is_shadowing(GDScriptParser::IdentifierNode *p_identifier
 	if (p_in_local_scope) {
 		while (base_class != nullptr) {
 			if (base_class->has_member(name)) {
-				bool can_access_member;
+				bool can_access_member = true;
 				if (static_context) {
 					const GDScriptParser::ClassNode::Member member = base_class->get_member(name);
 					switch (member.type) {
@@ -5229,8 +5229,6 @@ void GDScriptAnalyzer::is_shadowing(GDScriptParser::IdentifierNode *p_identifier
 						default:
 							can_access_member = false;
 					}
-				} else {
-					can_access_member = true;
 				}
 				if (can_access_member) {
 					parser->push_warning(p_identifier, GDScriptWarning::SHADOWED_VARIABLE, p_context, p_identifier->name, base_class->get_member(name).get_type_name(), itos(base_class->get_member(name).get_line()));
