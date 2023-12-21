@@ -5213,7 +5213,7 @@ void GDScriptAnalyzer::is_shadowing(GDScriptParser::IdentifierNode *p_identifier
 	if (p_in_local_scope) {
 		while (base_class != nullptr) {
 			if (base_class->has_member(name)) {
-				auto member_is_static = [base_class, name] -> bool {
+				auto member_is_static = [base_class, name]() -> bool {
 					const GDScriptParser::ClassNode::Member member = base_class->get_member(name);
 					switch (member.type) {
 						case GDScriptParser::ClassNode::Member::CONSTANT:
