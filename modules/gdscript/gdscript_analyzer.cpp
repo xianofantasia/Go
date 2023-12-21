@@ -5213,7 +5213,22 @@ void GDScriptAnalyzer::is_shadowing(GDScriptParser::IdentifierNode *p_identifier
 	if (p_in_local_scope) {
 		while (base_class != nullptr) {
 			if (base_class->has_member(name)) {
-				parser->push_warning(p_identifier, GDScriptWarning::SHADOWED_VARIABLE, p_context, p_identifier->name, base_class->get_member(name).get_type_name(), itos(base_class->get_member(name).get_line()));
+				auto member_is_static = [base_class, name] -> bool {
+					const GDScriptParser::ClassNode::Member member = base_class->get_member(name);
+					switch (member.type) {
+						case GDScriptParser::ClassNode::Member::CONSTANT:
+							return true;
+						case GDScriptParser::ClassNode::Member::FUNCTION:
+							return member.function->is_static;
+						case GDScriptParser::ClassNode::Member::VARIABLE:
+							return member.variable->is_static;
+						default:
+							return false;
+					}
+				};
+				if (!static_context || member_is_static()) {
+					parser->push_warning(p_identifier, GDScriptWarning::SHADOWED_VARIABLE, p_context, p_identifier->name, base_class->get_member(name).get_type_name(), itos(base_class->get_member(name).get_line()));
+				}
 				return;
 			}
 			base_class = base_class->base_type.class_type;
