@@ -238,6 +238,7 @@ static _character_accent_pair _character_to_accented[] = {
 Vector<TranslationServer::LocaleScriptInfo> TranslationServer::locale_script_info;
 
 HashMap<String, String> TranslationServer::language_map;
+HashMap<String, String> TranslationServer::native_language_map;
 HashMap<String, String> TranslationServer::script_map;
 HashMap<String, String> TranslationServer::locale_rename_map;
 HashMap<String, String> TranslationServer::country_name_map;
@@ -250,6 +251,7 @@ void TranslationServer::init_locale_info() {
 	int idx = 0;
 	while (language_list[idx][0] != nullptr) {
 		language_map[language_list[idx][0]] = String::utf8(language_list[idx][1]);
+		native_language_map[language_list[idx][0]] = String::utf8(language_list[idx][2]);
 		idx++;
 	}
 
@@ -447,7 +449,7 @@ int TranslationServer::compare_locales(const String &p_locale_a, const String &p
 	}
 }
 
-String TranslationServer::get_locale_name(const String &p_locale) const {
+String TranslationServer::_get_locale_name(const String &p_locale, bool p_native) const {
 	String lang_name, script_name, country_name;
 	Vector<String> locale_elements = standardize_locale(p_locale).split("_");
 	lang_name = locale_elements[0];
@@ -465,7 +467,7 @@ String TranslationServer::get_locale_name(const String &p_locale) const {
 		}
 	}
 
-	String name = language_map[lang_name];
+	String name = p_native ? native_language_map[lang_name] : language_map[lang_name];
 	if (!script_name.is_empty()) {
 		name = name + " (" + script_map[script_name] + ")";
 	}
@@ -473,6 +475,14 @@ String TranslationServer::get_locale_name(const String &p_locale) const {
 		name = name + ", " + country_name_map[country_name];
 	}
 	return name;
+}
+
+String TranslationServer::get_locale_name(const String &p_locale) const {
+	return _get_locale_name(p_locale, false);
+}
+
+String TranslationServer::get_native_locale_name(const String &p_locale) const {
+	return _get_locale_name(p_locale, true);
 }
 
 Vector<String> TranslationServer::get_all_languages() const {
@@ -486,6 +496,16 @@ Vector<String> TranslationServer::get_all_languages() const {
 }
 
 String TranslationServer::get_language_name(const String &p_language) const {
+	return language_map[p_language];
+}
+
+String TranslationServer::get_native_language_name(const String &p_language) const {
+	const String native_language_name = native_language_map[p_language];
+	if (!native_language_name.is_empty()) {
+		return native_language_name;
+	}
+
+	// Not all languages have a native name filled, so return the English language name as a fallback.
 	return language_map[p_language];
 }
 
@@ -993,6 +1013,7 @@ void TranslationServer::_bind_methods() {
 
 	ClassDB::bind_method(D_METHOD("get_all_languages"), &TranslationServer::get_all_languages);
 	ClassDB::bind_method(D_METHOD("get_language_name", "language"), &TranslationServer::get_language_name);
+	ClassDB::bind_method(D_METHOD("get_native_language_name", "language"), &TranslationServer::get_native_language_name);
 
 	ClassDB::bind_method(D_METHOD("get_all_scripts"), &TranslationServer::get_all_scripts);
 	ClassDB::bind_method(D_METHOD("get_script_name", "script"), &TranslationServer::get_script_name);
@@ -1001,6 +1022,7 @@ void TranslationServer::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_country_name", "country"), &TranslationServer::get_country_name);
 
 	ClassDB::bind_method(D_METHOD("get_locale_name", "locale"), &TranslationServer::get_locale_name);
+	ClassDB::bind_method(D_METHOD("get_native_locale_name", "locale"), &TranslationServer::get_native_locale_name);
 
 	ClassDB::bind_method(D_METHOD("translate", "message", "context"), &TranslationServer::translate, DEFVAL(""));
 	ClassDB::bind_method(D_METHOD("translate_plural", "message", "plural_message", "n", "context"), &TranslationServer::translate_plural, DEFVAL(""));
