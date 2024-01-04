@@ -34,6 +34,7 @@
 #include "core/error/error_macros.h"
 #include "core/io/resource_importer.h"
 #include "core/variant/dictionary.h"
+#include "core/variant/typed_array.h"
 #include "scene/3d/importer_mesh_instance_3d.h"
 #include "scene/resources/animation.h"
 #include "scene/resources/box_shape_3d.h"
@@ -60,7 +61,7 @@ protected:
 	GDVIRTUAL0RC(uint32_t, _get_import_flags)
 	GDVIRTUAL0RC(Vector<String>, _get_extensions)
 	GDVIRTUAL3R(Object *, _import_scene, String, uint32_t, Dictionary)
-	GDVIRTUAL1(_get_import_options, String)
+	GDVIRTUAL1R(TypedArray<Dictionary>, _get_import_options, String)
 	GDVIRTUAL3RC(Variant, _get_option_visibility, String, bool, String)
 
 public:
@@ -127,7 +128,7 @@ protected:
 	GDVIRTUAL3RC(Variant, _get_internal_option_visibility, int, bool, String)
 	GDVIRTUAL2RC(Variant, _get_internal_option_update_view_required, int, String)
 	GDVIRTUAL4(_internal_process, int, Node *, Node *, Ref<Resource>)
-	GDVIRTUAL1(_get_import_options, String)
+	GDVIRTUAL1R(TypedArray<Dictionary>, _get_import_options, String)
 	GDVIRTUAL3RC(Variant, _get_option_visibility, String, bool, String)
 	GDVIRTUAL1(_pre_process, Node *)
 	GDVIRTUAL1(_post_process, Node *)
