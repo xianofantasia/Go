@@ -3262,6 +3262,8 @@ uint64_t RenderingDeviceDriverVulkan::limit_get(Limit p_limit) {
 			return limits.maxComputeWorkGroupSize[1];
 		case LIMIT_MAX_COMPUTE_WORKGROUP_SIZE_Z:
 			return limits.maxComputeWorkGroupSize[2];
+		case LIMIT_MAX_COMPUTE_SHARED_MEMORY_SIZE:
+			return limits.maxComputeSharedMemorySize;
 		case LIMIT_MAX_VIEWPORT_DIMENSIONS_X:
 			return limits.maxViewportDimensions[0];
 		case LIMIT_MAX_VIEWPORT_DIMENSIONS_Y:
@@ -3290,8 +3292,12 @@ uint64_t RenderingDeviceDriverVulkan::limit_get(Limit p_limit) {
 			return context->get_vrs_capabilities().texel_size.x;
 		case LIMIT_VRS_TEXEL_HEIGHT:
 			return context->get_vrs_capabilities().texel_size.y;
-		default:
-			ERR_FAIL_V(0);
+		default: {
+#ifdef DEV_ENABLED
+			WARN_PRINT("Returning '0' for unknown limit " + itos(p_limit) + ".");
+#endif
+			return 0;
+		}
 	}
 }
 
