@@ -125,13 +125,11 @@ void initialize_openxr_module(ModuleInitializationLevel p_level) {
 			OpenXRAPI::register_extension_wrapper(memnew(OpenXRML2ControllerExtension));
 			OpenXRAPI::register_extension_wrapper(memnew(OpenXRMetaControllerExtension));
 			OpenXRAPI::register_extension_wrapper(memnew(OpenXREyeGazeInteractionExtension));
+			OpenXRAPI::register_extension_wrapper(memnew(OpenXROverlayExtension));
 
 			// register gated extensions
 			if (GLOBAL_GET("xr/openxr/extensions/hand_tracking")) {
 				OpenXRAPI::register_extension_wrapper(memnew(OpenXRHandTrackingExtension));
-			}
-			if (GLOBAL_GET("xr/openxr/extensions/overlay/enabled")) {
-				OpenXRAPI::register_extension_wrapper(memnew(OpenXROverlayExtension));
 			}
 		}
 

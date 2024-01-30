@@ -150,6 +150,10 @@ public:
 	virtual XRInterface::EnvironmentBlendMode get_environment_blend_mode() const { return XR_ENV_BLEND_MODE_OPAQUE; }
 	virtual bool set_environment_blend_mode(EnvironmentBlendMode mode) { return false; }
 
+	/** overlay */
+	virtual bool is_overlay_supported() { return false; }
+	virtual bool is_overlay_enabled() { return false; }
+
 	XRInterface();
 	~XRInterface();
 
