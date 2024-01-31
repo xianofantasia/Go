@@ -52,11 +52,13 @@
 #include <direct.h>
 #include <knownfolders.h>
 #include <process.h>
+#include <processenv.h>
 #include <psapi.h>
 #include <regstr.h>
 #include <shlobj.h>
 #include <wbemcli.h>
 #include <wincrypt.h>
+#include <winnt.h>
 
 #ifdef DEBUG_ENABLED
 #pragma pack(push, before_imagehlp, 8)
@@ -912,6 +914,14 @@ Error OS_Windows::set_cwd(const String &p_cwd) {
 	}
 
 	return OK;
+}
+
+String OS_Windows::get_cwd() const
+{
+	WCHAR ret[2048];
+	GetCurrentDirectoryW(2048, ret);
+	String cwd = String::utf16((const char16_t *)ret);
+	return cwd;
 }
 
 Vector<String> OS_Windows::get_system_fonts() const {

@@ -699,6 +699,16 @@ Error OS_Unix::set_cwd(const String &p_cwd) {
 
 	return OK;
 }
+String OS_Unix::get_cwd() const
+{
+	String cwd = "";
+	char ret[2048];
+	ERR_FAIL_NULL_V(getcwd(ret, 2048), ERR_BUG);
+	if (cwd.parse_utf8(ret) != OK) {
+		cwd = ret; //no utf8, maybe latin?
+	}
+	return cwd;
+}
 
 bool OS_Unix::has_environment(const String &p_var) const {
 	return getenv(p_var.utf8().get_data()) != nullptr;
