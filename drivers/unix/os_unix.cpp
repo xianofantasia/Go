@@ -699,8 +699,7 @@ Error OS_Unix::set_cwd(const String &p_cwd) {
 
 	return OK;
 }
-String OS_Unix::get_cwd() const
-{
+String OS_Unix::get_cwd() const {
 	String cwd = "";
 	char ret[PATH_MAX];
 	ERR_FAIL_NULL_V(getcwd(ret, PATH_MAX), ERR_BUG);
