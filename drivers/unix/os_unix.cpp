@@ -702,7 +702,7 @@ Error OS_Unix::set_cwd(const String &p_cwd) {
 String OS_Unix::get_cwd() const {
 	String cwd = "";
 	char ret[PATH_MAX];
-	ERR_FAIL_NULL_V(getcwd(ret, PATH_MAX), ERR_BUG);
+	ERR_FAIL_NULL_V(getcwd(ret, PATH_MAX), "");
 	if (cwd.parse_utf8(ret) != OK) {
 		cwd = ret; //no utf8, maybe latin?
 	}
