@@ -916,8 +916,7 @@ Error OS_Windows::set_cwd(const String &p_cwd) {
 	return OK;
 }
 
-String OS_Windows::get_cwd() const
-{
+String OS_Windows::get_cwd() const {
 	WCHAR ret[2048];
 	GetCurrentDirectoryW(2048, ret);
 	String cwd = String::utf16((const char16_t *)ret);
