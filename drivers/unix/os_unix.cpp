@@ -699,12 +699,13 @@ Error OS_Unix::set_cwd(const String &p_cwd) {
 
 	return OK;
 }
+
 String OS_Unix::get_cwd() const {
-	String cwd = "";
+	String cwd;
 	char ret[PATH_MAX];
 	ERR_FAIL_NULL_V(getcwd(ret, PATH_MAX), "");
 	if (cwd.parse_utf8(ret) != OK) {
-		cwd = ret; //no utf8, maybe latin?
+		cwd = ret; // No utf8, maybe latin1?
 	}
 	return cwd;
 }
