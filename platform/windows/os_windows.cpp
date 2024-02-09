@@ -52,13 +52,11 @@
 #include <direct.h>
 #include <knownfolders.h>
 #include <process.h>
-#include <processenv.h>
 #include <psapi.h>
 #include <regstr.h>
 #include <shlobj.h>
 #include <wbemcli.h>
 #include <wincrypt.h>
-#include <winnt.h>
 
 #ifdef DEBUG_ENABLED
 #pragma pack(push, before_imagehlp, 8)
