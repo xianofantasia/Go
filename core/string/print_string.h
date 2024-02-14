@@ -77,6 +77,12 @@ inline void print_line_rich(Variant v) {
 	__print_line_rich(stringify_variants(v));
 }
 
+#ifdef DEBUG_ENABLED
+inline void dump(Variant v) {
+	__print_line_rich(v.dump(0));
+}
+#endif
+
 template <typename... Args>
 void print_line(Variant p_var, Args... p_args) {
 	__print_line(stringify_variants(p_var, p_args...));
