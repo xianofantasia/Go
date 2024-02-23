@@ -399,6 +399,7 @@ void EditorResourcePicker::_edit_menu_cbk(int p_which) {
 			if (edited_resource.is_null()) {
 				return;
 			}
+
 			EditorNode::get_singleton()->save_resource(edited_resource);
 		} break;
 
@@ -406,6 +407,7 @@ void EditorResourcePicker::_edit_menu_cbk(int p_which) {
 			if (edited_resource.is_null()) {
 				return;
 			}
+
 			EditorNode::get_singleton()->save_resource_as(edited_resource);
 		} break;
 
