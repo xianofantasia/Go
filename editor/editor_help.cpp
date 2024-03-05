@@ -197,11 +197,11 @@ void EditorHelp::_class_list_select(const String &p_select) {
 
 void EditorHelp::_class_desc_select(const String &p_select) {
 	if (p_select.begins_with("$")) { // enum
-		String select = p_select.substr(1, p_select.length());
+		String select = p_select.substr(1);
 		String class_name;
 		int rfind = select.rfind(".");
 		if (rfind != -1) {
-			class_name = select.substr(0, rfind);
+			class_name = select.left(rfind);
 			select = select.substr(rfind + 1);
 		} else {
 			class_name = "@GlobalScope";
@@ -209,13 +209,13 @@ void EditorHelp::_class_desc_select(const String &p_select) {
 		emit_signal(SNAME("go_to_help"), "class_enum:" + class_name + ":" + select);
 		return;
 	} else if (p_select.begins_with("#")) {
-		emit_signal(SNAME("go_to_help"), "class_name:" + p_select.substr(1, p_select.length()));
+		emit_signal(SNAME("go_to_help"), "class_name:" + p_select.substr(1));
 		return;
 	} else if (p_select.begins_with("@")) {
 		int tag_end = p_select.find_char(' ');
 
 		String tag = p_select.substr(1, tag_end - 1);
-		String link = p_select.substr(tag_end + 1, p_select.length()).lstrip(" ");
+		String link = p_select.substr(tag_end + 1).lstrip(" ");
 
 		String topic;
 		HashMap<String, int> *table = nullptr;
@@ -284,9 +284,9 @@ void EditorHelp::_class_desc_select(const String &p_select) {
 				}
 			}
 
-			if (link.contains(".")) {
-				int class_end = link.find_char('.');
-				emit_signal(SNAME("go_to_help"), topic + ":" + link.substr(0, class_end) + ":" + link.substr(class_end + 1, link.length()));
+			const int dot_pos = link.rfind(".");
+			if (dot_pos >= 0) {
+				emit_signal(SNAME("go_to_help"), topic + ":" + link.left(dot_pos) + ":" + link.substr(dot_pos + 1));
 			}
 		}
 	} else if (p_select.begins_with("http")) {
@@ -691,10 +691,10 @@ void EditorHelp::_update_method_list(MethodType p_method_type, const Vector<DocD
 
 		String group_prefix;
 		for (int i = 0; i < m.size(); i++) {
-			const String new_prefix = m[i].name.substr(0, 3);
+			const String new_prefix = m[i].name.left(3);
 			bool is_new_group = false;
 
-			if (i < m.size() - 1 && new_prefix == m[i + 1].name.substr(0, 3) && new_prefix != group_prefix) {
+			if (i < m.size() - 1 && new_prefix == m[i + 1].name.left(3) && new_prefix != group_prefix) {
 				is_new_group = i > 0;
 				group_prefix = new_prefix;
 			} else if (!group_prefix.is_empty() && new_prefix != group_prefix) {
@@ -2447,7 +2447,7 @@ static void _add_text_to_rt(const String &p_bbcode, RichTextLabel *p_rt, Control
 		String tag = bbcode.substr(brk_pos + 1, brk_end - brk_pos - 1);
 
 		if (tag.begins_with("/")) {
-			bool tag_ok = tag_stack.size() && tag_stack.front()->get() == tag.substr(1, tag.length());
+			bool tag_ok = tag_stack.size() && tag_stack.front()->get() == tag.substr(1);
 
 			if (!tag_ok) {
 				p_rt->add_text("[");
@@ -2497,8 +2497,8 @@ static void _add_text_to_rt(const String &p_bbcode, RichTextLabel *p_rt, Control
 			}
 		} else if (tag.begins_with("method ") || tag.begins_with("constructor ") || tag.begins_with("operator ") || tag.begins_with("member ") || tag.begins_with("signal ") || tag.begins_with("enum ") || tag.begins_with("constant ") || tag.begins_with("annotation ") || tag.begins_with("theme_item ")) {
 			const int tag_end = tag.find_char(' ');
-			const String link_tag = tag.substr(0, tag_end);
-			const String link_target = tag.substr(tag_end + 1, tag.length()).lstrip(" ");
+			const String link_tag = tag.left(tag_end);
+			const String link_target = tag.substr(tag_end + 1).lstrip(" ");
 
 			// Use monospace font to make clickable references
 			// easier to distinguish from inline code and other text.
@@ -2525,7 +2525,7 @@ static void _add_text_to_rt(const String &p_bbcode, RichTextLabel *p_rt, Control
 
 		} else if (tag.begins_with("param ")) {
 			const int tag_end = tag.find_char(' ');
-			const String param_name = tag.substr(tag_end + 1, tag.length()).lstrip(" ");
+			const String param_name = tag.substr(tag_end + 1).lstrip(" ");
 
 			// Use monospace font with translucent background color to make code easier to distinguish from other text.
 			p_rt->push_font(doc_code_font);
@@ -2549,6 +2549,22 @@ static void _add_text_to_rt(const String &p_bbcode, RichTextLabel *p_rt, Control
 
 			pos = brk_end + 1;
 
+		} else if (!p_class.is_empty() && doc->class_list.has(p_class + "." + tag)) {
+			// Use a monospace font for class reference tags such as [InnerClass].
+
+			p_rt->push_font(doc_code_font);
+			p_rt->push_font_size(doc_code_font_size);
+			p_rt->push_color(type_color);
+			p_rt->push_meta("#" + p_class + "." + tag);
+
+			p_rt->add_text(tag);
+
+			p_rt->pop(); // meta
+			p_rt->pop(); // color
+			p_rt->pop(); // font_size
+			p_rt->pop(); // font
+
+			pos = brk_end + 1;
 		} else if (doc->class_list.has(tag)) {
 			// Use a monospace font for class reference tags such as [Node2D] or [SceneTree].
 
@@ -2556,15 +2572,86 @@ static void _add_text_to_rt(const String &p_bbcode, RichTextLabel *p_rt, Control
 			p_rt->push_font_size(doc_code_font_size);
 			p_rt->push_color(type_color);
 			p_rt->push_meta("#" + tag);
+
 			p_rt->add_text(tag);
 
-			p_rt->pop();
-			p_rt->pop();
-			p_rt->pop(); // Font size
-			p_rt->pop(); // Font
+			p_rt->pop(); // meta
+			p_rt->pop(); // color
+			p_rt->pop(); // font_size
+			p_rt->pop(); // font
 
 			pos = brk_end + 1;
+		} else if (tag.begins_with("Array[")) {
+			// Expected:
+			//   [Array[String]]
+			//   ^ brk_pos    ^ brk_end
+			// Nested types (like `Array[Array[int]]`) are not currently supported.
+			if (brk_end + 1 < bbcode.length() && bbcode[brk_end + 1] == ']') {
+				p_rt->push_font(doc_code_font);
+				p_rt->push_font_size(doc_code_font_size);
+				p_rt->push_color(type_color);
 
+				p_rt->push_meta("#Array");
+				p_rt->add_text("Array");
+				p_rt->pop(); // meta
+
+				p_rt->add_text("[");
+
+				const String elem_type = tag.substr(6); // `len("Array[")`.
+				String elem_type_link;
+
+				if (!p_class.is_empty()) {
+					const String globalized_elem_type = p_class + "." + elem_type;
+					if (doc->class_list.has(globalized_elem_type)) {
+						elem_type_link = "#" + globalized_elem_type;
+					} else {
+						const int dot_pos = globalized_elem_type.rfind(".");
+						if (dot_pos >= 0) {
+							const HashMap<String, DocData::ClassDoc>::ConstIterator E = doc->class_list.find(globalized_elem_type.left(dot_pos));
+							if (E && E->value.enums.has(globalized_elem_type.substr(dot_pos + 1))) {
+								elem_type_link = "$" + globalized_elem_type;
+							}
+						}
+					}
+				}
+				if (elem_type_link.is_empty()) {
+					if (doc->class_list.has(elem_type)) {
+						elem_type_link = "#" + elem_type;
+					} else {
+						const int dot_pos = elem_type.rfind(".");
+						if (dot_pos >= 0) {
+							const HashMap<String, DocData::ClassDoc>::ConstIterator E = doc->class_list.find(elem_type.left(dot_pos));
+							if (E && E->value.enums.has(elem_type.substr(dot_pos + 1))) {
+								elem_type_link = "$" + elem_type;
+							}
+						}
+					}
+				}
+				if (elem_type_link.is_empty() && CoreConstants::is_global_enum(elem_type)) {
+					elem_type_link = "@enum " + elem_type;
+				}
+
+				if (elem_type_link.is_empty()) {
+					p_rt->push_color(Color(type_color, 0.5));
+					p_rt->add_text(elem_type);
+					p_rt->pop(); // color
+				} else {
+					p_rt->push_meta(elem_type_link);
+					p_rt->add_text(elem_type);
+					p_rt->pop(); // meta
+				}
+
+				p_rt->add_text("]");
+
+				p_rt->pop(); // color
+				p_rt->pop(); // font_size
+				p_rt->pop(); // font
+
+				pos = brk_end + 2;
+			} else {
+				p_rt->add_text("["); // Ignore.
+				pos = brk_pos + 1;
+			}
 		} else if (tag == "b") {
 			// Use bold font.
 			p_rt->push_font(doc_bold_font);
@@ -2650,7 +2737,7 @@ static void _add_text_to_rt(const String &p_bbcode, RichTextLabel *p_rt, Control
 			pos = brk_end + 1;
 			tag_stack.push_front(tag);
 		} else if (tag.begins_with("url=")) {
-			String url = tag.substr(4, tag.length());
+			String url = tag.substr(4);
 			p_rt->push_meta(url);
 
 			pos = brk_end + 1;
@@ -2660,13 +2747,13 @@ static void _add_text_to_rt(const String &p_bbcode, RichTextLabel *p_rt, Control
 			int height = 0;
 			bool size_in_percent = false;
 			if (tag.length() > 4) {
-				Vector<String> subtags = tag.substr(4, tag.length()).split(" ");
+				Vector<String> subtags = tag.substr(4).split(" ");
 				HashMap<String, String> bbcode_options;
 				for (int i = 0; i < subtags.size(); i++) {
 					const String &expr = subtags[i];
 					int value_pos = expr.find_char('=');
 					if (value_pos > -1) {
-						bbcode_options[expr.substr(0, value_pos)] = expr.substr(value_pos + 1).unquote();
+						bbcode_options[expr.left(value_pos)] = expr.substr(value_pos + 1).unquote();
 					}
 				}
 				HashMap<String, String>::Iterator width_option = bbcode_options.find("width");
@@ -2696,7 +2783,7 @@ static void _add_text_to_rt(const String &p_bbcode, RichTextLabel *p_rt, Control
 			pos = end;
 			tag_stack.push_front("img");
 		} else if (tag.begins_with("color=")) {
-			String col = tag.substr(6, tag.length());
+			String col = tag.substr(6);
 			Color color = Color::from_string(col, Color());
 			p_rt->push_color(color);
 
@@ -2704,7 +2791,7 @@ static void _add_text_to_rt(const String &p_bbcode, RichTextLabel *p_rt, Control
 			tag_stack.push_front("color");
 
 		} else if (tag.begins_with("font=")) {
-			String fnt = tag.substr(5, tag.length());
+			String fnt = tag.substr(5);
 
 			Ref<Font> font = ResourceLoader::load(base_path.path_join(fnt), "Font");
 			if (font.is_valid()) {
@@ -2717,7 +2804,7 @@ static void _add_text_to_rt(const String &p_bbcode, RichTextLabel *p_rt, Control
 			tag_stack.push_front("font");
 
 		} else {
-			p_rt->add_text("["); // ignore
+			p_rt->add_text("["); // Ignore.
 			pos = brk_pos + 1;
 		}
 	}
@@ -3024,11 +3111,11 @@ void EditorHelpBit::_go_to_help(const String &p_what) {
 
 void EditorHelpBit::_meta_clicked(const String &p_select) {
 	if (p_select.begins_with("$")) { // enum
-		String select = p_select.substr(1, p_select.length());
+		String select = p_select.substr(1);
 		String class_name;
 		int rfind = select.rfind(".");
 		if (rfind != -1) {
-			class_name = select.substr(0, rfind);
+			class_name = select.left(rfind);
 			select = select.substr(rfind + 1);
 		} else {
 			class_name = "@GlobalScope";
@@ -3036,10 +3123,10 @@ void EditorHelpBit::_meta_clicked(const String &p_select) {
 		_go_to_help("class_enum:" + class_name + ":" + select);
 		return;
 	} else if (p_select.begins_with("#")) {
-		_go_to_help("class_name:" + p_select.substr(1, p_select.length()));
+		_go_to_help("class_name:" + p_select.substr(1));
 		return;
 	} else if (p_select.begins_with("@")) {
-		String m = p_select.substr(1, p_select.length());
+		String m = p_select.substr(1);
 
 		if (m.contains(".")) {
 			_go_to_help("class_method:" + m.get_slice(".", 0) + ":" + m.get_slice(".", 0)); // Must go somewhere else.
