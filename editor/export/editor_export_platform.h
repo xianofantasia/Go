@@ -35,6 +35,7 @@ class EditorFileSystemDirectory;
 struct EditorProgress;
 
 #include "core/io/dir_access.h"
+#include "core/io/file_access_pack.h"
 #include "core/io/zip_io.h"
 #include "editor_export_preset.h"
 #include "editor_export_shared_object.h"
@@ -68,6 +69,38 @@ public:
 		String category;
 		String text;
 	};
+
+	static int _get_pad(int p_alignment, int p_n) {
+		int rest = p_n % p_alignment;
+		int pad = 0;
+		if (rest > 0) {
+			pad = p_alignment - rest;
+		}
+
+		return pad;
+	}
+
+	static bool file_requires_encryption(const String &p_path, const Vector<String> &p_enc_in_filters, const Vector<String> &p_enc_ex_filters) {
+		bool encrypted = false;
+		if (PackedData::file_requires_encryption(p_path)) {
+			encrypted = true;
+		} else {
+			for (int i = 0; i < p_enc_in_filters.size(); ++i) {
+				if (p_path.matchn(p_enc_in_filters[i]) || p_path.replace("res://", "").matchn(p_enc_in_filters[i])) {
+					encrypted = true;
+					break;
+				}
+			}
+
+			for (int i = 0; i < p_enc_ex_filters.size(); ++i) {
+				if (p_path.matchn(p_enc_ex_filters[i]) || p_path.replace("res://", "").matchn(p_enc_ex_filters[i])) {
+					encrypted = false;
+					break;
+				}
+			}
+		}
+		return encrypted;
+	}
 
 private:
 	struct SavedData {
@@ -122,7 +155,6 @@ private:
 	bool _is_editable_ancestor(Node *p_root, Node *p_node);
 
 	String _export_customize(const String &p_path, LocalVector<Ref<EditorExportPlugin>> &customize_resources_plugins, LocalVector<Ref<EditorExportPlugin>> &customize_scenes_plugins, HashMap<String, FileExportCache> &export_cache, const String &export_base_path, bool p_force_save);
-	String _get_script_encryption_key(const Ref<EditorExportPreset> &p_preset) const;
 
 protected:
 	struct ExportNotifier {
@@ -144,6 +176,7 @@ protected:
 	Error ssh_push_to_remote(const String &p_host, const String &p_port, const Vector<String> &p_scp_args, const String &p_src_file, const String &p_dst_file) const;
 
 public:
+	String _get_script_encryption_key(const Ref<EditorExportPreset> &p_preset) const;
 	virtual void get_preset_features(const Ref<EditorExportPreset> &p_preset, List<String> *r_features) const = 0;
 
 	struct ExportOption {

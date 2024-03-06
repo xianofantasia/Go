@@ -360,15 +360,6 @@ bool EditorExportPreset::get_enc_pck() const {
 	return enc_pck;
 }
 
-void EditorExportPreset::set_enc_directory(bool p_enabled) {
-	enc_directory = p_enabled;
-	EditorExport::singleton->save_presets();
-}
-
-bool EditorExportPreset::get_enc_directory() const {
-	return enc_directory;
-}
-
 void EditorExportPreset::set_script_encryption_key(const String &p_key) {
 	script_key = p_key;
 	EditorExport::singleton->save_presets();

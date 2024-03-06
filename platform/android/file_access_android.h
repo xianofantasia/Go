@@ -32,6 +32,8 @@
 #define FILE_ACCESS_ANDROID_H
 
 #include "core/io/file_access.h"
+#include "core/io/file_access_encrypted.h"
+#include "core/io/file_access_pack.h"
 
 #include <android/asset_manager.h>
 #include <android/log.h>
@@ -44,6 +46,14 @@ class FileAccessAndroid : public FileAccess {
 	mutable bool eof = false;
 	String absolute_path;
 	String path_src;
+
+#if defined(PCK_ENCRYPTION_ENABLED)
+	static HashMap<String, String> directory;
+	static bool dir_loaded;
+	Ref<FileAccessEncrypted> fae;
+
+	static void _load_encrypted_directory();
+#endif
 
 	void _close();
 
