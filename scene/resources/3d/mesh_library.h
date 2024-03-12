@@ -35,7 +35,7 @@
 #include "core/templates/rb_map.h"
 #include "scene/3d/navigation_region_3d.h"
 #include "scene/resources/mesh.h"
-#include "servers/rendering_server.h"
+#include "servers/rendering/rendering_server.h"
 #include "shape_3d.h"
 
 class MeshLibrary : public Resource {
