@@ -72,6 +72,7 @@ class Window;
 class AudioStreamImportSettingsDialog;
 class AudioStreamPreviewGenerator;
 class BackgroundProgress;
+class CreditsRoll;
 class DependencyEditor;
 class DependencyErrorDialog;
 class DockSplitContainer;
@@ -375,6 +376,7 @@ private:
 	AcceptDialog *accept = nullptr;
 	AcceptDialog *save_accept = nullptr;
 	EditorAbout *about = nullptr;
+	CreditsRoll *credits_roll = nullptr;
 	AcceptDialog *warning = nullptr;
 	EditorPlugin *plugin_to_save = nullptr;
 

@@ -76,6 +76,10 @@ void EditorAbout::_notification(int p_what) {
 	}
 }
 
+void EditorAbout::_bind_methods() {
+	ADD_SIGNAL(MethodInfo("project_manager_clicked"));
+}
+
 void EditorAbout::_license_tree_selected() {
 	TreeItem *selected = _tpl_tree->get_selected();
 	_tpl_text->scroll_to_line(0);
@@ -84,6 +88,10 @@ void EditorAbout::_license_tree_selected() {
 
 void EditorAbout::_version_button_pressed() {
 	DisplayServer::get_singleton()->clipboard_set(version_btn->get_meta(META_TEXT_TO_COPY));
+}
+
+void EditorAbout::_project_manager_clicked() {
+	emit_signal("project_manager_clicked");
 }
 
 void EditorAbout::_item_with_website_selected(int p_id, ItemList *p_il) {
@@ -97,7 +105,7 @@ void EditorAbout::_item_list_resized(ItemList *p_il) {
 	p_il->set_fixed_column_width(p_il->get_size().x / 3.0 - 16 * EDSCALE * 2.5); // Weird. Should be 3.0 and that's it?.
 }
 
-ScrollContainer *EditorAbout::_populate_list(const String &p_name, const List<String> &p_sections, const char *const *const p_src[], const int p_single_column_flags, const bool p_allow_website) {
+ScrollContainer *EditorAbout::_populate_list(const String &p_name, const List<String> &p_sections, const char *const *const p_src[], const int p_single_column_flags, const bool p_allow_website, const String &p_easter_egg_section) {
 	ScrollContainer *sc = memnew(ScrollContainer);
 	sc->set_name(p_name);
 	sc->set_v_size_flags(Control::SIZE_EXPAND);
@@ -112,9 +120,11 @@ ScrollContainer *EditorAbout::_populate_list(const String &p_name, const List<St
 		bool single_column = p_single_column_flags & (1 << i);
 		const char *const *names_ptr = p_src[i];
 		if (*names_ptr) {
+			const String &section_name = p_sections[i];
+
 			Label *lbl = memnew(Label);
 			lbl->set_theme_type_variation("HeaderSmall");
-			lbl->set_text(p_sections[i]);
+			lbl->set_text(section_name);
 			vbc->add_child(lbl);
 
 			ItemList *il = memnew(ItemList);
@@ -156,6 +166,17 @@ ScrollContainer *EditorAbout::_populate_list(const String &p_name, const List<St
 					}
 				}
 			} else {
+				if (section_name == p_easter_egg_section) {
+					// Easter egg :D
+					il->set_focus_mode(Control::FOCUS_CLICK);
+					il->set_mouse_filter(Control::MOUSE_FILTER_PASS);
+
+					il->connect("item_activated", callable_mp(this, &EditorAbout::_project_manager_clicked).unbind(1));
+
+					il->add_theme_style_override("focus", empty_stylebox);
+					il->add_theme_style_override("selected", empty_stylebox);
+				}
+
 				while (*names_ptr) {
 					il->add_item(String::utf8(*names_ptr++), nullptr, false);
 				}
@@ -240,7 +261,8 @@ EditorAbout::EditorAbout() {
 	dev_sections.push_back(TTR("Project Founders"));
 	dev_sections.push_back(TTR("Lead Developer"));
 	// TRANSLATORS: This refers to a job title.
-	dev_sections.push_back(TTR("Project Manager", "Job Title"));
+	const String project_manager = TTR("Project Manager", "Job Title");
+	dev_sections.push_back(project_manager);
 	dev_sections.push_back(TTR("Developers"));
 	const char *const *dev_src[] = {
 		AUTHORS_FOUNDERS,
@@ -248,7 +270,7 @@ EditorAbout::EditorAbout() {
 		AUTHORS_PROJECT_MANAGERS,
 		AUTHORS_DEVELOPERS,
 	};
-	tc->add_child(_populate_list(TTR("Authors"), dev_sections, dev_src, 0b1)); // First section (Project Founders) is always one column.
+	tc->add_child(_populate_list(TTR("Authors"), dev_sections, dev_src, 0b1, false, project_manager)); // First section (Project Founders) is always one column.
 
 	// Donors.
 

@@ -1,5 +1,5 @@
 /**************************************************************************/
-/*  editor_about.h                                                        */
+/*  credits_roll.h                                                        */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                             GODOT ENGINE                               */
@@ -28,51 +28,40 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef EDITOR_ABOUT_H
-#define EDITOR_ABOUT_H
+#ifndef CREDITS_ROLL_H
+#define CREDITS_ROLL_H
 
-#include "scene/gui/dialogs.h"
-#include "scene/gui/item_list.h"
-#include "scene/gui/link_button.h"
-#include "scene/gui/rich_text_label.h"
-#include "scene/gui/scroll_container.h"
-#include "scene/gui/separator.h"
-#include "scene/gui/split_container.h"
-#include "scene/gui/tab_container.h"
-#include "scene/gui/texture_rect.h"
-#include "scene/gui/tree.h"
+#include "scene/gui/popup.h"
 
-/**
- * NOTE: Do not assume the EditorNode singleton to be available in this class' methods.
- * EditorAbout is also used from the project manager where EditorNode isn't initialized.
- */
-class EditorAbout : public AcceptDialog {
-	GDCLASS(EditorAbout, AcceptDialog);
+class Label;
+class VBoxContainer;
 
-	static const String META_TEXT_TO_COPY;
+class CreditsRoll : public Popup {
+	GDCLASS(CreditsRoll, Popup);
 
-private:
-	void _license_tree_selected();
-	void _version_button_pressed();
-	void _project_manager_clicked();
-	void _item_with_website_selected(int p_id, ItemList *p_il);
-	void _item_list_resized(ItemList *p_il);
-	ScrollContainer *_populate_list(const String &p_name, const List<String> &p_sections, const char *const *const p_src[], int p_single_column_flags = 0, bool p_allow_website = false, const String &p_easter_egg_section = String());
+	enum class LabelSize {
+		NORMAL,
+		HEADER,
+		BIG_HEADER,
+	};
 
-	LinkButton *version_btn = nullptr;
-	Tree *_tpl_tree = nullptr;
-	RichTextLabel *license_text_label = nullptr;
-	RichTextLabel *_tpl_text = nullptr;
-	TextureRect *_logo = nullptr;
-	Vector<ItemList *> name_lists;
+	int font_size_normal = 0;
+	int font_size_header = 0;
+	int font_size_big_header = 0;
+
+	VBoxContainer *content = nullptr;
+
+	Label *_create_label(const String &p_with_text, LabelSize p_size = LabelSize::NORMAL);
+	void _create_nothing(int p_size = -1);
+	String _build_string(const char *const *p_from) const;
 
 protected:
 	void _notification(int p_what);
-	static void _bind_methods();
 
 public:
-	EditorAbout();
-	~EditorAbout();
+	void roll_credits();
+
+	CreditsRoll();
 };
 
-#endif // EDITOR_ABOUT_H
+#endif // CREDITS_ROLL_H
