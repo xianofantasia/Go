@@ -194,6 +194,8 @@ void ConnectDialog::_unbind_count_changed(double p_count) {
 			e->set_read_only(p_count > 0);
 		}
 	}
+
+	append_source->set_disabled(p_count > 0);
 }
 
 void ConnectDialog::_method_selected() {
@@ -585,6 +587,10 @@ bool ConnectDialog::get_one_shot() const {
 	return one_shot->is_pressed();
 }
 
+bool ConnectDialog::get_append_source() const {
+	return !append_source->is_disabled() && append_source->is_pressed();
+}
+
 /*
  * Returns true if ConnectDialog is being used to edit an existing connection.
  */
@@ -628,12 +634,13 @@ void ConnectDialog::init(const ConnectionData &p_cd, const PackedStringArray &p_
 
 	bool b_deferred = (p_cd.flags & CONNECT_DEFERRED) == CONNECT_DEFERRED;
 	bool b_oneshot = (p_cd.flags & CONNECT_ONE_SHOT) == CONNECT_ONE_SHOT;
+	bool b_append_source = (p_cd.flags & CONNECT_APPEND_SOURCE_OBJECT) == CONNECT_APPEND_SOURCE_OBJECT;
 
 	deferred->set_pressed(b_deferred);
 	one_shot->set_pressed(b_oneshot);
+	append_source->set_pressed(b_append_source);
 
 	unbind_count->set_max(p_signal_args.size());
-
 	unbind_count->set_value(p_cd.unbinds);
 	_unbind_count_changed(p_cd.unbinds);
 
@@ -855,6 +862,12 @@ ConnectDialog::ConnectDialog() {
 	one_shot->set_tooltip_text(TTR("Disconnects the signal after its first emission."));
 	hbox->add_child(one_shot);
 
+	append_source = memnew(CheckBox);
+	append_source->set_h_size_flags(0);
+	append_source->set_text(TTR("Append source"));
+	append_source->set_tooltip_text(TTR("The source object is automatically sent when the signal is emitted."));
+	vbc_right->add_child(append_source);
+
 	cdbinds = memnew(ConnectDialogBinds);
 
 	error = memnew(AcceptDialog);
@@ -905,7 +918,8 @@ void ConnectionsDock::_make_or_edit_connection() {
 	}
 	bool b_deferred = connect_dialog->get_deferred();
 	bool b_oneshot = connect_dialog->get_one_shot();
-	cd.flags = CONNECT_PERSIST | (b_deferred ? CONNECT_DEFERRED : 0) | (b_oneshot ? CONNECT_ONE_SHOT : 0);
+	bool b_append_source = connect_dialog->get_append_source();
+	cd.flags = CONNECT_PERSIST | (b_deferred ? CONNECT_DEFERRED : 0) | (b_oneshot ? CONNECT_ONE_SHOT : 0) | (b_append_source ? CONNECT_APPEND_SOURCE_OBJECT : 0);
 
 	// If the function is found in target's own script, check the editor setting
 	// to determine if the script should be opened.
@@ -947,6 +961,28 @@ void ConnectionsDock::_make_or_edit_connection() {
 	if (add_script_function_request) {
 		PackedStringArray script_function_args = connect_dialog->get_signal_args();
 		script_function_args.resize(script_function_args.size() - cd.unbinds);
+
+		// Append the source.
+		if (b_append_source) {
+			String class_name = cd.source->get_class();
+			bool found = false;
+
+			Ref<Script> source_script = cd.source->get_script();
+			if (source_script.is_valid()) {
+				found = source_script->has_script_signal(cd.signal);
+			}
+			if (!found) {
+				found = ClassDB::has_signal(class_name, cd.signal, true);
+			}
+
+			while (!found) {
+				class_name = ClassDB::get_parent_class(class_name);
+				found = ClassDB::has_signal(class_name, cd.signal, true);
+			}
+
+			script_function_args.push_back("source:" + class_name);
+		}
+
 		for (int i = 0; i < cd.binds.size(); i++) {
 			script_function_args.push_back("extra_arg_" + itos(i) + ":" + Variant::get_type_name(cd.binds[i].get_type()));
 		}
@@ -1515,6 +1551,9 @@ void ConnectionsDock::update_tree() {
 				}
 				if (cd.flags & CONNECT_ONE_SHOT) {
 					path += " (one-shot)";
+				}
+				if (cd.flags & CONNECT_APPEND_SOURCE_OBJECT) {
+					path += " (source)";
 				}
 				if (cd.unbinds > 0) {
 					path += " unbinds(" + itos(cd.unbinds) + ")";
