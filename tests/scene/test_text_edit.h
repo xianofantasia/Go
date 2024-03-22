@@ -52,12 +52,8 @@ TEST_CASE("[SceneTree][TextEdit] text entry") {
 		SIGNAL_WATCH(text_edit, "lines_edited_from");
 		SIGNAL_WATCH(text_edit, "caret_changed");
 
-		Array args1;
-		args1.push_back(0);
-		args1.push_back(0);
-		Array lines_edited_args;
-		lines_edited_args.push_back(args1);
-		lines_edited_args.push_back(args1.duplicate());
+		Array args1{ 0, 0 };
+		Array lines_edited_args{ args1, args1.duplicate() };
 
 		SUBCASE("[TextEdit] clear and set text") {
 			// "text_changed" should not be emitted on clear / set.
@@ -122,9 +118,9 @@ TEST_CASE("[SceneTree][TextEdit] text entry") {
 			// Clear.
 			text_edit->set_editable(false);
 
-			Array lines_edited_clear_args;
 			Array new_args = args1.duplicate();
 			new_args[0] = 1;
+			Array lines_edited_clear_args;
 			lines_edited_clear_args.push_back(new_args);
 
 			text_edit->clear();
@@ -319,9 +315,7 @@ TEST_CASE("[SceneTree][TextEdit] text entry") {
 			SIGNAL_CHECK("caret_changed", empty_signal_args);
 
 			((Array)lines_edited_args[1])[1] = 0;
-			Array swap_args;
-			swap_args.push_back(1);
-			swap_args.push_back(1);
+			Array swap_args{ 1, 1 };
 			lines_edited_args.push_back(swap_args);
 			lines_edited_args.push_back(swap_args);
 
@@ -589,12 +583,8 @@ TEST_CASE("[SceneTree][TextEdit] text entry") {
 		SIGNAL_WATCH(text_edit, "lines_edited_from");
 		SIGNAL_WATCH(text_edit, "caret_changed");
 
-		Array args1;
-		args1.push_back(0);
-		args1.push_back(0);
-		Array lines_edited_args;
-		lines_edited_args.push_back(args1);
-		lines_edited_args.push_back(args1.duplicate());
+		Array args1{ 0, 0 };
+		Array lines_edited_args{ args1, args1.duplicate() };
 
 		SUBCASE("[TextEdit] select all") {
 			text_edit->select_all();
@@ -1182,9 +1172,7 @@ TEST_CASE("[SceneTree][TextEdit] text entry") {
 		SIGNAL_WATCH(text_edit, "lines_edited_from");
 		SIGNAL_WATCH(text_edit, "caret_changed");
 
-		Array args1;
-		args1.push_back(0);
-		args1.push_back(0);
+		Array args1{ 0, 0 };
 		Array lines_edited_args;
 		lines_edited_args.push_back(args1);
 
@@ -1372,9 +1360,7 @@ TEST_CASE("[SceneTree][TextEdit] text entry") {
 		SIGNAL_WATCH(text_edit, "lines_edited_from");
 		SIGNAL_WATCH(text_edit, "caret_changed");
 
-		Array args1;
-		args1.push_back(0);
-		args1.push_back(0);
+		Array args1{ 0, 0 };
 		Array lines_edited_args;
 		lines_edited_args.push_back(args1);
 
@@ -1395,9 +1381,7 @@ TEST_CASE("[SceneTree][TextEdit] text entry") {
 			SIGNAL_DISCARD("caret_changed");
 
 			// For the second caret.
-			Array args2;
-			args2.push_back(0);
-			args2.push_back(1);
+			Array args2{ 0, 1 };
 			lines_edited_args.push_front(args2);
 
 			((Array)lines_edited_args[1])[1] = 1;
@@ -1474,9 +1458,7 @@ TEST_CASE("[SceneTree][TextEdit] text entry") {
 			SIGNAL_DISCARD("caret_changed");
 
 			// For the second caret.
-			Array args2;
-			args2.push_back(1);
-			args2.push_back(2);
+			Array args2{ 1, 2 };
 			lines_edited_args.push_front(args2);
 
 			((Array)lines_edited_args[1])[1] = 1;
@@ -1528,9 +1510,7 @@ TEST_CASE("[SceneTree][TextEdit] text entry") {
 			SIGNAL_DISCARD("caret_changed");
 
 			// For the second caret.
-			Array args2;
-			args2.push_back(1);
-			args2.push_back(1);
+			Array args2{ 1, 1 };
 			lines_edited_args.push_front(args2);
 			lines_edited_args.push_front(args2.duplicate());
 			((Array)lines_edited_args[1])[1] = 2;
@@ -1590,9 +1570,7 @@ TEST_CASE("[SceneTree][TextEdit] text entry") {
 			SIGNAL_DISCARD("caret_changed");
 
 			// For the second caret.
-			Array args2;
-			args2.push_back(3);
-			args2.push_back(3);
+			Array args2{ 3, 3 };
 			lines_edited_args.push_front(args2);
 
 			// With selection should be a normal backspace.
@@ -1694,9 +1672,7 @@ TEST_CASE("[SceneTree][TextEdit] text entry") {
 			SIGNAL_DISCARD("caret_changed");
 
 			// For the second caret.
-			Array args2;
-			args2.push_back(3);
-			args2.push_back(3);
+			Array args2{ 3, 3 };
 			lines_edited_args.push_front(args2);
 
 			// With selection should be a normal backspace.
@@ -1787,12 +1763,10 @@ TEST_CASE("[SceneTree][TextEdit] text entry") {
 			text_edit->add_caret(0, 15);
 
 			// For the second caret.
-			Array args2;
-			args2.push_back(0);
+			Array args2{ 0 };
 			lines_edited_args.push_front(args2);
 
 			// For the third caret.
-			Array args3;
 			args2.push_back(0);
 			lines_edited_args.push_front(args2);
 
@@ -1842,9 +1816,7 @@ TEST_CASE("[SceneTree][TextEdit] text entry") {
 			SIGNAL_DISCARD("caret_changed");
 
 			// For the second caret.
-			Array args2;
-			args2.push_back(3);
-			args2.push_back(3);
+			Array args2{ 3, 3 };
 			lines_edited_args.push_front(args2);
 
 			// With selection should be a normal backspace.
@@ -1973,9 +1945,7 @@ TEST_CASE("[SceneTree][TextEdit] text entry") {
 			SIGNAL_DISCARD("caret_changed");
 
 			// For the second caret.
-			Array args2;
-			args2.push_back(1);
-			args2.push_back(1);
+			Array args2{ 1, 1 };
 			lines_edited_args.push_front(args2);
 
 			// With selection should be a normal delete.
@@ -2080,9 +2050,7 @@ TEST_CASE("[SceneTree][TextEdit] text entry") {
 			SIGNAL_DISCARD("caret_changed");
 
 			// For the second caret.
-			Array args2;
-			args2.push_back(2);
-			args2.push_back(2);
+			Array args2{ 2, 2 };
 			lines_edited_args.push_front(args2);
 
 			// With selection should be a normal delete.
@@ -2190,9 +2158,7 @@ TEST_CASE("[SceneTree][TextEdit] text entry") {
 			SIGNAL_DISCARD("caret_changed");
 
 			// For the second caret.
-			Array args2;
-			args2.push_back(1);
-			args2.push_back(1);
+			Array args2{ 1, 1 };
 			lines_edited_args.push_front(args2);
 
 			// With selection should be a normal delete.
@@ -3010,9 +2976,7 @@ TEST_CASE("[SceneTree][TextEdit] text entry") {
 			SIGNAL_DISCARD("caret_changed");
 
 			// For the second caret.
-			Array args2;
-			args2.push_back(1);
-			args2.push_back(1);
+			Array args2{ 1, 1 };
 			lines_edited_args.push_front(args2);
 
 			SEND_GUI_KEY_EVENT(Key::A);
@@ -3197,8 +3161,7 @@ TEST_CASE("[SceneTree][TextEdit] versioning") {
 
 		CHECK(text_edit->get_caret_count() == 1);
 
-		Array caret_index;
-		caret_index.push_back(0);
+		Array caret_index{ 0 };
 
 		for (int i = 1; i < 4; i++) {
 			caret_index.push_back(text_edit->add_caret(i, 0));
@@ -3524,9 +3487,7 @@ TEST_CASE("[SceneTree][TextEdit] multicaret") {
 	}
 
 	SUBCASE("[TextEdit] caret index edit order") {
-		Vector<int> caret_index_get_order;
-		caret_index_get_order.push_back(1);
-		caret_index_get_order.push_back(0);
+		Vector<int> caret_index_get_order{ 1, 0 };
 
 		CHECK(text_edit->add_caret(1, 0));
 		CHECK(text_edit->get_caret_count() == 2);
