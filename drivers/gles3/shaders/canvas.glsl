@@ -597,7 +597,7 @@ void main() {
 		color.a = 0.0;
 	}
 
-	uv = uv * read_draw_data_src_rect.zw + read_draw_data_src_rect.xy; //apply region if needed
+	uv = region_to_texture_uv(uv); //apply region if needed
 
 #endif
 	if (bool(read_draw_data_flags & FLAGS_CLIP_RECT_UV)) {
