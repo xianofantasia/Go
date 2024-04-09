@@ -473,6 +473,15 @@ float msdf_median(float r, float g, float b, float a) {
 vec2 region_position = region_info.xy/draw_data.color_texture_pixel_size;
 vec2 region_size = region_info.zw/draw_data.color_texture_pixel_size;
 
+vec2 texture_to_region_uv(vec2 uv) {
+	return (uv - region_info.xy) / region_info.zw;
+}
+
+vec2 region_to_texture_uv(vec2 uv) {
+	return uv * region_info.zw + region_info.xy;
+}
+
+
 void main() {
 	vec4 color = color_interp;
 	vec2 uv = uv_interp;

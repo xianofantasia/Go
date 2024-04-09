@@ -2609,6 +2609,9 @@ RendererCanvasRenderRD::RendererCanvasRenderRD() {
 		actions.renames["sdf_to_screen_uv"] = "sdf_to_screen_uv";
 		actions.renames["screen_uv_to_sdf"] = "screen_uv_to_sdf";
 
+		actions.renames["texture_to_region_uv"] = "texture_to_region_uv";
+		actions.renames["region_to_texture_uv"] = "region_to_texture_uv";
+
 		actions.usage_defines["COLOR"] = "#define COLOR_USED\n";
 		actions.usage_defines["SCREEN_UV"] = "#define SCREEN_UV_USED\n";
 		actions.usage_defines["SCREEN_PIXEL_SIZE"] = "@SCREEN_UV";
