@@ -464,7 +464,7 @@ float msdf_median(float r, float g, float b, float a) {
 	return min(max(min(r, g), min(max(r, g), b)), a);
 }
 
-#if !defined(USE_PRIMITIVE)
+#if !defined(USE_ATTRIBUTES) && !defined(USE_PRIMITIVE)
 	vec4 region_info = draw_data.src_rect;
 #else
 	vec4 region_info = vec4(0.0, 0.0, 1.0, 1.0);
