@@ -464,6 +464,15 @@ float msdf_median(float r, float g, float b, float a) {
 	return min(max(min(r, g), min(max(r, g), b)), a);
 }
 
+#if !defined(USE_PRIMITIVE)
+	vec4 region_info = draw_data.src_rect;
+#else
+	vec4 region_info = vec4(0.0, 0.0, 1.0, 1.0);
+#endif
+
+vec2 region_position = region_info.xy/draw_data.color_texture_pixel_size;
+vec2 region_size = region_info.zw/draw_data.color_texture_pixel_size;
+
 void main() {
 	vec4 color = color_interp;
 	vec2 uv = uv_interp;
