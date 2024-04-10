@@ -563,13 +563,13 @@ float msdf_median(float r, float g, float b, float a) {
 }
 
 #if !defined(USE_ATTRIBUTES) && !defined(USE_PRIMITIVE)
-	vec4 region_info = read_draw_data_src_rect.xyzw;
+vec4 region_info = read_draw_data_src_rect;
 #else
-	vec4 region_info = vec4(0.0, 0.0, 1.0, 1.0);
+vec4 region_info = vec4(0.0, 0.0, 1.0, 1.0);
 #endif
 
-vec2 region_position = region_info.xy/read_draw_data_color_texture_pixel_size;
-vec2 region_size = region_info.zw/read_draw_data_color_texture_pixel_size;
+vec2 region_position = region_info.xy / read_draw_data_color_texture_pixel_size;
+vec2 region_size = region_info.zw / read_draw_data_color_texture_pixel_size;
 
 vec2 texture_to_region_uv(vec2 uv) {
 	return (uv - region_info.xy) / region_info.zw;
