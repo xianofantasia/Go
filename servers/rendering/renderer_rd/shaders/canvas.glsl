@@ -481,7 +481,6 @@ vec2 region_to_texture_uv(vec2 uv) {
 	return uv * region_info.zw + region_info.xy;
 }
 
-
 void main() {
 	vec4 color = color_interp;
 	vec2 uv = uv_interp;
