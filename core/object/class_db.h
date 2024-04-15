@@ -131,6 +131,7 @@ public:
 		StringName name;
 		bool disabled = false;
 		bool exposed = false;
+		bool hidden = false;
 		bool reloadable = false;
 		bool is_virtual = false;
 		bool is_runtime = false;
@@ -193,7 +194,7 @@ public:
 	}
 
 	template <typename T>
-	static void register_class(bool p_virtual = false) {
+	static void register_class(bool p_virtual = false, bool p_hidden = false) {
 		GLOBAL_LOCK_FUNCTION;
 		static_assert(types_are_same_v<typename T::self_type, T>, "Class not declared properly, please use GDCLASS.");
 		T::initialize_class();
@@ -201,6 +202,7 @@ public:
 		ERR_FAIL_NULL(t);
 		t->creation_func = &creator<T>;
 		t->exposed = true;
+		t->hidden = p_hidden;
 		t->is_virtual = p_virtual;
 		t->class_ptr = T::get_class_ptr_static();
 		t->api = current_api;
@@ -459,6 +461,7 @@ public:
 	static bool is_class_enabled(const StringName &p_class);
 
 	static bool is_class_exposed(const StringName &p_class);
+	static bool is_class_hidden(const StringName &p_class);
 	static bool is_class_reloadable(const StringName &p_class);
 
 	static void add_resource_base_extension(const StringName &p_extension, const StringName &p_class);
@@ -527,6 +530,10 @@ _FORCE_INLINE_ Vector<Error> errarray(P... p_args) {
 #define GDREGISTER_VIRTUAL_CLASS(m_class)         \
 	if (m_class::_class_is_enabled) {             \
 		::ClassDB::register_class<m_class>(true); \
+	}
+#define GDREGISTER_HIDDEN_CLASS(m_class)                 \
+	if (m_class::_class_is_enabled) {                    \
+		::ClassDB::register_class<m_class>(false, true); \
 	}
 #define GDREGISTER_ABSTRACT_CLASS(m_class)             \
 	if (m_class::_class_is_enabled) {                  \
