@@ -2758,6 +2758,9 @@ String GDScriptLanguage::get_global_class_name(const String &p_path, String *r_b
 	if (r_icon_path) {
 		*r_icon_path = c->simplified_icon_path;
 	}
+	if (r_hidden) {
+		*r_hidden = c->hidden;
+	}
 	return c->identifier != nullptr ? String(c->identifier->name) : String();
 }
 

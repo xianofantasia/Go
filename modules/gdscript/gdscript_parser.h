@@ -737,6 +737,7 @@ public:
 
 		IdentifierNode *identifier = nullptr;
 		String icon_path;
+		bool hidden = false;
 		String simplified_icon_path;
 		Vector<Member> members;
 		HashMap<StringName, int> members_indices;
@@ -1488,6 +1489,7 @@ private:
 	bool validate_annotation_arguments(AnnotationNode *p_annotation);
 	void clear_unused_annotations();
 	bool tool_annotation(const AnnotationNode *p_annotation, Node *p_target, ClassNode *p_class);
+	bool hide_annotation(const AnnotationNode *p_annotation, Node *p_target, ClassNode *p_class);
 	bool icon_annotation(const AnnotationNode *p_annotation, Node *p_target, ClassNode *p_class);
 	bool onready_annotation(const AnnotationNode *p_annotation, Node *p_target, ClassNode *p_class);
 	template <PropertyHint t_hint, Variant::Type t_type>
