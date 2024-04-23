@@ -152,6 +152,9 @@ bool CreateDialog::_should_hide_type(const String &p_type) const {
 		if (!ScriptServer::is_global_class(p_type)) {
 			return true;
 		}
+		if (ScriptServer::is_class_hidden(p_type)) {
+			return true;
+		}
 
 		StringName native_type = ScriptServer::get_global_class_native_base(p_type);
 		if (ClassDB::class_exists(native_type) && !ClassDB::can_instantiate(native_type)) {
