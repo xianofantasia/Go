@@ -196,7 +196,7 @@ void OpenXROpenGLExtension::get_usable_depth_formats(Vector<int64_t> &p_usable_d
 	p_usable_depth_formats.push_back(GL_DEPTH_COMPONENT24);
 }
 
-void OpenXROpenGLExtension::on_pre_draw_viewport(RID p_render_target) {
+bool OpenXROpenGLExtension::on_pre_draw_viewport(RID p_render_target) {
 	if (srgb_ext_is_available) {
 		hw_linear_to_srgb_is_enabled = glIsEnabled(GL_FRAMEBUFFER_SRGB);
 		if (hw_linear_to_srgb_is_enabled) {
@@ -204,6 +204,7 @@ void OpenXROpenGLExtension::on_pre_draw_viewport(RID p_render_target) {
 			glDisable(GL_FRAMEBUFFER_SRGB);
 		}
 	}
+	return true;
 }
 
 void OpenXROpenGLExtension::on_post_draw_viewport(RID p_render_target) {
