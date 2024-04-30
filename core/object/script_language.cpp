@@ -259,10 +259,10 @@ void ScriptServer::init_languages() {
 
 			for (const Variant &script_class : script_classes) {
 				Dictionary c = script_class;
-				if (!c.has("class") || !c.has("language") || !c.has("path") || !c.has("base")) {
+				if (!c.has("class") || !c.has("language") || !c.has("path") || !c.has("base") || !c.has("hidden")) {
 					continue;
 				}
-				add_global_class(c["class"], c["base"], c["language"], c["path"]);
+				add_global_class(c["class"], c["base"], c["language"], c["path"], c["hidden"]);
 			}
 			ProjectSettings::get_singleton()->clear("_global_script_classes");
 		}
@@ -271,10 +271,10 @@ void ScriptServer::init_languages() {
 		Array script_classes = ProjectSettings::get_singleton()->get_global_class_list();
 		for (const Variant &script_class : script_classes) {
 			Dictionary c = script_class;
-			if (!c.has("class") || !c.has("language") || !c.has("path") || !c.has("base")) {
+			if (!c.has("class") || !c.has("language") || !c.has("path") || !c.has("base") || !c.has("hidden")) {
 				continue;
 			}
-			add_global_class(c["class"], c["base"], c["language"], c["path"]);
+			add_global_class(c["class"], c["base"], c["language"], c["path"], c["hidden"]);
 		}
 	}
 
@@ -364,15 +364,16 @@ void ScriptServer::global_classes_clear() {
 	inheriters_cache.clear();
 }
 
-void ScriptServer::add_global_class(const StringName &p_class, const StringName &p_base, const StringName &p_language, const String &p_path) {
+void ScriptServer::add_global_class(const StringName &p_class, const StringName &p_base, const StringName &p_language, const String &p_path, bool p_hidden) {
 	ERR_FAIL_COND_MSG(p_class == p_base || (global_classes.has(p_base) && get_global_class_native_base(p_base) == p_class), "Cyclic inheritance in script class.");
 	GlobalScriptClass *existing = global_classes.getptr(p_class);
 	if (existing) {
 		// Update an existing class (only set dirty if something changed).
-		if (existing->base != p_base || existing->path != p_path || existing->language != p_language) {
+		if (existing->base != p_base || existing->path != p_path || existing->language != p_language || existing->language != p_language) {
 			existing->base = p_base;
 			existing->path = p_path;
 			existing->language = p_language;
+			existing->hidden = p_hidden;
 			inheriters_cache_dirty = true;
 		}
 	} else {
@@ -381,6 +382,7 @@ void ScriptServer::add_global_class(const StringName &p_class, const StringName 
 		g.language = p_language;
 		g.path = p_path;
 		g.base = p_base;
+		g.hidden = p_hidden;
 		global_classes[p_class] = g;
 		inheriters_cache_dirty = true;
 	}
@@ -428,6 +430,10 @@ void ScriptServer::remove_global_class_by_path(const String &p_path) {
 
 bool ScriptServer::is_global_class(const StringName &p_class) {
 	return global_classes.has(p_class);
+}
+bool ScriptServer::is_class_hidden(const StringName &p_class) {
+	ERR_FAIL_COND_V(!global_classes.has(p_class), false);
+	return global_classes[p_class].hidden;
 }
 
 StringName ScriptServer::get_global_class_language(const StringName &p_class) {
@@ -486,6 +492,7 @@ void ScriptServer::save_global_classes() {
 		d["language"] = global_classes[E].language;
 		d["path"] = global_classes[E].path;
 		d["base"] = global_classes[E].base;
+		d["hidden"] = global_classes[E].hidden;
 		d["icon"] = class_icons.get(E, "");
 		gcarr.push_back(d);
 	}

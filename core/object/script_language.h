@@ -62,6 +62,7 @@ class ScriptServer {
 		StringName language;
 		String path;
 		StringName base;
+		bool hidden = false;
 	};
 
 	static HashMap<StringName, GlobalScriptClass> global_classes;
@@ -86,10 +87,11 @@ public:
 	static void thread_exit();
 
 	static void global_classes_clear();
-	static void add_global_class(const StringName &p_class, const StringName &p_base, const StringName &p_language, const String &p_path);
+	static void add_global_class(const StringName &p_class, const StringName &p_base, const StringName &p_language, const String &p_path, bool p_hidden);
 	static void remove_global_class(const StringName &p_class);
 	static void remove_global_class_by_path(const String &p_path);
 	static bool is_global_class(const StringName &p_class);
+	static bool is_class_hidden(const StringName &p_class);
 	static StringName get_global_class_language(const StringName &p_class);
 	static String get_global_class_path(const String &p_class);
 	static StringName get_global_class_base(const String &p_class);
@@ -418,7 +420,7 @@ public:
 	virtual void frame();
 
 	virtual bool handles_global_class_type(const String &p_type) const { return false; }
-	virtual String get_global_class_name(const String &p_path, String *r_base_type = nullptr, String *r_icon_path = nullptr) const { return String(); }
+	virtual String get_global_class_name(const String &p_path, String *r_base_type = nullptr, String *r_icon_path = nullptr, bool *r_hidden = nullptr) const { return String(); }
 
 	virtual ~ScriptLanguage() {}
 };

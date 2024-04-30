@@ -1592,7 +1592,7 @@ void FileSystemDock::_update_resource_paths_after_move(const HashMap<String, Str
 				continue; // No language found that can handle this global class.
 			}
 
-			ScriptServer::add_global_class(efd->get_file_script_class_name(index), efd->get_file_script_class_extends(index), lang, new_path);
+			ScriptServer::add_global_class(efd->get_file_script_class_name(index), efd->get_file_script_class_extends(index), lang, new_path, efd->get_file_script_class_hidden(index));
 			EditorNode::get_editor_data().script_class_set_icon_path(efd->get_file_script_class_name(index), efd->get_file_script_class_icon_path(index));
 			EditorNode::get_editor_data().script_class_set_name(new_path, efd->get_file_script_class_name(index));
 		}

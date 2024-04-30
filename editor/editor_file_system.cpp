@@ -153,6 +153,10 @@ String EditorFileSystemDirectory::get_file_script_class_name(int p_idx) const {
 	return files[p_idx]->script_class_name;
 }
 
+bool EditorFileSystemDirectory::get_file_script_class_hidden(int p_idx) const {
+	return files[p_idx]->script_class_hidden;
+}
+
 String EditorFileSystemDirectory::get_file_script_class_extends(int p_idx) const {
 	return files[p_idx]->script_class_extends;
 }
@@ -881,6 +885,7 @@ void EditorFileSystem::_scan_new_dir(EditorFileSystemDirectory *p_dir, Ref<DirAc
 				fi->script_class_name = fc->script_class_name;
 				fi->import_group_file = fc->import_group_file;
 				fi->script_class_extends = fc->script_class_extends;
+				fi->script_class_hidden = fc->script_class_hidden;
 				fi->script_class_icon_path = fc->script_class_icon_path;
 
 				if (revalidate_import_files && !ResourceFormatImporter::get_singleton()->are_import_settings_valid(path)) {
@@ -908,7 +913,7 @@ void EditorFileSystem::_scan_new_dir(EditorFileSystemDirectory *p_dir, Ref<DirAc
 				fi->type = ResourceFormatImporter::get_singleton()->get_resource_type(path);
 				fi->uid = ResourceFormatImporter::get_singleton()->get_resource_uid(path);
 				fi->import_group_file = ResourceFormatImporter::get_singleton()->get_import_group_file(path);
-				fi->script_class_name = _get_global_script_class(fi->type, path, &fi->script_class_extends, &fi->script_class_icon_path);
+				fi->script_class_name = _get_global_script_class(fi->type, path, &fi->script_class_extends, &fi->script_class_icon_path, &fi->script_class_hidden);
 				fi->modified_time = 0;
 				fi->import_modified_time = 0;
 				fi->import_valid = fi->type == "TextFile" ? true : ResourceLoader::is_import_valid(path);
@@ -940,7 +945,7 @@ void EditorFileSystem::_scan_new_dir(EditorFileSystemDirectory *p_dir, Ref<DirAc
 					fi->type = "TextFile";
 				}
 				fi->uid = ResourceLoader::get_resource_uid(path);
-				fi->script_class_name = _get_global_script_class(fi->type, path, &fi->script_class_extends, &fi->script_class_icon_path);
+				fi->script_class_name = _get_global_script_class(fi->type, path, &fi->script_class_extends, &fi->script_class_icon_path, &fi->script_class_hidden);
 				fi->deps = _get_dependencies(path);
 				fi->modified_time = mt;
 				fi->import_modified_time = 0;
@@ -1057,7 +1062,7 @@ void EditorFileSystem::_scan_fs_changes(EditorFileSystemDirectory *p_dir, const 
 					if (fi->type == "" && textfile_extensions.has(ext)) {
 						fi->type = "TextFile";
 					}
-					fi->script_class_name = _get_global_script_class(fi->type, path, &fi->script_class_extends, &fi->script_class_icon_path);
+					fi->script_class_name = _get_global_script_class(fi->type, path, &fi->script_class_extends, &fi->script_class_icon_path, &fi->script_class_hidden);
 					fi->import_valid = fi->type == "TextFile" ? true : ResourceLoader::is_import_valid(path);
 					fi->import_group_file = ResourceLoader::get_import_group_file(path);
 
@@ -1556,16 +1561,18 @@ Vector<String> EditorFileSystem::_get_dependencies(const String &p_path) {
 	return ret;
 }
 
-String EditorFileSystem::_get_global_script_class(const String &p_type, const String &p_path, String *r_extends, String *r_icon_path) const {
+String EditorFileSystem::_get_global_script_class(const String &p_type, const String &p_path, String *r_extends, String *r_icon_path, bool *r_hidden) const {
 	for (int i = 0; i < ScriptServer::get_language_count(); i++) {
 		if (ScriptServer::get_language(i)->handles_global_class_type(p_type)) {
 			String global_name;
 			String extends;
 			String icon_path;
+			bool hidden;
 
-			global_name = ScriptServer::get_language(i)->get_global_class_name(p_path, &extends, &icon_path);
+			global_name = ScriptServer::get_language(i)->get_global_class_name(p_path, &extends, &icon_path, &hidden);
 			*r_extends = extends;
 			*r_icon_path = icon_path;
+			*r_hidden = hidden;
 			return global_name;
 		}
 	}
@@ -1599,7 +1606,7 @@ void EditorFileSystem::_update_script_classes() {
 				continue; // No lang found that can handle this global class
 			}
 
-			ScriptServer::add_global_class(efd->files[index]->script_class_name, efd->files[index]->script_class_extends, lang, path);
+			ScriptServer::add_global_class(efd->files[index]->script_class_name, efd->files[index]->script_class_extends, lang, path, efd->files[index]->script_class_hidden);
 			EditorNode::get_editor_data().script_class_set_icon_path(efd->files[index]->script_class_name, efd->files[index]->script_class_icon_path);
 			EditorNode::get_editor_data().script_class_set_name(path, efd->files[index]->script_class_name);
 		}
@@ -1810,7 +1817,7 @@ void EditorFileSystem::update_file(const String &p_file) {
 	fs->files[cpos]->type = type;
 	fs->files[cpos]->resource_script_class = script_class;
 	fs->files[cpos]->uid = uid;
-	fs->files[cpos]->script_class_name = _get_global_script_class(type, p_file, &fs->files[cpos]->script_class_extends, &fs->files[cpos]->script_class_icon_path);
+	fs->files[cpos]->script_class_name = _get_global_script_class(type, p_file, &fs->files[cpos]->script_class_extends, &fs->files[cpos]->script_class_icon_path, &fs->files[cpos]->script_class_hidden);
 	fs->files[cpos]->import_group_file = ResourceLoader::get_import_group_file(p_file);
 	fs->files[cpos]->modified_time = FileAccess::get_modified_time(p_file);
 	fs->files[cpos]->deps = _get_dependencies(p_file);

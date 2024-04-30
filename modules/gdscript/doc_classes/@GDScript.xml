@@ -668,6 +668,16 @@
 				[b]Note:[/b] Subgroups cannot be nested, they only provide one extra level of depth. Just like the next group ends the previous group, so do the subsequent subgroups.
 			</description>
 		</annotation>
+		<annotation name="@hide">
+			<return type="void" />
+			<description>
+				Prevent the current class from appearing in the Create Node dialog.
+				[codeblock]
+				@hide class_name MyClass
+				[/codeblock]
+				[b]Note:[/b] As annotations describe their subject, the [annotation @hide] annotation must be placed before the class definition and inheritance.
+			</description>
+		</annotation>
 		<annotation name="@icon">
 			<return type="void" />
 			<param index="0" name="icon_path" type="String" />
