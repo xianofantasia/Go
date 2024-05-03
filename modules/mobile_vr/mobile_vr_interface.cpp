@@ -489,11 +489,16 @@ Vector<BlitToScreen> MobileVRInterface::post_draw_viewport(RID p_render_target, 
 
 	Vector<BlitToScreen> blit_to_screen;
 
-	// We must have a valid render target
+	// We must have a valid render target.
 	ERR_FAIL_COND_V(!p_render_target.is_valid(), blit_to_screen);
 
-	// Because we are rendering to our device we must use our main viewport!
-	ERR_FAIL_COND_V(p_screen_rect == Rect2(), blit_to_screen);
+	// We will only output to screen if this is our main viewport.
+	if (p_screen_rect == Rect2()) {
+		// Warn the developer once, it's up to the developer to output to screen.
+		WARN_PRINT_ONCE("SubViewport used with MobileVRInterface, no output to screen");
+
+		return blit_to_screen;
+	}
 
 	Rect2 modified_screen_rect = Rect2(p_screen_rect.position + offset_rect.position * p_screen_rect.size, p_screen_rect.size * offset_rect.size);
 
