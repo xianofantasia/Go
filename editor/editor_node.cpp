@@ -72,6 +72,7 @@
 #include "servers/rendering_server.h"
 
 #include "editor/audio_stream_preview.h"
+#include "editor/credits_roll.h"
 #include "editor/debugger/editor_debugger_node.h"
 #include "editor/debugger/script_editor_debugger.h"
 #include "editor/dependency_editor.h"
@@ -6726,6 +6727,11 @@ EditorNode::EditorNode() {
 
 	about = memnew(EditorAbout);
 	gui_base->add_child(about);
+
+	credits_roll = memnew(CreditsRoll);
+	gui_base->add_child(credits_roll);
+	about->connect("project_manager_clicked", callable_mp(credits_roll, &CreditsRoll::roll_credits));
+
 	feature_profile_manager->connect("current_feature_profile_changed", callable_mp(this, &EditorNode::_feature_profile_changed));
 
 #if !defined(ANDROID_ENABLED) && !defined(WEB_ENABLED)
