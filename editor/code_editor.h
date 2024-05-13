@@ -32,15 +32,17 @@
 #define CODE_EDITOR_H
 
 #include "scene/gui/box_container.h"
-#include "scene/gui/button.h"
-#include "scene/gui/check_box.h"
 #include "scene/gui/code_edit.h"
 #include "scene/gui/dialogs.h"
-#include "scene/gui/label.h"
-#include "scene/gui/line_edit.h"
-#include "scene/main/timer.h"
 
+class Button;
+class CheckBox;
+class CodeTextEditor;
+class Label;
+class LineEdit;
 class MenuButton;
+class RichTextLabel;
+class Timer;
 
 class GotoLineDialog : public ConfirmationDialog {
 	GDCLASS(GotoLineDialog, ConfirmationDialog);
@@ -58,8 +60,6 @@ public:
 
 	GotoLineDialog();
 };
-
-class CodeTextEditor;
 
 class FindReplaceBar : public HBoxContainer {
 	GDCLASS(FindReplaceBar, HBoxContainer);
@@ -170,7 +170,7 @@ class CodeTextEditor : public VBoxContainer {
 
 	float zoom_factor = 1.0f;
 
-	Label *error = nullptr;
+	RichTextLabel *error = nullptr;
 	int error_line;
 	int error_column;
 
