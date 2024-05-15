@@ -123,10 +123,6 @@ bool CreateDialog::_should_hide_type(const String &p_type) const {
 		return true;
 	}
 
-	if (is_base_type_node && p_type.begins_with("Editor")) {
-		return true; // Do not show editor nodes.
-	}
-
 	if (ClassDB::class_exists(p_type)) {
 		if (!ClassDB::can_instantiate(p_type) || ClassDB::is_virtual(p_type)) {
 			return true; // Can't create abstract or virtual class.
@@ -137,6 +133,10 @@ bool CreateDialog::_should_hide_type(const String &p_type) const {
 		}
 
 		if (!ClassDB::is_class_exposed(p_type)) {
+			return true; // Unexposed types.
+		}
+
+		if (ClassDB::is_class_hidden(p_type)) {
 			return true; // Unexposed types.
 		}
 

@@ -66,10 +66,10 @@ void initialize_fbx_module(ModuleInitializationLevel p_level) {
 		ClassDB::APIType prev_api = ClassDB::get_current_api();
 		ClassDB::set_current_api(ClassDB::API_EDITOR);
 
-		GDREGISTER_CLASS(EditorSceneFormatImporterUFBX);
+		GDREGISTER_HIDDEN_CLASS(EditorSceneFormatImporterUFBX);
 
 		GLOBAL_DEF_RST_BASIC("filesystem/import/fbx2gltf/enabled", true);
-		GDREGISTER_CLASS(EditorSceneFormatImporterFBX2GLTF);
+		GDREGISTER_HIDDEN_CLASS(EditorSceneFormatImporterFBX2GLTF);
 		GLOBAL_DEF_RST("filesystem/import/fbx2gltf/enabled.android", false);
 		GLOBAL_DEF_RST("filesystem/import/fbx2gltf/enabled.web", false);
 
