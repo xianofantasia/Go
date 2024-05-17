@@ -1741,8 +1741,18 @@ SceneTree::SceneTree() {
 
 	// Create with mainloop.
 
+	const Size2i window_min_size = {
+		GLOBAL_GET("display/window/size/window_minimum_width"),
+		GLOBAL_GET("display/window/size/window_minimum_height")
+	};
+	const Size2i window_max_size = {
+		GLOBAL_GET("display/window/size/window_maximum_width"),
+		GLOBAL_GET("display/window/size/window_maximum_height")
+	};
+
 	root = memnew(Window);
-	root->set_min_size(Size2i(64, 64)); // Define a very small minimum window size to prevent bugs such as GH-37242.
+	root->set_min_size(window_min_size);
+	root->set_max_size(window_max_size);
 	root->set_process_mode(Node::PROCESS_MODE_PAUSABLE);
 	root->set_auto_translate_mode(GLOBAL_GET("internationalization/rendering/root_node_auto_translate") ? Node::AUTO_TRANSLATE_MODE_ALWAYS : Node::AUTO_TRANSLATE_MODE_DISABLED);
 	root->set_name("root");
