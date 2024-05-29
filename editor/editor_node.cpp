@@ -2237,7 +2237,10 @@ void EditorNode::edit_item(Object *p_object, Object *p_editing_owner) {
 
 	// Remove editor plugins no longer used by this editing owner. Keep the ones that can
 	// still be reused by the new edited object.
-
+	print_line(p_object->to_string());
+	for (EditorPlugin *plugin : available_plugins) {
+		print_line("  " + plugin->get_name());
+	}
 	List<EditorPlugin *> to_remove;
 	for (EditorPlugin *plugin : active_plugins[owner_id]) {
 		if (!available_plugins.has(plugin)) {
