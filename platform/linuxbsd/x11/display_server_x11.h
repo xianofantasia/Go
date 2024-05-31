@@ -264,6 +264,7 @@ class DisplayServerX11 : public DisplayServer {
 	uint64_t last_click_ms = 0;
 	MouseButton last_click_button_index = MouseButton::NONE;
 	BitField<MouseButtonMask> last_button_state;
+	BitField<MouseButtonMask> last_double_click_button_mask;
 	bool app_focused = false;
 	uint64_t time_since_no_focus = 0;
 
@@ -292,7 +293,7 @@ class DisplayServerX11 : public DisplayServer {
 
 	Rect2i _screen_get_rect(int p_screen) const;
 
-	BitField<MouseButtonMask> _get_mouse_button_state(MouseButton p_x11_button, int p_x11_type);
+	BitField<MouseButtonMask> _get_mouse_button_state(MouseButtonMask p_button_mask, int p_x11_type);
 	void _get_key_modifier_state(unsigned int p_x11_state, Ref<InputEventWithModifiers> state);
 	void _flush_mouse_motion();
 

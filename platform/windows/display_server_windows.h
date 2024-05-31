@@ -484,6 +484,7 @@ class DisplayServerWindows : public DisplayServer {
 	bool control_mem = false;
 	bool meta_mem = false;
 	BitField<MouseButtonMask> last_button_state;
+	BitField<MouseButtonMask> last_double_click_button_mask;
 	bool use_raw_input = false;
 	bool drop_events = false;
 	bool in_dispatch_input_event = false;
