@@ -376,6 +376,7 @@ public:
 	Error compress_from_channels(CompressMode p_mode, UsedChannels p_channels, ASTCFormat p_astc_format = ASTC_FORMAT_4x4);
 	Error decompress();
 	bool is_compressed() const;
+	static bool is_format_compressed(Format p_format);
 
 	void fix_alpha_edges();
 	void premultiply_alpha();
@@ -425,6 +426,10 @@ public:
 	Color get_pixel(int p_x, int p_y) const;
 	void set_pixelv(const Point2i &p_point, const Color &p_color);
 	void set_pixel(int p_x, int p_y, const Color &p_color);
+
+	const uint8_t *ptr() const;
+	uint8_t *ptrw();
+	int64_t data_size() const;
 
 	void adjust_bcs(float p_brightness, float p_contrast, float p_saturation);
 

@@ -143,8 +143,8 @@ bool MultiplayerSynchronizer::update_inbound_sync_time(uint16_t p_network_time) 
 	return true;
 }
 
-Array MultiplayerSynchronizer::get_configuration_warnings() const {
-	Array warnings = Node::get_configuration_warnings();
+PackedStringArray MultiplayerSynchronizer::get_configuration_warnings() const {
+	PackedStringArray warnings = Node::get_configuration_warnings();
 
 	if (root_path.is_empty() || !has_node(root_path)) {
 		warnings.push_back(RTR("A valid NodePath must be set in the \"Root Path\" property in order for MultiplayerSynchronizer to be able to synchronize properties."));
@@ -343,7 +343,7 @@ void MultiplayerSynchronizer::update_visibility(int p_for_peer) {
 #endif
 	Node *node = is_inside_tree() ? get_node_or_null(root_path) : nullptr;
 	if (node && get_multiplayer()->has_multiplayer_peer() && is_multiplayer_authority()) {
-		emit_signal(SNAME("visibility_changed"), p_for_peer);
+		emit_signal(SceneStringName(visibility_changed), p_for_peer);
 	}
 }
 
@@ -354,6 +354,7 @@ void MultiplayerSynchronizer::set_root_path(const NodePath &p_path) {
 	_stop();
 	root_path = p_path;
 	_start();
+	update_configuration_warnings();
 }
 
 NodePath MultiplayerSynchronizer::get_root_path() const {

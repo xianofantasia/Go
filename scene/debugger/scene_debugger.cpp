@@ -72,11 +72,6 @@ void SceneDebugger::deinitialize() {
 	}
 }
 
-#ifdef MINGW_ENABLED
-#undef near
-#undef far
-#endif
-
 #ifdef DEBUG_ENABLED
 Error SceneDebugger::parse_message(void *p_user, const String &p_msg, const Array &p_args, bool &r_captured) {
 	SceneTree *scene_tree = SceneTree::get_singleton();
@@ -124,12 +119,12 @@ Error SceneDebugger::parse_message(void *p_user, const String &p_msg, const Arra
 		Transform3D transform = p_args[0];
 		bool is_perspective = p_args[1];
 		float size_or_fov = p_args[2];
-		float near = p_args[3];
-		float far = p_args[4];
+		float depth_near = p_args[3];
+		float depth_far = p_args[4];
 		if (is_perspective) {
-			scene_tree->get_root()->set_camera_3d_override_perspective(size_or_fov, near, far);
+			scene_tree->get_root()->set_camera_3d_override_perspective(size_or_fov, depth_near, depth_far);
 		} else {
-			scene_tree->get_root()->set_camera_3d_override_orthogonal(size_or_fov, near, far);
+			scene_tree->get_root()->set_camera_3d_override_orthogonal(size_or_fov, depth_near, depth_far);
 		}
 		scene_tree->get_root()->set_camera_3d_override_transform(transform);
 #endif // _3D_DISABLED
@@ -426,9 +421,9 @@ void SceneDebuggerObject::_parse_script_properties(Script *p_script, ScriptInsta
 
 void SceneDebuggerObject::serialize(Array &r_arr, int p_max_size) {
 	Array send_props;
-	for (int i = 0; i < properties.size(); i++) {
-		const PropertyInfo &pi = properties[i].first;
-		Variant &var = properties[i].second;
+	for (SceneDebuggerObject::SceneDebuggerProperty &property : properties) {
+		const PropertyInfo &pi = property.first;
+		Variant &var = property.second;
 
 		Ref<Resource> res = var;
 
@@ -515,7 +510,7 @@ SceneDebuggerTree::SceneDebuggerTree(Node *p_root) {
 	const StringName &is_visible_sn = SNAME("is_visible");
 	const StringName &is_visible_in_tree_sn = SNAME("is_visible_in_tree");
 	while (stack.size()) {
-		Node *n = stack[0];
+		Node *n = stack.front()->get();
 		stack.pop_front();
 
 		int count = n->get_child_count();

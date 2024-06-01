@@ -298,7 +298,7 @@ String OS::get_system_dir(SystemDir p_dir, bool p_shared_storage) const {
 	return ".";
 }
 
-Error OS::shell_open(String p_uri) {
+Error OS::shell_open(const String &p_uri) {
 	return ERR_UNAVAILABLE;
 }
 
@@ -397,6 +397,11 @@ bool OS::has_feature(const String &p_feature) {
 #ifdef TOOLS_ENABLED
 	if (p_feature == "editor") {
 		return true;
+	}
+	if (p_feature == "editor_hint") {
+		return _in_editor;
+	} else if (p_feature == "editor_runtime") {
+		return !_in_editor;
 	}
 #else
 	if (p_feature == "template") {

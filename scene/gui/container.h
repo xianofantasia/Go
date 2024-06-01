@@ -42,6 +42,8 @@ class Container : public Control {
 
 protected:
 	void queue_sort();
+	Control *as_sortable_control(Node *p_node) const;
+
 	virtual void add_child_notify(Node *p_child) override;
 	virtual void move_child_notify(Node *p_child) override;
 	virtual void remove_child_notify(Node *p_child) override;
@@ -63,7 +65,7 @@ public:
 	virtual Vector<int> get_allowed_size_flags_horizontal() const;
 	virtual Vector<int> get_allowed_size_flags_vertical() const;
 
-	Array get_configuration_warnings() const override;
+	PackedStringArray get_configuration_warnings() const override;
 
 	Container();
 };
