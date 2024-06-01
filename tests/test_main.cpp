@@ -101,7 +101,6 @@
 #include "tests/core/variant/test_variant_utility.h"
 #include "tests/scene/test_animation.h"
 #include "tests/scene/test_animation_player.h"
-#include "tests/scene/test_arraymesh.h"
 #include "tests/scene/test_audio_stream_wav.h"
 #include "tests/scene/test_bit_map.h"
 #include "tests/scene/test_camera_2d.h"
