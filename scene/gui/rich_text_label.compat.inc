@@ -30,6 +30,10 @@
 
 #ifndef DISABLE_DEPRECATED
 
+void RichTextLabel::_push_list_bind_compat_92749(int p_level, ListType p_list, bool p_capitalize, const String &p_bullet) {
+	push_list(p_level, p_list, p_capitalize, p_bullet, "", ".", -1, false);
+}
+
 void RichTextLabel::_push_meta_bind_compat_89024(const Variant &p_meta) {
 	push_meta(p_meta, RichTextLabel::MetaUnderline::META_UNDERLINE_ALWAYS);
 }
@@ -43,6 +47,7 @@ bool RichTextLabel::_remove_paragraph_bind_compat_91098(int p_paragraph) {
 }
 
 void RichTextLabel::_bind_compatibility_methods() {
+	ClassDB::bind_compatibility_method(D_METHOD("push_list", "level", "type", "capitalize", "bullet"), &RichTextLabel::_push_list_bind_compat_92749, DEFVAL(String::utf8("•")));
 	ClassDB::bind_compatibility_method(D_METHOD("push_meta", "data"), &RichTextLabel::_push_meta_bind_compat_89024);
 	ClassDB::bind_compatibility_method(D_METHOD("add_image", "image", "width", "height", "color", "inline_align", "region"), &RichTextLabel::_add_image_bind_compat_80410, DEFVAL(0), DEFVAL(0), DEFVAL(Color(1.0, 1.0, 1.0)), DEFVAL(INLINE_ALIGNMENT_CENTER), DEFVAL(Rect2()));
 	ClassDB::bind_compatibility_method(D_METHOD("remove_paragraph", "paragraph"), &RichTextLabel::_remove_paragraph_bind_compat_91098);
