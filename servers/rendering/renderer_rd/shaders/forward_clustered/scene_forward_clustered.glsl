@@ -383,6 +383,14 @@ void vertex_shader(vec3 vertex_input,
 #endif
 #endif
 
+#ifdef Z_CLIP_SCALE_USED
+	float z_clip_scale = 1.0;
+#endif
+
+#ifdef PERSPECTIVE_SCALE_USED
+	float perspective_scale = 1.0;
+#endif
+
 	float roughness = 1.0;
 
 	mat4 modelview = scene_data.view_matrix * model_matrix;
@@ -475,6 +483,15 @@ void vertex_shader(vec3 vertex_input,
 	gl_Position = position;
 #else
 	gl_Position = projection_matrix * vec4(vertex_interp, 1.0);
+#endif
+
+//TODO need to disable when rendering shadows.
+#ifdef Z_CLIP_SCALE_USED
+	gl_Position.z = mix(gl_Position.w, gl_Position.z, z_clip_scale);
+#endif
+
+#ifdef PERSPECTIVE_SCALE_USED
+	gl_Position.xy *= perspective_scale;
 #endif
 
 #ifdef USE_MULTIVIEW

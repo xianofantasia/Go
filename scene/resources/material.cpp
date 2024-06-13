@@ -589,6 +589,8 @@ void BaseMaterial3D::init_shaders() {
 
 	shader_names->alpha_antialiasing_edge = "alpha_antialiasing_edge";
 	shader_names->albedo_texture_size = "albedo_texture_size";
+	shader_names->z_clip_scale = "z_clip_scale";
+	shader_names->perspective_scale = "perspective_scale";
 }
 
 HashMap<uint64_t, Ref<StandardMaterial3D>> BaseMaterial3D::materials_for_2d;
@@ -1037,6 +1039,11 @@ uniform vec3 uv2_scale;
 uniform vec3 uv2_offset;
 )";
 
+	if (flags[FLAG_USE_CLIP_SCALE]) {
+		code += "uniform float z_clip_scale : hint_range(0.01, 1.0, 0.01);\n";
+		code += "uniform float perspective_scale : hint_range(0.01, 8.0, 0.01);\n";
+	}
+
 	// Generate vertex shader.
 	code += R"(
 void vertex() {)";
@@ -1280,6 +1287,14 @@ void vertex() {)";
 )";
 	}
 
+	if (flags[FLAG_USE_CLIP_SCALE]) {
+		code += R"(
+	Z_CLIP_SCALE = z_clip_scale;
+	PERSPECTIVE_SCALE = perspective_scale;
+)";
+	}
+
+	// End of the vertex shader function.
 	code += "}\n";
 
 	if (flags[FLAG_ALBEDO_TEXTURE_MSDF] && !flags[FLAG_UV1_USE_TRIPLANAR]) {
@@ -2692,6 +2707,24 @@ BaseMaterial3D::TextureChannel BaseMaterial3D::get_refraction_texture_channel() 
 	return refraction_texture_channel;
 }
 
+void BaseMaterial3D::set_z_clip_scale(float p_z_clip_scale) {
+	z_clip_scale = p_z_clip_scale;
+	RS::get_singleton()->material_set_param(_get_material(), shader_names->z_clip_scale, p_z_clip_scale);
+}
+
+float BaseMaterial3D::get_z_clip_scale() const {
+	return z_clip_scale;
+}
+
+void BaseMaterial3D::set_perspective_scale(float p_perspective_scale) {
+	perspective_scale = p_perspective_scale;
+	RS::get_singleton()->material_set_param(_get_material(), shader_names->perspective_scale, p_perspective_scale);
+}
+
+float BaseMaterial3D::get_perspective_scale() const {
+	return perspective_scale;
+}
+
 Ref<Material> BaseMaterial3D::get_material_for_2d(bool p_shaded, Transparency p_transparency, bool p_double_sided, bool p_billboard, bool p_billboard_y, bool p_msdf, bool p_no_depth, bool p_fixed_size, TextureFilter p_filter, AlphaAntiAliasing p_alpha_antialiasing_mode, RID *r_shader_rid) {
 	uint64_t key = 0;
 	key |= ((int8_t)p_shaded & 0x01) << 0;
@@ -3042,6 +3075,12 @@ void BaseMaterial3D::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_distance_fade_min_distance", "distance"), &BaseMaterial3D::set_distance_fade_min_distance);
 	ClassDB::bind_method(D_METHOD("get_distance_fade_min_distance"), &BaseMaterial3D::get_distance_fade_min_distance);
 
+	ClassDB::bind_method(D_METHOD("set_z_clip_scale", "scale"), &BaseMaterial3D::set_z_clip_scale);
+	ClassDB::bind_method(D_METHOD("get_z_clip_scale"), &BaseMaterial3D::get_z_clip_scale);
+
+	ClassDB::bind_method(D_METHOD("set_perspective_scale", "scale"), &BaseMaterial3D::set_perspective_scale);
+	ClassDB::bind_method(D_METHOD("get_perspective_scale"), &BaseMaterial3D::get_perspective_scale);
+
 	ADD_GROUP("Transparency", "");
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "transparency", PROPERTY_HINT_ENUM, "Disabled,Alpha,Alpha Scissor,Alpha Hash,Depth Pre-Pass"), "set_transparency", "get_transparency");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "alpha_scissor_threshold", PROPERTY_HINT_RANGE, "0,1,0.001"), "set_alpha_scissor_threshold", "get_alpha_scissor_threshold");
@@ -3205,6 +3244,9 @@ void BaseMaterial3D::_bind_methods() {
 	ADD_PROPERTYI(PropertyInfo(Variant::BOOL, "use_point_size"), "set_flag", "get_flag", FLAG_USE_POINT_SIZE);
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "point_size", PROPERTY_HINT_RANGE, "0.1,128,0.1,suffix:px"), "set_point_size", "get_point_size");
 	ADD_PROPERTYI(PropertyInfo(Variant::BOOL, "use_particle_trails"), "set_flag", "get_flag", FLAG_PARTICLE_TRAILS_MODE);
+	ADD_PROPERTYI(PropertyInfo(Variant::BOOL, "use_clip_scale"), "set_flag", "get_flag", FLAG_USE_CLIP_SCALE);
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "z_clip_scale", PROPERTY_HINT_RANGE, "0.01,1.0,0.01"), "set_z_clip_scale", "get_z_clip_scale");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "perspective_scale", PROPERTY_HINT_RANGE, "0.01,8.0,0.01"), "set_perspective_scale", "get_perspective_scale");
 	ADD_GROUP("Proximity Fade", "proximity_fade_");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "proximity_fade_enabled"), "set_proximity_fade_enabled", "is_proximity_fade_enabled");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "proximity_fade_distance", PROPERTY_HINT_RANGE, "0.01,4096,0.01,suffix:m"), "set_proximity_fade_distance", "get_proximity_fade_distance");
@@ -3313,6 +3355,7 @@ void BaseMaterial3D::_bind_methods() {
 	BIND_ENUM_CONSTANT(FLAG_PARTICLE_TRAILS_MODE);
 	BIND_ENUM_CONSTANT(FLAG_ALBEDO_TEXTURE_MSDF);
 	BIND_ENUM_CONSTANT(FLAG_DISABLE_FOG);
+	BIND_ENUM_CONSTANT(FLAG_USE_CLIP_SCALE);
 	BIND_ENUM_CONSTANT(FLAG_MAX);
 
 	BIND_ENUM_CONSTANT(DIFFUSE_BURLEY);
@@ -3406,6 +3449,9 @@ BaseMaterial3D::BaseMaterial3D(bool p_orm) :
 	set_heightmap_deep_parallax_min_layers(8);
 	set_heightmap_deep_parallax_max_layers(32);
 	set_heightmap_deep_parallax_flip_tangent(false); //also sets binormal
+
+	set_z_clip_scale(1.0);
+	set_perspective_scale(1.0);
 
 	flags[FLAG_ALBEDO_TEXTURE_MSDF] = false;
 	flags[FLAG_USE_TEXTURE_REPEAT] = true;
