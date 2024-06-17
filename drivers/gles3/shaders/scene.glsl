@@ -431,6 +431,14 @@ void main() {
 #endif
 #endif
 
+#ifdef Z_CLIP_SCALE_USED
+	float z_clip_scale = 1.0;
+#endif
+
+#ifdef PERSPECTIVE_SCALE_USED
+	float perspective_scale = 1.0;
+#endif
+
 	float roughness = 1.0;
 
 	highp mat4 modelview = scene_data.view_matrix * model_matrix;
@@ -531,6 +539,15 @@ void main() {
 	gl_Position = position;
 #else
 	gl_Position = projection_matrix * vec4(vertex_interp, 1.0);
+#endif
+
+#if !defined(RENDER_SHADOWS) && !defined(RENDER_SHADOWS_LINEAR)
+#ifdef Z_CLIP_SCALE_USED
+	gl_Position.z = mix(gl_Position.w, gl_Position.z, z_clip_scale);
+#endif
+#ifdef PERSPECTIVE_SCALE_USED
+	gl_Position.xy *= perspective_scale;
+#endif
 #endif
 
 #ifdef RENDER_MATERIAL
