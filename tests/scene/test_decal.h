@@ -1,4 +1,4 @@
-/*  test_decal_3d.h                                                       */
+/*  test_decal.h                                                       */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                             GODOT ENGINE                               */
@@ -29,7 +29,6 @@
 
 #ifndef TEST_DECAL_H
 #define TEST_DECAL_H
-#include "scene/main/scene_tree.h"
 
 #include "scene/3d/decal.h"
 
