@@ -64,6 +64,11 @@ public:
 		shader_languages.push_back(p_shader_language);
 	}
 
+	static void clear_registered_shader_languages() {
+		shader_languages.clear();
+		language_variation_map.clear();
+	}
+
 	static const Vector<Ref<ShaderLanguageEditorPlugin>> get_shader_languages_read_only() {
 		return shader_languages;
 	}

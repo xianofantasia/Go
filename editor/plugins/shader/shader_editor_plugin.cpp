@@ -785,4 +785,5 @@ ShaderEditorPlugin::ShaderEditorPlugin() {
 }
 
 ShaderEditorPlugin::~ShaderEditorPlugin() {
+	ShaderLanguageEditorPlugin::clear_registered_shader_languages();
 }
