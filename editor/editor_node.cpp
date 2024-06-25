@@ -152,7 +152,6 @@
 #include "editor/plugins/script_text_editor.h"
 #include "editor/plugins/text_editor.h"
 #include "editor/plugins/version_control_editor_plugin.h"
-#include "editor/plugins/visual_shader_editor_plugin.h"
 #include "editor/progress_dialog.h"
 #include "editor/project_settings_editor.h"
 #include "editor/register_exporters.h"
@@ -6171,6 +6170,8 @@ void EditorNode::open_export_template_manager() {
 	export_template_manager->popup_manager();
 }
 
+Vector<Ref<EditorResourceConversionPlugin>> EditorNode::resource_conversion_plugins;
+
 void EditorNode::add_resource_conversion_plugin(const Ref<EditorResourceConversionPlugin> &p_plugin) {
 	resource_conversion_plugins.push_back(p_plugin);
 }
@@ -6617,10 +6618,6 @@ EditorNode::EditorNode() {
 		Ref<EditorInspectorRootMotionPlugin> rmp;
 		rmp.instantiate();
 		EditorInspector::add_inspector_plugin(rmp);
-
-		Ref<EditorInspectorVisualShaderModePlugin> smp;
-		smp.instantiate();
-		EditorInspector::add_inspector_plugin(smp);
 
 		Ref<EditorInspectorParticleProcessMaterialPlugin> ppm;
 		ppm.instantiate();
@@ -7484,10 +7481,6 @@ EditorNode::EditorNode() {
 		Ref<FogMaterialConversionPlugin> fog_mat_convert;
 		fog_mat_convert.instantiate();
 		resource_conversion_plugins.push_back(fog_mat_convert);
-
-		Ref<VisualShaderConversionPlugin> vshader_convert;
-		vshader_convert.instantiate();
-		resource_conversion_plugins.push_back(vshader_convert);
 	}
 
 	update_spinner_step_msec = OS::get_singleton()->get_ticks_msec();

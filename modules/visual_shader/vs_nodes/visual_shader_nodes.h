@@ -31,8 +31,9 @@
 #ifndef VISUAL_SHADER_NODES_H
 #define VISUAL_SHADER_NODES_H
 
+#include "../visual_shader.h"
+
 #include "scene/resources/curve_texture.h"
-#include "scene/resources/visual_shader.h"
 
 class Cubemap;
 class Texture2DArray;

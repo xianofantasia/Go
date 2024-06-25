@@ -33,14 +33,16 @@
 
 #include "editor/plugins/editor_plugin.h"
 
+#include "shader_language_editor_plugin.h"
+
 class HSplitContainer;
 class ItemList;
 class MenuButton;
 class ShaderCreateDialog;
 class ShaderLanguageEditorBase;
 class TabContainer;
-class TextShaderEditor;
-class VisualShaderEditor;
+//class TextShaderEditor;
+//class VisualShaderEditor;
 class WindowWrapper;
 
 #ifdef MINGW_ENABLED

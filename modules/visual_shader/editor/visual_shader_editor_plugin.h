@@ -31,13 +31,14 @@
 #ifndef VISUAL_SHADER_EDITOR_PLUGIN_H
 #define VISUAL_SHADER_EDITOR_PLUGIN_H
 
+#include "../visual_shader.h"
+
 #include "editor/editor_properties.h"
 #include "editor/plugins/editor_plugin.h"
 #include "editor/plugins/editor_resource_conversion_plugin.h"
 #include "editor/plugins/shader/shader_language_editor_plugin.h"
 #include "scene/gui/graph_edit.h"
 #include "scene/resources/syntax_highlighter.h"
-#include "scene/resources/visual_shader.h"
 
 class CodeEdit;
 class ColorPicker;

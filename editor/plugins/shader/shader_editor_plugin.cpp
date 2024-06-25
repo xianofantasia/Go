@@ -37,9 +37,9 @@
 #include "editor/filesystem_dock.h"
 #include "editor/gui/editor_bottom_panel.h"
 #include "editor/inspector_dock.h"
-#include "editor/plugins/text_shader_editor.h"
-#include "editor/plugins/visual_shader_editor_plugin.h"
-#include "editor/shader_create_dialog.h"
+#include "editor/plugins/shader/shader_create_dialog.h"
+#include "editor/plugins/shader/text/text_shader_editor.h"
+#include "editor/plugins/shader/text/text_shader_language_plugin.h"
 #include "editor/themes/editor_scale.h"
 #include "editor/window_wrapper.h"
 #include "scene/gui/item_list.h"
@@ -72,7 +72,6 @@ void ShaderEditorPlugin::_update_shader_list() {
 		if (edited_shader.shader_editor) {
 			unsaved = edited_shader.shader_editor->is_unsaved();
 		}
-		// TODO: Handle visual shaders too.
 
 		if (unsaved) {
 			text += "(*)";
@@ -129,8 +128,7 @@ void ShaderEditorPlugin::edit(Object *p_object) {
 		return;
 	}
 
-	EditedShader es;
-
+#if 0
 	ShaderInclude *si = Object::cast_to<ShaderInclude>(p_object);
 	if (si != nullptr) {
 		for (uint32_t i = 0; i < edited_shaders.size(); i++) {
@@ -171,6 +169,49 @@ void ShaderEditorPlugin::edit(Object *p_object) {
 		if (cte) {
 			cte->set_zoom_factor(text_shader_zoom_factor);
 			cte->connect("zoomed", callable_mp(this, &ShaderEditorPlugin::_set_text_shader_zoom_factor));
+		}
+	}
+#endif
+	// First, check for ShaderInclude.
+	ShaderInclude *shader_include_ptr = Object::cast_to<ShaderInclude>(p_object);
+	if (shader_include_ptr) {
+		// Check if this shader include is already being edited.
+		for (uint32_t i = 0; i < edited_shaders.size(); i++) {
+			if (edited_shaders[i].shader_inc.ptr() == shader_include_ptr) {
+				shader_tabs->set_current_tab(i);
+				shader_list->select(i);
+				return;
+			}
+		}
+		// If we did not return, the shader include needs to be opened in a new shader editor.
+		EditedShader es;
+		es.shader_inc = Ref<ShaderInclude>(shader_include_ptr);
+		TextShaderEditor *text_shader_editor = memnew(TextShaderEditor);
+		es.shader_editor = text_shader_editor;
+		text_shader_editor->edit_shader_include(shader_include_ptr);
+		shader_tabs->add_child(es.shader_editor);
+		shader_tabs->set_current_tab(shader_tabs->get_tab_count() - 1);
+		edited_shaders.push_back(es);
+		_update_shader_list();
+		return;
+	}
+	// Check if this shader is already being edited.
+	Shader *shader_ptr = Object::cast_to<Shader>(p_object);
+	ERR_FAIL_COND_MSG(shader_ptr == nullptr, "ShaderEditorPlugin: Unable to edit object " + p_object->to_string() + " because it is not a Shader.");
+	for (uint32_t i = 0; i < edited_shaders.size(); i++) {
+		if (edited_shaders[i].shader.ptr() == shader_ptr) {
+			shader_tabs->set_current_tab(i);
+			shader_list->select(i);
+			return;
+		}
+	}
+	// If we did not return, the shader needs to be opened in a new shader editor.
+	EditedShader es;
+	es.shader = Ref<Shader>(shader_ptr);
+	for (Ref<ShaderLanguageEditorPlugin> shader_lang : ShaderLanguageEditorPlugin::get_shader_languages_read_only()) {
+		if (shader_lang->handles_shader(es.shader)) {
+			shader_lang->edit_shader(es.shader);
+			return;
 		}
 	}
 
@@ -412,7 +453,7 @@ void ShaderEditorPlugin::_menu_item_pressed(int p_index) {
 		} break;
 		case FILE_NEW_INCLUDE: {
 			String base_path = FileSystemDock::get_singleton()->get_current_path().get_base_dir();
-			shader_create_dialog->config(base_path.path_join("new_shader"), false, false, 2);
+			shader_create_dialog->config(base_path.path_join("new_shader"), false, false, 1);
 			shader_create_dialog->popup_centered();
 		} break;
 		case FILE_OPEN: {
@@ -664,6 +705,10 @@ void ShaderEditorPlugin::_notification(int p_what) {
 }
 
 ShaderEditorPlugin::ShaderEditorPlugin() {
+	Ref<TextShaderLanguageEditorPlugin> text_shader_editor;
+	text_shader_editor.instantiate();
+	ShaderLanguageEditorPlugin::register_shader_language(text_shader_editor);
+
 	window_wrapper = memnew(WindowWrapper);
 	window_wrapper->set_window_title(vformat(TTR("%s - Godot Engine"), TTR("Shader Editor")));
 	window_wrapper->set_margins_enabled(true);

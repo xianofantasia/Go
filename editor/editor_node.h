@@ -481,7 +481,7 @@ private:
 	HashSet<FileDialog *> file_dialogs;
 	HashSet<EditorFileDialog *> editor_file_dialogs;
 
-	Vector<Ref<EditorResourceConversionPlugin>> resource_conversion_plugins;
+	static Vector<Ref<EditorResourceConversionPlugin>> resource_conversion_plugins;
 	PrintHandlerList print_handler;
 
 	HashMap<String, Ref<Texture2D>> icon_type_cache;
@@ -920,9 +920,9 @@ public:
 	EditorNode();
 	~EditorNode();
 
-	void add_resource_conversion_plugin(const Ref<EditorResourceConversionPlugin> &p_plugin);
-	void remove_resource_conversion_plugin(const Ref<EditorResourceConversionPlugin> &p_plugin);
-	Vector<Ref<EditorResourceConversionPlugin>> find_resource_conversion_plugin(const Ref<Resource> &p_for_resource);
+	static void add_resource_conversion_plugin(const Ref<EditorResourceConversionPlugin> &p_plugin);
+	static void remove_resource_conversion_plugin(const Ref<EditorResourceConversionPlugin> &p_plugin);
+	static Vector<Ref<EditorResourceConversionPlugin>> find_resource_conversion_plugin(const Ref<Resource> &p_for_resource);
 
 	bool ensure_main_scene(bool p_from_native);
 };

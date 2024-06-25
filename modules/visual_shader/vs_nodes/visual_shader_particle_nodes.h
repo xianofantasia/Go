@@ -31,7 +31,7 @@
 #ifndef VISUAL_SHADER_PARTICLE_NODES_H
 #define VISUAL_SHADER_PARTICLE_NODES_H
 
-#include "scene/resources/visual_shader.h"
+#include "../visual_shader.h"
 
 class ImageTexture;
 

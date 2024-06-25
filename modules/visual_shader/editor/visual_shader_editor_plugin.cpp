@@ -30,6 +30,8 @@
 
 #include "visual_shader_editor_plugin.h"
 
+#include "../vs_nodes/visual_shader_nodes.h"
+#include "../vs_nodes/visual_shader_particle_nodes.h"
 #include "core/config/project_settings.h"
 #include "core/io/resource_loader.h"
 #include "core/math/math_defs.h"
@@ -43,7 +45,7 @@
 #include "editor/filesystem_dock.h"
 #include "editor/inspector_dock.h"
 #include "editor/plugins/curve_editor_plugin.h"
-#include "editor/plugins/shader_editor_plugin.h"
+#include "editor/plugins/shader/shader_editor_plugin.h"
 #include "editor/themes/editor_scale.h"
 #include "scene/animation/tween.h"
 #include "scene/gui/button.h"
@@ -61,8 +63,6 @@
 #include "scene/main/window.h"
 #include "scene/resources/curve_texture.h"
 #include "scene/resources/style_box_flat.h"
-#include "scene/resources/visual_shader_nodes.h"
-#include "scene/resources/visual_shader_particle_nodes.h"
 #include "servers/display_server.h"
 #include "servers/rendering/shader_preprocessor.h"
 #include "servers/rendering/shader_types.h"

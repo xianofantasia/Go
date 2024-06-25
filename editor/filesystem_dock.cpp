@@ -50,9 +50,9 @@
 #include "editor/import/3d/scene_import_settings.h"
 #include "editor/import_dock.h"
 #include "editor/plugins/editor_resource_tooltip_plugins.h"
+#include "editor/plugins/shader/shader_create_dialog.h"
 #include "editor/scene_create_dialog.h"
 #include "editor/scene_tree_dock.h"
-#include "editor/shader_create_dialog.h"
 #include "editor/themes/editor_scale.h"
 #include "editor/themes/editor_theme_manager.h"
 #include "scene/gui/item_list.h"
@@ -2550,12 +2550,12 @@ void FileSystemDock::_resource_created() {
 		make_shader_dialog->config(fpath.path_join("new_shader"), false, false, 0);
 		make_shader_dialog->popup_centered();
 		return;
-	} else if (type_name == "VisualShader") {
-		make_shader_dialog->config(fpath.path_join("new_shader"), false, false, 1);
+	} else if (type_name == "ShaderInclude") {
+		make_shader_dialog->config(fpath.path_join("new_shader_include"), false, false, 1);
 		make_shader_dialog->popup_centered();
 		return;
-	} else if (type_name == "ShaderInclude") {
-		make_shader_dialog->config(fpath.path_join("new_shader_include"), false, false, 2);
+	} else if (type_name == "VisualShader") {
+		make_shader_dialog->config(fpath.path_join("new_shader"), false, false, 2);
 		make_shader_dialog->popup_centered();
 		return;
 	}
