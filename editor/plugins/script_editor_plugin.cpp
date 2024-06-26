@@ -57,8 +57,8 @@
 #include "editor/gui/editor_toaster.h"
 #include "editor/inspector_dock.h"
 #include "editor/node_dock.h"
-#include "editor/plugins/shader_editor_plugin.h"
-#include "editor/plugins/text_shader_editor.h"
+#include "editor/plugins/shader/shader_editor_plugin.h"
+#include "editor/plugins/shader/text/text_shader_editor.h"
 #include "editor/themes/editor_scale.h"
 #include "editor/themes/editor_theme_manager.h"
 #include "editor/window_wrapper.h"
@@ -3806,7 +3806,10 @@ void ScriptEditor::_on_find_in_files_result_selected(const String &fpath, int li
 			ShaderEditorPlugin *shader_editor = Object::cast_to<ShaderEditorPlugin>(EditorNode::get_editor_data().get_editor_by_name("Shader"));
 			shader_editor->edit(res.ptr());
 			shader_editor->make_visible(true);
-			shader_editor->get_shader_editor(res)->goto_line_selection(line_number - 1, begin, end);
+			TextShaderEditor *text_shader_editor = Object::cast_to<TextShaderEditor>(shader_editor->get_shader_editor(res));
+			if (text_shader_editor) {
+				text_shader_editor->goto_line_selection(line_number - 1, begin, end);
+			}
 			return;
 		} else if (fpath.get_extension() == "tscn") {
 			Ref<FileAccess> f = FileAccess::open(fpath, FileAccess::READ);
