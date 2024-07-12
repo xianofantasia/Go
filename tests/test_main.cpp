@@ -109,7 +109,6 @@
 #include "tests/scene/test_curve.h"
 #include "tests/scene/test_curve_2d.h"
 #include "tests/scene/test_curve_3d.h"
-#include "tests/scene/test_decal.h"
 #include "tests/scene/test_gradient.h"
 #include "tests/scene/test_image_texture.h"
 #include "tests/scene/test_image_texture_3d.h"
@@ -130,6 +129,7 @@
 #include "tests/test_validate_testing.h"
 
 #ifndef _3D_DISABLED
+#include "tests/scene/test_decal.h"
 #include "tests/scene/test_arraymesh.h"
 #include "tests/scene/test_camera_3d.h"
 #include "tests/scene/test_navigation_agent_2d.h"
