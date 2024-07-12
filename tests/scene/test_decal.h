@@ -36,7 +36,7 @@
 #include "tests/test_macros.h"
 
 namespace TestDecal {
-TEST_CASE("[SceneTree][Decal] Decal checks get_aabb") {
+TEST_CASE("[SceneTree][Decal] Getters/Setters") {
 	Decal *decal = memnew(Decal);
 	AABB default_aabb{
 		Vector3(-1.0f, -1.0f, -1.0f),
