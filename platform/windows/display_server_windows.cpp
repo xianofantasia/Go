@@ -2666,7 +2666,7 @@ void DisplayServerWindows::cursor_set_custom_image(const Ref<Resource> &p_cursor
 
 		bool fully_transparent = true;
 		for (UINT index = 0; index < image_size; index++) {
-			int row_index = floor(index / texture_size.width);
+			int row_index = Math::floor(float(index) / texture_size.width);
 			int column_index = index % int(texture_size.width);
 
 			const Color &c = image->get_pixel(column_index, row_index);
@@ -4955,7 +4955,7 @@ LRESULT DisplayServerWindows::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARA
 					} else {
 						mb->set_button_index(MouseButton::WHEEL_DOWN);
 					}
-					mb->set_factor(fabs((double)motion / (double)WHEEL_DELTA));
+					mb->set_factor(Math::abs((double)motion / (double)WHEEL_DELTA));
 				} break;
 				case WM_MOUSEHWHEEL: {
 					mb->set_pressed(true);
@@ -4969,7 +4969,7 @@ LRESULT DisplayServerWindows::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARA
 					} else {
 						mb->set_button_index(MouseButton::WHEEL_RIGHT);
 					}
-					mb->set_factor(fabs((double)motion / (double)WHEEL_DELTA));
+					mb->set_factor(Math::abs((double)motion / (double)WHEEL_DELTA));
 				} break;
 				case WM_XBUTTONDOWN: {
 					mb->set_pressed(true);

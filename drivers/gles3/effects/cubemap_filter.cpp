@@ -92,13 +92,13 @@ CubemapFilter::~CubemapFilter() {
 Vector3 importance_sample_GGX(Vector2 xi, float roughness4) {
 	// Compute distribution direction
 	float phi = 2.0 * Math_PI * xi.x;
-	float cos_theta = sqrt((1.0 - xi.y) / (1.0 + (roughness4 - 1.0) * xi.y));
-	float sin_theta = sqrt(1.0 - cos_theta * cos_theta);
+	float cos_theta = Math::sqrt((1.0 - xi.y) / (1.0 + (roughness4 - 1.0) * xi.y));
+	float sin_theta = Math::sqrt(1.0 - cos_theta * cos_theta);
 
 	// Convert to spherical direction
 	Vector3 half_vector;
-	half_vector.x = sin_theta * cos(phi);
-	half_vector.y = sin_theta * sin(phi);
+	half_vector.x = sin_theta * Math::cos(phi);
+	half_vector.y = sin_theta * Math::sin(phi);
 	half_vector.z = cos_theta;
 
 	return half_vector;

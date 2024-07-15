@@ -206,7 +206,7 @@ void RendererViewport::_configure_3d_render_buffers(Viewport *p_viewport) {
 			uint32_t jitter_phase_count = 0;
 			if (scaling_3d_mode == RS::VIEWPORT_SCALING_3D_MODE_FSR2) {
 				// Implementation has been copied from ffxFsr2GetJitterPhaseCount.
-				jitter_phase_count = uint32_t(8.0f * pow(float(target_width) / render_width, 2.0f));
+				jitter_phase_count = uint32_t(8.0f * Math::pow(float(target_width) / render_width, 2.0f));
 			} else if (use_taa) {
 				// Default jitter count for TAA.
 				jitter_phase_count = 16;

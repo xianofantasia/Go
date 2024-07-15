@@ -1760,7 +1760,7 @@ String String::num(double p_num, int p_decimals) {
 	}
 
 	if (Math::is_inf(p_num)) {
-		if (signbit(p_num)) {
+		if (Math::sign_bit(p_num)) {
 			return "-inf";
 		} else {
 			return "inf";
@@ -1773,7 +1773,7 @@ String String::num(double p_num, int p_decimals) {
 		if (abs_num > 10) {
 			// We want to align the digits to the above reasonable default, so we only
 			// need to subtract log10 for numbers with a positive power of ten.
-			p_decimals -= (int)floor(log10(abs_num));
+			p_decimals -= (int)Math::floor(Math::log10(abs_num));
 		}
 	}
 	if (p_decimals > MAX_DECIMALS) {
@@ -1952,7 +1952,7 @@ String String::num_real(float p_num, bool p_trailing) {
 	// to subtract log10 for numbers with a positive power of ten magnitude.
 	const float abs_num = Math::abs(p_num);
 	if (abs_num > 10) {
-		decimals -= (int)floor(log10(abs_num));
+		decimals -= (int)Math::floor(Math::log10(abs_num));
 	}
 	return num(p_num, decimals);
 }
@@ -1963,7 +1963,7 @@ String String::num_scientific(double p_num) {
 	}
 
 	if (Math::is_inf(p_num)) {
-		if (signbit(p_num)) {
+		if (Math::sign_bit(p_num)) {
 			return "-inf";
 		} else {
 			return "inf";
@@ -5692,7 +5692,7 @@ String String::sprintf(const Array &values, bool *error) const {
 					}
 
 					double value = values[value_index];
-					bool is_negative = signbit(value);
+					bool is_negative = Math::sign_bit(value);
 					String str = String::num(Math::abs(value), min_decimals);
 					const bool is_finite = Math::is_finite(value);
 

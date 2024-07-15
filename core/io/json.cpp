@@ -73,10 +73,10 @@ String JSON::_stringify(const Variant &p_var, const String &p_indent, int p_cur_
 			if (p_full_precision) {
 				// Store unreliable digits (17) instead of just reliable
 				// digits (14) so that the value can be decoded exactly.
-				return String::num(num, 17 - (int)floor(log10(num)));
+				return String::num(num, 17 - (int)Math::floor(Math::log10(num)));
 			} else {
 				// Store only reliable digits (14) by default.
-				return String::num(num, 14 - (int)floor(log10(num)));
+				return String::num(num, 14 - (int)Math::floor(Math::log10(num)));
 			}
 		}
 		case Variant::PACKED_INT32_ARRAY:

@@ -581,7 +581,7 @@ void TextEdit::_notification(int p_what) {
 		case NOTIFICATION_INTERNAL_PHYSICS_PROCESS: {
 			if (scrolling && get_v_scroll() != target_v_scroll) {
 				double target_y = target_v_scroll - get_v_scroll();
-				double dist = abs(target_y);
+				double dist = Math::abs(target_y);
 				// To ensure minimap is responsive override the speed setting.
 				double vel = ((target_y / dist) * ((minimap_clicked) ? 3000 : v_scroll_speed)) * get_physics_process_delta_time();
 
@@ -1152,9 +1152,9 @@ void TextEdit::_notification(int p_what) {
 									float icon_ratio = icon->get_width() / icon->get_height();
 									float gutter_ratio = gutter_rect.size.x / gutter_rect.size.y;
 									if (gutter_ratio > icon_ratio) {
-										gutter_rect.size.x = floor(icon->get_width() * (gutter_rect.size.y / icon->get_height()));
+										gutter_rect.size.x = Math::floor(icon->get_width() * (gutter_rect.size.y / icon->get_height()));
 									} else {
-										gutter_rect.size.y = floor(icon->get_height() * (gutter_rect.size.x / icon->get_width()));
+										gutter_rect.size.y = Math::floor(icon->get_height() * (gutter_rect.size.x / icon->get_width()));
 									}
 									if (rtl) {
 										gutter_rect.position.x = size.width - gutter_rect.position.x - gutter_rect.size.x;
@@ -1289,7 +1289,7 @@ void TextEdit::_notification(int p_what) {
 									} else if (rect.position.x + rect.size.x > xmargin_end) {
 										rect.size.x = xmargin_end - rect.position.x;
 									}
-									rect.position.y += ceil(TS->shaped_text_get_ascent(rid)) + ceil(theme_cache.font->get_underline_position(theme_cache.font_size));
+									rect.position.y += Math::ceil(TS->shaped_text_get_ascent(rid)) + Math::ceil(theme_cache.font->get_underline_position(theme_cache.font_size));
 									rect.size.y = MAX(1, theme_cache.font->get_underline_thickness(theme_cache.font_size));
 									RS::get_singleton()->canvas_item_add_rect(ci, rect, highlight_underline_color);
 								}
@@ -8022,7 +8022,7 @@ void TextEdit::_update_scrollbars() {
 		if (first_visible_col > (total_width - visible_width)) {
 			first_visible_col = (total_width - visible_width);
 		}
-		if (fabs(h_scroll->get_value() - (double)first_visible_col) >= 1) {
+		if (Math::abs(h_scroll->get_value() - (double)first_visible_col) >= 1) {
 			h_scroll->set_value(first_visible_col);
 		}
 
@@ -8062,7 +8062,7 @@ void TextEdit::_scroll_moved(double p_to_val) {
 		// Set line ofs and wrap ofs.
 		bool draw_placeholder = _using_placeholder();
 
-		int v_scroll_i = floor(get_v_scroll());
+		int v_scroll_i = Math::floor(get_v_scroll());
 		int sc = 0;
 		int n_line;
 		for (n_line = 0; n_line < text.size(); n_line++) {
@@ -8088,13 +8088,13 @@ void TextEdit::_scroll_moved(double p_to_val) {
 double TextEdit::_get_visible_lines_offset() const {
 	double total = _get_control_height();
 	total /= (double)get_line_height();
-	total = total - floor(total);
+	total = total - Math::floor(total);
 	total = -CLAMP(total, 0.001, 1) + 1;
 	return total;
 }
 
 double TextEdit::_get_v_scroll_offset() const {
-	double val = get_v_scroll() - floor(get_v_scroll());
+	double val = get_v_scroll() - Math::floor(get_v_scroll());
 	return CLAMP(val, 0, 1);
 }
 

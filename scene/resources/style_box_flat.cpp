@@ -282,8 +282,8 @@ inline void draw_rounded_rectangle(Vector<Vector2> &verts, Vector<int> &indices,
 			}
 
 			const real_t pt_angle = (corner_idx + detail / (double)adapted_corner_detail) * quarter_arc_rad + Math_PI;
-			const real_t angle_cosine = cos(pt_angle);
-			const real_t angle_sine = sin(pt_angle);
+			const real_t angle_cosine = Math::cos(pt_angle);
+			const real_t angle_sine = Math::sin(pt_angle);
 
 			{
 				const real_t x = inner_corner_radius[corner_idx] * angle_cosine + inner_points[corner_idx].x;

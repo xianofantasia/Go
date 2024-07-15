@@ -625,8 +625,8 @@ float RichTextLabel::_shape_line(ItemFrame *p_frame, int p_line, const Ref<Font>
 						t_char_count += cell_ch;
 						remaining_characters -= cell_ch;
 
-						table->columns[column].min_width = MAX(table->columns[column].min_width, ceil(frame->lines[i].text_buf->get_size().x));
-						table->columns[column].max_width = MAX(table->columns[column].max_width, ceil(frame->lines[i].text_buf->get_non_wrapped_size().x));
+						table->columns[column].min_width = MAX(table->columns[column].min_width, Math::ceil(frame->lines[i].text_buf->get_size().x));
+						table->columns[column].max_width = MAX(table->columns[column].max_width, Math::ceil(frame->lines[i].text_buf->get_non_wrapped_size().x));
 					}
 					idx++;
 				}
@@ -743,7 +743,7 @@ void RichTextLabel::_set_table_size(ItemTable *p_table, int p_available_width) {
 			MutexLock sub_lock(frame->lines[i].text_buf->get_mutex());
 
 			frame->lines[i].text_buf->set_width(p_table->columns[column].width);
-			p_table->columns[column].width = MAX(p_table->columns[column].width, ceil(frame->lines[i].text_buf->get_size().x));
+			p_table->columns[column].width = MAX(p_table->columns[column].width, Math::ceil(frame->lines[i].text_buf->get_size().x));
 
 			frame->lines[i].offset.y = prev_h;
 
