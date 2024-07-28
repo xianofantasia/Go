@@ -39,7 +39,6 @@
 #include "core/string/string_name.h"
 #include "core/string/translation_server.h"
 #include "core/string/ucaps.h"
-#include "core/variant/variant.h"
 #include "core/version_generated.gen.h"
 
 #include <stdio.h>
@@ -1099,14 +1098,16 @@ const char32_t *String::get_data() const {
 	return size() ? &operator[](0) : &zero;
 }
 
-String String::_camelcase_to_underscore() const {
-	const char32_t *cstr = get_data();
-	String new_string;
-	int start_index = 0;
+PackedStringArray String::_separate_compound_words() const {
+	PackedStringArray res;
 
 	if (length() == 0) {
-		return *this;
+		return res;
 	}
+
+	const char32_t *cstr = get_data();
+	int start_index = 0;
+	String new_string;
 
 	bool is_prev_upper = is_unicode_upper_case(cstr[0]);
 	bool is_prev_lower = is_unicode_lower_case(cstr[0]);
@@ -1128,7 +1129,7 @@ String String::_camelcase_to_underscore() const {
 		const bool cond_d = (is_prev_upper || is_prev_lower) && is_curr_digit; // A2, a2
 
 		if (cond_a || cond_b || cond_c || cond_d) {
-			new_string += substr(start_index, i - start_index) + "_";
+			new_string += substr(start_index, i - start_index) + " ";
 			start_index = i;
 		}
 
@@ -1138,40 +1139,77 @@ String String::_camelcase_to_underscore() const {
 	}
 
 	new_string += substr(start_index, size() - start_index);
-	return new_string.to_lower();
-}
 
-String String::capitalize() const {
-	String aux = _camelcase_to_underscore().replace("_", " ").strip_edges();
-	String cap;
-	for (int i = 0; i < aux.get_slice_count(" "); i++) {
-		String slice = aux.get_slicec(' ', i);
-		if (slice.length() > 0) {
-			slice[0] = _find_upper(slice[0]);
-			if (i > 0) {
-				cap += " ";
-			}
-			cap += slice;
+	for (int i = 0; i < new_string.size(); i++) {
+		const bool whitespace = is_whitespace(new_string[i]);
+		const bool underscore = is_underscore(new_string[i]);
+		const bool hyphen = is_hyphen(new_string[i]);
+
+		if (whitespace || underscore || hyphen) {
+			new_string[i] = ' ';
 		}
 	}
 
-	return cap;
+	new_string = new_string.to_lower();
+	res = new_string.split(" ");
+	return res;
+}
+
+String String::capitalize() const {
+	PackedStringArray words = _separate_compound_words();
+	String ret;
+	for (int i = 0; i < words.size(); i++) {
+		if (words[i].is_empty()) {
+			continue;
+		}
+		String word = words[i];
+		word[0] = _find_upper(word[0]);
+		words.set(i, word);
+	}
+	ret = String(" ").join(words);
+	return ret;
 }
 
 String String::to_camel_case() const {
-	String s = to_pascal_case();
-	if (!s.is_empty()) {
-		s[0] = _find_lower(s[0]);
+	PackedStringArray words = _separate_compound_words();
+	String ret;
+	for (int i = 0; i < words.size(); i++) {
+		if (words[i].is_empty()) {
+			continue;
+		}
+		String word = words[i];
+		if (ret.size() > 0) {
+			word[0] = _find_upper(word[0]);
+		}
+		ret += word;
 	}
-	return s;
+	return ret;
 }
 
 String String::to_pascal_case() const {
-	return capitalize().replace(" ", "");
+	PackedStringArray words = _separate_compound_words();
+	String ret;
+	for (int i = 0; i < words.size(); i++) {
+		if (words[i].is_empty()) {
+			continue;
+		}
+		String word = words[i];
+		word[0] = _find_upper(word[0]);
+		ret += word;
+	}
+	return ret;
 }
 
 String String::to_snake_case() const {
-	return _camelcase_to_underscore().replace(" ", "_").strip_edges();
+	PackedStringArray words = _separate_compound_words();
+	String ret = String("_").join(words);
+	return ret;
+}
+
+String String::to_kebab_case() const {
+	PackedStringArray words = _separate_compound_words();
+	String ret = String("-").join(words);
+	return ret;
 }
 
 String String::get_with_code_lines() const {
