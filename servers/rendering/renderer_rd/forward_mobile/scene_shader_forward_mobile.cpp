@@ -144,7 +144,7 @@ void SceneShaderForwardMobile::ShaderData::set_code(const String &p_code) {
 	SceneShaderForwardMobile *shader_singleton = (SceneShaderForwardMobile *)SceneShaderForwardMobile::singleton;
 
 	Error err = shader_singleton->compiler.compile(RS::SHADER_SPATIAL, code, &actions, path, gen_code);
-	ERR_FAIL_COND_MSG(err != OK, "Shader compilation failed.");
+	ERR_FAIL_COND_MSG(err != OK, "Spatial shader compilation failed (most likely due to a syntax error). Shader code has been printed nearby for troubleshooting.");
 
 	if (version.is_null()) {
 		version = shader_singleton->shader.version_create();

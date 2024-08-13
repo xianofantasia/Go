@@ -572,7 +572,7 @@ void ShaderRD::version_set_code(RID p_version, const HashMap<String, String> &p_
 	ERR_FAIL_COND(is_compute);
 
 	Version *version = version_owner.get_or_null(p_version);
-	ERR_FAIL_NULL(version);
+	ERR_FAIL_NULL_MSG(version, "Can't use a shader that previously failed compilation.");
 	version->vertex_globals = p_vertex_globals.utf8();
 	version->fragment_globals = p_fragment_globals.utf8();
 	version->uniforms = p_uniforms.utf8();
@@ -604,7 +604,7 @@ void ShaderRD::version_set_compute_code(RID p_version, const HashMap<String, Str
 	ERR_FAIL_COND(!is_compute);
 
 	Version *version = version_owner.get_or_null(p_version);
-	ERR_FAIL_NULL(version);
+	ERR_FAIL_NULL_MSG(version, "Compute shader compilation failed (most likely due to a syntax error). Shader code has been printed nearby for troubleshooting.");
 
 	version->compute_globals = p_compute_globals.utf8();
 	version->uniforms = p_uniforms.utf8();

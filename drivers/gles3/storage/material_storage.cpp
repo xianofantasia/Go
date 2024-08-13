@@ -2576,7 +2576,7 @@ void CanvasShaderData::set_code(const String &p_code) {
 
 	actions.uniforms = &uniforms;
 	Error err = MaterialStorage::get_singleton()->shaders.compiler_canvas.compile(RS::SHADER_CANVAS_ITEM, code, &actions, path, gen_code);
-	ERR_FAIL_COND_MSG(err != OK, "Shader compilation failed.");
+	ERR_FAIL_COND_MSG(err != OK, "CanvasItem shader compilation failed (most likely due to a syntax error). Shader code has been printed nearby for troubleshooting.");
 
 	if (version.is_null()) {
 		version = MaterialStorage::get_singleton()->shaders.canvas_shader.version_create();
@@ -2752,7 +2752,7 @@ void SkyShaderData::set_code(const String &p_code) {
 	actions.uniforms = &uniforms;
 
 	Error err = MaterialStorage::get_singleton()->shaders.compiler_sky.compile(RS::SHADER_SKY, code, &actions, path, gen_code);
-	ERR_FAIL_COND_MSG(err != OK, "Shader compilation failed.");
+	ERR_FAIL_COND_MSG(err != OK, "Sky shader compilation failed (most likely due to a syntax error). Shader code has been printed nearby for troubleshooting.");
 
 	if (version.is_null()) {
 		version = MaterialStorage::get_singleton()->shaders.sky_shader.version_create();
@@ -2969,7 +2969,7 @@ void SceneShaderData::set_code(const String &p_code) {
 	actions.uniforms = &uniforms;
 
 	Error err = MaterialStorage::get_singleton()->shaders.compiler_scene.compile(RS::SHADER_SPATIAL, code, &actions, path, gen_code);
-	ERR_FAIL_COND_MSG(err != OK, "Shader compilation failed.");
+	ERR_FAIL_COND_MSG(err != OK, "Spatial shader compilation failed (most likely due to a syntax error). Shader code has been printed nearby for troubleshooting.");
 
 	if (version.is_null()) {
 		version = MaterialStorage::get_singleton()->shaders.scene_shader.version_create();
@@ -3152,7 +3152,7 @@ void ParticlesShaderData::set_code(const String &p_code) {
 	actions.uniforms = &uniforms;
 
 	Error err = MaterialStorage::get_singleton()->shaders.compiler_particles.compile(RS::SHADER_PARTICLES, code, &actions, path, gen_code);
-	ERR_FAIL_COND_MSG(err != OK, "Shader compilation failed.");
+	ERR_FAIL_COND_MSG(err != OK, "Particles shader compilation failed (most likely due to a syntax error). Shader code has been printed nearby for troubleshooting.");
 
 	if (version.is_null()) {
 		version = MaterialStorage::get_singleton()->shaders.particles_process_shader.version_create();
