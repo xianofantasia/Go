@@ -1133,6 +1133,10 @@ void ParticlesStorage::_particles_process(Particles *p_particles, double p_delta
 		//fill the trail params
 		for (uint32_t i = 0; i < p_particles->trail_params.size(); i++) {
 			uint32_t src_idx = i * p_particles->frame_history.size() / p_particles->trail_params.size();
+			if (p_particles->speed_scale <= 0.0) {
+				// Stop trails.
+				src_idx = 0;
+			}
 			p_particles->trail_params[i] = p_particles->frame_history[src_idx];
 		}
 	} else {
@@ -1503,7 +1507,7 @@ void ParticlesStorage::update_particles() {
 			}
 		}
 
-		bool zero_time_scale = Engine::get_singleton()->get_time_scale() <= 0.0;
+		bool zero_time_scale = Engine::get_singleton()->get_time_scale() * particles->speed_scale <= 0.0;
 
 		if (particles->clear && particles->pre_process_time > 0.0) {
 			double frame_time;
@@ -1522,29 +1526,25 @@ void ParticlesStorage::update_particles() {
 		}
 
 		if (fixed_fps > 0) {
-			double frame_time;
-			double decr;
 			if (zero_time_scale) {
-				frame_time = 0.0;
-				decr = 1.0 / fixed_fps;
+				_particles_process(particles, 0.0);
 			} else {
-				frame_time = 1.0 / fixed_fps;
-				decr = frame_time;
-			}
-			double delta = RendererCompositorRD::get_singleton()->get_frame_delta_time();
-			if (delta > 0.1) { //avoid recursive stalls if fps goes below 10
-				delta = 0.1;
-			} else if (delta <= 0.0) { //unlikely but..
-				delta = 0.001;
-			}
-			double todo = particles->frame_remainder + delta;
+				double frame_time = 1.0 / fixed_fps;
+				double delta = RendererCompositorRD::get_singleton()->get_frame_delta_time();
+				if (delta > 0.1) { //avoid recursive stalls if fps goes below 10
+					delta = 0.1;
+				} else if (delta <= 0.0) { //unlikely but..
+					delta = 0.001;
+				}
+				double todo = particles->frame_remainder + delta;
 
-			while (todo >= frame_time || particles->clear) {
-				_particles_process(particles, frame_time);
-				todo -= decr;
-			}
+				while (todo >= frame_time || particles->clear) {
+					_particles_process(particles, frame_time);
+					todo -= frame_time;
+				}
 
-			particles->frame_remainder = todo;
+				particles->frame_remainder = todo;
+			}
 
 		} else {
 			if (zero_time_scale) {
