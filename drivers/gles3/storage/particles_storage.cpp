@@ -1085,8 +1085,6 @@ void ParticlesStorage::update_particles() {
 			fixed_fps = particles->fixed_fps;
 		}
 
-		bool zero_time_scale = Engine::get_singleton()->get_time_scale() <= 0.0;
-
 		if (particles->clear && particles->pre_process_time > 0.0) {
 			double frame_time;
 			if (fixed_fps > 0) {
@@ -1103,37 +1101,27 @@ void ParticlesStorage::update_particles() {
 			}
 		}
 
+		double time_scale = MAX(Engine::get_singleton()->get_time_scale() * particles->speed_scale, 0.0);
+
 		if (fixed_fps > 0) {
-			double frame_time;
-			double decr;
-			if (zero_time_scale) {
-				frame_time = 0.0;
-				decr = 1.0 / fixed_fps;
-			} else {
-				frame_time = 1.0 / fixed_fps;
-				decr = frame_time;
-			}
+			double frame_time = 1.0 / fixed_fps;
 			double delta = RSG::rasterizer->get_frame_delta_time();
 			if (delta > 0.1) { //avoid recursive stalls if fps goes below 10
 				delta = 0.1;
 			} else if (delta <= 0.0) { //unlikely but..
 				delta = 0.001;
 			}
-			double todo = particles->frame_remainder + delta;
+			double todo = particles->frame_remainder + delta * time_scale;
 
 			while (todo >= frame_time) {
 				_particles_process(particles, frame_time);
-				todo -= decr;
+				todo -= frame_time;
 			}
 
 			particles->frame_remainder = todo;
 
 		} else {
-			if (zero_time_scale) {
-				_particles_process(particles, 0.0);
-			} else {
-				_particles_process(particles, RSG::rasterizer->get_frame_delta_time());
-			}
+			_particles_process(particles, RSG::rasterizer->get_frame_delta_time() * time_scale);
 		}
 
 		// Copy particles to instance buffer and pack Color/Custom.
