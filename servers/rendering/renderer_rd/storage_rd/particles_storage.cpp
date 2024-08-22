@@ -1507,8 +1507,6 @@ void ParticlesStorage::update_particles() {
 			}
 		}
 
-		bool zero_time_scale = Engine::get_singleton()->get_time_scale() * particles->speed_scale <= 0.0;
-
 		if (particles->clear && particles->pre_process_time > 0.0) {
 			double frame_time;
 			if (fixed_fps > 0) {
@@ -1525,33 +1523,26 @@ void ParticlesStorage::update_particles() {
 			}
 		}
 
+		double time_scale = MAX(Engine::get_singleton()->get_time_scale() * particles->speed_scale, 0.0);
+
 		if (fixed_fps > 0) {
-			if (zero_time_scale) {
-				_particles_process(particles, 0.0);
-			} else {
-				double frame_time = 1.0 / fixed_fps;
-				double delta = RendererCompositorRD::get_singleton()->get_frame_delta_time();
-				if (delta > 0.1) { //avoid recursive stalls if fps goes below 10
-					delta = 0.1;
-				} else if (delta <= 0.0) { //unlikely but..
-					delta = 0.001;
-				}
-				double todo = particles->frame_remainder + delta;
+			double frame_time = 1.0 / fixed_fps;
+			double delta = RendererCompositorRD::get_singleton()->get_frame_delta_time();
+			if (delta > 0.1) { //avoid recursive stalls if fps goes below 10
+				delta = 0.1;
+			} else if (delta <= 0.0) { //unlikely but..
+				delta = 0.001;
+			}
+			double todo = particles->frame_remainder + delta * time_scale;
 
-				while (todo >= frame_time || particles->clear) {
-					_particles_process(particles, frame_time);
-					todo -= frame_time;
-				}
-
-				particles->frame_remainder = todo;
+			while (todo >= frame_time || particles->clear) {
+				_particles_process(particles, frame_time);
+				todo -= frame_time;
 			}
 
+			particles->frame_remainder = todo;
 		} else {
-			if (zero_time_scale) {
-				_particles_process(particles, 0.0);
-			} else {
-				_particles_process(particles, RendererCompositorRD::get_singleton()->get_frame_delta_time());
-			}
+			_particles_process(particles, RendererCompositorRD::get_singleton()->get_frame_delta_time() * time_scale);
 		}
 
 		// Ensure that memory is initialized (the code above should ensure that _particles_process is always called at least once upon clearing).
