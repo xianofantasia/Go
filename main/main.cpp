@@ -3196,8 +3196,8 @@ Error Main::setup2(bool p_show_boot_logo) {
 
 		OS::get_singleton()->benchmark_end_measure("Scene", "Modules and Extensions");
 
-		/// We need to initialize the movie writer here in case
-		/// One of the user provided gdextensions subclasses MovieWriter
+		// We need to initialize the movie writer here in case
+		// one of the user provided gdextensions subclasses MovieWriter.
 		if (Engine::get_singleton()->get_write_movie_path() != String()) {
 			movie_writer = MovieWriter::find_writer_for_file(Engine::get_singleton()->get_write_movie_path());
 			if (movie_writer == nullptr) {
