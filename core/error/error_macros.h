@@ -35,6 +35,7 @@
 #include "core/typedefs.h"
 
 #include <atomic> // We'd normally use safe_refcount.h, but that would cause circular includes.
+#include <type_traits>
 
 class String;
 
@@ -112,6 +113,20 @@ void _physics_interpolation_warning(const char *p_function, const char *p_file, 
 // Index out of bounds error macros.
 // These macros should be used instead of `ERR_FAIL_COND` for bounds checking.
 
+// Allow enum class values to be implicitly parsed by their underlying types
+template <typename T>
+constexpr auto _parse_enum_class(T p_value) {
+	if constexpr (std::is_enum_v<T>) {
+		if constexpr (!std::is_convertible_v<T, std::underlying_type_t<T>>) {
+			return static_cast<std::underlying_type_t<T>>(p_value);
+		} else {
+			return p_value;
+		}
+	} else {
+		return p_value;
+	}
+}
+
 // Integer index out of bounds error macros.
 
 /**
@@ -121,32 +136,32 @@ void _physics_interpolation_warning(const char *p_function, const char *p_file, 
  * Ensures an integer index `m_index` is less than `m_size` and greater than or equal to 0.
  * If not, the current function returns.
  */
-#define ERR_FAIL_INDEX(m_index, m_size)                                                                         \
-	if (unlikely((m_index) < 0 || (m_index) >= (m_size))) {                                                     \
-		_err_print_index_error(FUNCTION_STR, __FILE__, __LINE__, m_index, m_size, _STR(m_index), _STR(m_size)); \
-		return;                                                                                                 \
-	} else                                                                                                      \
+#define ERR_FAIL_INDEX(m_index, m_size)                                                                                                               \
+	if (unlikely(_parse_enum_class(m_index) < 0 || (m_index) >= (m_size))) {                                                                          \
+		_err_print_index_error(FUNCTION_STR, __FILE__, __LINE__, _parse_enum_class(m_index), _parse_enum_class(m_size), _STR(m_index), _STR(m_size)); \
+		return;                                                                                                                                       \
+	} else                                                                                                                                            \
 		((void)0)
 
 /**
  * Ensures an integer index `m_index` is less than `m_size` and greater than or equal to 0.
  * If not, prints `m_msg` and the current function returns.
  */
-#define ERR_FAIL_INDEX_MSG(m_index, m_size, m_msg)                                                                     \
-	if (unlikely((m_index) < 0 || (m_index) >= (m_size))) {                                                            \
-		_err_print_index_error(FUNCTION_STR, __FILE__, __LINE__, m_index, m_size, _STR(m_index), _STR(m_size), m_msg); \
-		return;                                                                                                        \
-	} else                                                                                                             \
+#define ERR_FAIL_INDEX_MSG(m_index, m_size, m_msg)                                                                                                           \
+	if (unlikely(_parse_enum_class(m_index) < 0 || (m_index) >= (m_size))) {                                                                                 \
+		_err_print_index_error(FUNCTION_STR, __FILE__, __LINE__, _parse_enum_class(m_index), _parse_enum_class(m_size), _STR(m_index), _STR(m_size), m_msg); \
+		return;                                                                                                                                              \
+	} else                                                                                                                                                   \
 		((void)0)
 
 /**
  * Same as `ERR_FAIL_INDEX_MSG` but also notifies the editor.
  */
-#define ERR_FAIL_INDEX_EDMSG(m_index, m_size, m_msg)                                                                         \
-	if (unlikely((m_index) < 0 || (m_index) >= (m_size))) {                                                                  \
-		_err_print_index_error(FUNCTION_STR, __FILE__, __LINE__, m_index, m_size, _STR(m_index), _STR(m_size), m_msg, true); \
-		return;                                                                                                              \
-	} else                                                                                                                   \
+#define ERR_FAIL_INDEX_EDMSG(m_index, m_size, m_msg)                                                                                                               \
+	if (unlikely(_parse_enum_class(m_index) < 0 || (m_index) >= (m_size))) {                                                                                       \
+		_err_print_index_error(FUNCTION_STR, __FILE__, __LINE__, _parse_enum_class(m_index), _parse_enum_class(m_size), _STR(m_index), _STR(m_size), m_msg, true); \
+		return;                                                                                                                                                    \
+	} else                                                                                                                                                         \
 		((void)0)
 
 /**
@@ -156,32 +171,32 @@ void _physics_interpolation_warning(const char *p_function, const char *p_file, 
  * Ensures an integer index `m_index` is less than `m_size` and greater than or equal to 0.
  * If not, the current function returns `m_retval`.
  */
-#define ERR_FAIL_INDEX_V(m_index, m_size, m_retval)                                                             \
-	if (unlikely((m_index) < 0 || (m_index) >= (m_size))) {                                                     \
-		_err_print_index_error(FUNCTION_STR, __FILE__, __LINE__, m_index, m_size, _STR(m_index), _STR(m_size)); \
-		return m_retval;                                                                                        \
-	} else                                                                                                      \
+#define ERR_FAIL_INDEX_V(m_index, m_size, m_retval)                                                                                                   \
+	if (unlikely(_parse_enum_class(m_index) < 0 || (m_index) >= (m_size))) {                                                                          \
+		_err_print_index_error(FUNCTION_STR, __FILE__, __LINE__, _parse_enum_class(m_index), _parse_enum_class(m_size), _STR(m_index), _STR(m_size)); \
+		return m_retval;                                                                                                                              \
+	} else                                                                                                                                            \
 		((void)0)
 
 /**
  * Ensures an integer index `m_index` is less than `m_size` and greater than or equal to 0.
  * If not, prints `m_msg` and the current function returns `m_retval`.
  */
-#define ERR_FAIL_INDEX_V_MSG(m_index, m_size, m_retval, m_msg)                                                         \
-	if (unlikely((m_index) < 0 || (m_index) >= (m_size))) {                                                            \
-		_err_print_index_error(FUNCTION_STR, __FILE__, __LINE__, m_index, m_size, _STR(m_index), _STR(m_size), m_msg); \
-		return m_retval;                                                                                               \
-	} else                                                                                                             \
+#define ERR_FAIL_INDEX_V_MSG(m_index, m_size, m_retval, m_msg)                                                                                               \
+	if (unlikely(_parse_enum_class(m_index) < 0 || (m_index) >= (m_size))) {                                                                                 \
+		_err_print_index_error(FUNCTION_STR, __FILE__, __LINE__, _parse_enum_class(m_index), _parse_enum_class(m_size), _STR(m_index), _STR(m_size), m_msg); \
+		return m_retval;                                                                                                                                     \
+	} else                                                                                                                                                   \
 		((void)0)
 
 /**
  * Same as `ERR_FAIL_INDEX_V_MSG` but also notifies the editor.
  */
-#define ERR_FAIL_INDEX_V_EDMSG(m_index, m_size, m_retval, m_msg)                                                             \
-	if (unlikely((m_index) < 0 || (m_index) >= (m_size))) {                                                                  \
-		_err_print_index_error(FUNCTION_STR, __FILE__, __LINE__, m_index, m_size, _STR(m_index), _STR(m_size), m_msg, true); \
-		return m_retval;                                                                                                     \
-	} else                                                                                                                   \
+#define ERR_FAIL_INDEX_V_EDMSG(m_index, m_size, m_retval, m_msg)                                                                                                   \
+	if (unlikely(_parse_enum_class(m_index) < 0 || (m_index) >= (m_size))) {                                                                                       \
+		_err_print_index_error(FUNCTION_STR, __FILE__, __LINE__, _parse_enum_class(m_index), _parse_enum_class(m_size), _STR(m_index), _STR(m_size), m_msg, true); \
+		return m_retval;                                                                                                                                           \
+	} else                                                                                                                                                         \
 		((void)0)
 
 /**
@@ -192,12 +207,12 @@ void _physics_interpolation_warning(const char *p_function, const char *p_file, 
  * Ensures an integer index `m_index` is less than `m_size` and greater than or equal to 0.
  * If not, the application crashes.
  */
-#define CRASH_BAD_INDEX(m_index, m_size)                                                                                         \
-	if (unlikely((m_index) < 0 || (m_index) >= (m_size))) {                                                                      \
-		_err_print_index_error(FUNCTION_STR, __FILE__, __LINE__, m_index, m_size, _STR(m_index), _STR(m_size), "", false, true); \
-		_err_flush_stdout();                                                                                                     \
-		GENERATE_TRAP();                                                                                                         \
-	} else                                                                                                                       \
+#define CRASH_BAD_INDEX(m_index, m_size)                                                                                                                               \
+	if (unlikely(_parse_enum_class(m_index) < 0 || (m_index) >= (m_size))) {                                                                                           \
+		_err_print_index_error(FUNCTION_STR, __FILE__, __LINE__, _parse_enum_class(m_index), _parse_enum_class(m_size), _STR(m_index), _STR(m_size), "", false, true); \
+		_err_flush_stdout();                                                                                                                                           \
+		GENERATE_TRAP();                                                                                                                                               \
+	} else                                                                                                                                                             \
 		((void)0)
 
 /**
@@ -207,12 +222,12 @@ void _physics_interpolation_warning(const char *p_function, const char *p_file, 
  * Ensures an integer index `m_index` is less than `m_size` and greater than or equal to 0.
  * If not, prints `m_msg` and the application crashes.
  */
-#define CRASH_BAD_INDEX_MSG(m_index, m_size, m_msg)                                                                                 \
-	if (unlikely((m_index) < 0 || (m_index) >= (m_size))) {                                                                         \
-		_err_print_index_error(FUNCTION_STR, __FILE__, __LINE__, m_index, m_size, _STR(m_index), _STR(m_size), m_msg, false, true); \
-		_err_flush_stdout();                                                                                                        \
-		GENERATE_TRAP();                                                                                                            \
-	} else                                                                                                                          \
+#define CRASH_BAD_INDEX_MSG(m_index, m_size, m_msg)                                                                                                                       \
+	if (unlikely(_parse_enum_class(m_index) < 0 || (m_index) >= (m_size))) {                                                                                              \
+		_err_print_index_error(FUNCTION_STR, __FILE__, __LINE__, _parse_enum_class(m_index), _parse_enum_class(m_size), _STR(m_index), _STR(m_size), m_msg, false, true); \
+		_err_flush_stdout();                                                                                                                                              \
+		GENERATE_TRAP();                                                                                                                                                  \
+	} else                                                                                                                                                                \
 		((void)0)
 
 // Unsigned integer index out of bounds error macros.
@@ -224,32 +239,32 @@ void _physics_interpolation_warning(const char *p_function, const char *p_file, 
  * Ensures an unsigned integer index `m_index` is less than `m_size`.
  * If not, the current function returns.
  */
-#define ERR_FAIL_UNSIGNED_INDEX(m_index, m_size)                                                                \
-	if (unlikely((m_index) >= (m_size))) {                                                                      \
-		_err_print_index_error(FUNCTION_STR, __FILE__, __LINE__, m_index, m_size, _STR(m_index), _STR(m_size)); \
-		return;                                                                                                 \
-	} else                                                                                                      \
+#define ERR_FAIL_UNSIGNED_INDEX(m_index, m_size)                                                                                                      \
+	if (unlikely((m_index) >= (m_size))) {                                                                                                            \
+		_err_print_index_error(FUNCTION_STR, __FILE__, __LINE__, _parse_enum_class(m_index), _parse_enum_class(m_size), _STR(m_index), _STR(m_size)); \
+		return;                                                                                                                                       \
+	} else                                                                                                                                            \
 		((void)0)
 
 /**
  * Ensures an unsigned integer index `m_index` is less than `m_size`.
  * If not, prints `m_msg` and the current function returns.
  */
-#define ERR_FAIL_UNSIGNED_INDEX_MSG(m_index, m_size, m_msg)                                                            \
-	if (unlikely((m_index) >= (m_size))) {                                                                             \
-		_err_print_index_error(FUNCTION_STR, __FILE__, __LINE__, m_index, m_size, _STR(m_index), _STR(m_size), m_msg); \
-		return;                                                                                                        \
-	} else                                                                                                             \
+#define ERR_FAIL_UNSIGNED_INDEX_MSG(m_index, m_size, m_msg)                                                                                                  \
+	if (unlikely((m_index) >= (m_size))) {                                                                                                                   \
+		_err_print_index_error(FUNCTION_STR, __FILE__, __LINE__, _parse_enum_class(m_index), _parse_enum_class(m_size), _STR(m_index), _STR(m_size), m_msg); \
+		return;                                                                                                                                              \
+	} else                                                                                                                                                   \
 		((void)0)
 
 /**
  * Same as `ERR_FAIL_UNSIGNED_INDEX_MSG` but also notifies the editor.
  */
-#define ERR_FAIL_UNSIGNED_INDEX_EDMSG(m_index, m_size, m_msg)                                                                \
-	if (unlikely((m_index) >= (m_size))) {                                                                                   \
-		_err_print_index_error(FUNCTION_STR, __FILE__, __LINE__, m_index, m_size, _STR(m_index), _STR(m_size), m_msg, true); \
-		return;                                                                                                              \
-	} else                                                                                                                   \
+#define ERR_FAIL_UNSIGNED_INDEX_EDMSG(m_index, m_size, m_msg)                                                                                                      \
+	if (unlikely((m_index) >= (m_size))) {                                                                                                                         \
+		_err_print_index_error(FUNCTION_STR, __FILE__, __LINE__, _parse_enum_class(m_index), _parse_enum_class(m_size), _STR(m_index), _STR(m_size), m_msg, true); \
+		return;                                                                                                                                                    \
+	} else                                                                                                                                                         \
 		((void)0)
 
 /**
@@ -259,32 +274,32 @@ void _physics_interpolation_warning(const char *p_function, const char *p_file, 
  * Ensures an unsigned integer index `m_index` is less than `m_size`.
  * If not, the current function returns `m_retval`.
  */
-#define ERR_FAIL_UNSIGNED_INDEX_V(m_index, m_size, m_retval)                                                    \
-	if (unlikely((m_index) >= (m_size))) {                                                                      \
-		_err_print_index_error(FUNCTION_STR, __FILE__, __LINE__, m_index, m_size, _STR(m_index), _STR(m_size)); \
-		return m_retval;                                                                                        \
-	} else                                                                                                      \
+#define ERR_FAIL_UNSIGNED_INDEX_V(m_index, m_size, m_retval)                                                                                          \
+	if (unlikely((m_index) >= (m_size))) {                                                                                                            \
+		_err_print_index_error(FUNCTION_STR, __FILE__, __LINE__, _parse_enum_class(m_index), _parse_enum_class(m_size), _STR(m_index), _STR(m_size)); \
+		return m_retval;                                                                                                                              \
+	} else                                                                                                                                            \
 		((void)0)
 
 /**
  * Ensures an unsigned integer index `m_index` is less than `m_size`.
  * If not, prints `m_msg` and the current function returns `m_retval`.
  */
-#define ERR_FAIL_UNSIGNED_INDEX_V_MSG(m_index, m_size, m_retval, m_msg)                                                \
-	if (unlikely((m_index) >= (m_size))) {                                                                             \
-		_err_print_index_error(FUNCTION_STR, __FILE__, __LINE__, m_index, m_size, _STR(m_index), _STR(m_size), m_msg); \
-		return m_retval;                                                                                               \
-	} else                                                                                                             \
+#define ERR_FAIL_UNSIGNED_INDEX_V_MSG(m_index, m_size, m_retval, m_msg)                                                                                      \
+	if (unlikely((m_index) >= (m_size))) {                                                                                                                   \
+		_err_print_index_error(FUNCTION_STR, __FILE__, __LINE__, _parse_enum_class(m_index), _parse_enum_class(m_size), _STR(m_index), _STR(m_size), m_msg); \
+		return m_retval;                                                                                                                                     \
+	} else                                                                                                                                                   \
 		((void)0)
 
 /**
  * Same as `ERR_FAIL_UNSIGNED_INDEX_V_EDMSG` but also notifies the editor.
  */
-#define ERR_FAIL_UNSIGNED_INDEX_V_EDMSG(m_index, m_size, m_retval, m_msg)                                                    \
-	if (unlikely((m_index) >= (m_size))) {                                                                                   \
-		_err_print_index_error(FUNCTION_STR, __FILE__, __LINE__, m_index, m_size, _STR(m_index), _STR(m_size), m_msg, true); \
-		return m_retval;                                                                                                     \
-	} else                                                                                                                   \
+#define ERR_FAIL_UNSIGNED_INDEX_V_EDMSG(m_index, m_size, m_retval, m_msg)                                                                                          \
+	if (unlikely((m_index) >= (m_size))) {                                                                                                                         \
+		_err_print_index_error(FUNCTION_STR, __FILE__, __LINE__, _parse_enum_class(m_index), _parse_enum_class(m_size), _STR(m_index), _STR(m_size), m_msg, true); \
+		return m_retval;                                                                                                                                           \
+	} else                                                                                                                                                         \
 		((void)0)
 
 /**
@@ -295,12 +310,12 @@ void _physics_interpolation_warning(const char *p_function, const char *p_file, 
  * Ensures an unsigned integer index `m_index` is less than `m_size`.
  * If not, the application crashes.
  */
-#define CRASH_BAD_UNSIGNED_INDEX(m_index, m_size)                                                                                \
-	if (unlikely((m_index) >= (m_size))) {                                                                                       \
-		_err_print_index_error(FUNCTION_STR, __FILE__, __LINE__, m_index, m_size, _STR(m_index), _STR(m_size), "", false, true); \
-		_err_flush_stdout();                                                                                                     \
-		GENERATE_TRAP();                                                                                                         \
-	} else                                                                                                                       \
+#define CRASH_BAD_UNSIGNED_INDEX(m_index, m_size)                                                                                                                      \
+	if (unlikely((m_index) >= (m_size))) {                                                                                                                             \
+		_err_print_index_error(FUNCTION_STR, __FILE__, __LINE__, _parse_enum_class(m_index), _parse_enum_class(m_size), _STR(m_index), _STR(m_size), "", false, true); \
+		_err_flush_stdout();                                                                                                                                           \
+		GENERATE_TRAP();                                                                                                                                               \
+	} else                                                                                                                                                             \
 		((void)0)
 
 /**
@@ -310,12 +325,12 @@ void _physics_interpolation_warning(const char *p_function, const char *p_file, 
  * Ensures an unsigned integer index `m_index` is less than `m_size`.
  * If not, prints `m_msg` and the application crashes.
  */
-#define CRASH_BAD_UNSIGNED_INDEX_MSG(m_index, m_size, m_msg)                                                                        \
-	if (unlikely((m_index) >= (m_size))) {                                                                                          \
-		_err_print_index_error(FUNCTION_STR, __FILE__, __LINE__, m_index, m_size, _STR(m_index), _STR(m_size), m_msg, false, true); \
-		_err_flush_stdout();                                                                                                        \
-		GENERATE_TRAP();                                                                                                            \
-	} else                                                                                                                          \
+#define CRASH_BAD_UNSIGNED_INDEX_MSG(m_index, m_size, m_msg)                                                                                                              \
+	if (unlikely((m_index) >= (m_size))) {                                                                                                                                \
+		_err_print_index_error(FUNCTION_STR, __FILE__, __LINE__, _parse_enum_class(m_index), _parse_enum_class(m_size), _STR(m_index), _STR(m_size), m_msg, false, true); \
+		_err_flush_stdout();                                                                                                                                              \
+		GENERATE_TRAP();                                                                                                                                                  \
+	} else                                                                                                                                                                \
 		((void)0)
 
 // Null reference error macros.
