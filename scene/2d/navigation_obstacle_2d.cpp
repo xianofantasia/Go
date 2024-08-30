@@ -312,24 +312,26 @@ bool NavigationObstacle2D::get_carve_navigation_mesh() const {
 	return carve_navigation_mesh;
 }
 
-PackedStringArray NavigationObstacle2D::get_configuration_warnings() const {
-	PackedStringArray warnings = Node2D::get_configuration_warnings();
+#ifdef TOOLS_ENABLED
+Vector<ConfigurationInfo> NavigationObstacle2D::get_configuration_info() const {
+	Vector<ConfigurationInfo> infos = Node2D::get_configuration_info();
 
 	const Vector2 global_scale = get_global_scale();
 	if (global_scale.x < 0.001 || global_scale.y < 0.001) {
-		warnings.push_back(RTR("NavigationObstacle2D does not support negative or zero scaling."));
+		CONFIG_WARNING_P(RTR("NavigationObstacle2D does not support negative or zero scaling."), "scale");
 	}
 
 	if (radius > 0.0 && !get_global_transform().is_conformal()) {
-		warnings.push_back(RTR("The agent radius can only be scaled uniformly. The largest value along the two axes of the global scale will be used to scale the radius. This value may change in unexpected ways when the node is rotated."));
+		CONFIG_WARNING(RTR("The agent radius can only be scaled uniformly. The largest value along the two axes of the global scale will be used to scale the radius. This value may change in unexpected ways when the node is rotated."));
 	}
 
 	if (radius > 0.0 && get_global_skew() != 0.0) {
-		warnings.push_back(RTR("Skew has no effect on the agent radius."));
+		CONFIG_WARNING_P(RTR("Skew has no effect on the agent radius."), "skew");
 	}
 
-	return warnings;
+	return infos;
 }
+#endif
 
 void NavigationObstacle2D::_update_map(RID p_map) {
 	map_current = p_map;
