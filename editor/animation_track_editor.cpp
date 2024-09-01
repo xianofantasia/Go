@@ -2523,7 +2523,7 @@ void AnimationTrackEdit::draw_key(int p_index, float p_pixels_sec, int p_x, bool
 		text += ")";
 
 		int limit = MAX(0, p_clip_right - p_x - icon_to_draw->get_width());
-		if (limit > 0) {
+		if (limit > 0 && !editor->is_function_name_pressed()) {
 			draw_string(font, Vector2(p_x + icon_to_draw->get_width(), int(get_size().height - font->get_height(font_size)) / 2 + font->get_ascent(font_size)), text, HORIZONTAL_ALIGNMENT_LEFT, limit, font_size, color);
 		}
 	}
@@ -5136,6 +5136,7 @@ void AnimationTrackEditor::_notification(int p_what) {
 			snap_keys->set_button_icon(get_editor_theme_icon(SNAME("SnapKeys")));
 			fps_compat->set_button_icon(get_editor_theme_icon(SNAME("FPS")));
 			view_group->set_button_icon(get_editor_theme_icon(view_group->is_pressed() ? SNAME("AnimationTrackList") : SNAME("AnimationTrackGroup")));
+			function_name_toggler->set_button_icon(get_editor_theme_icon(SNAME("MemberMethod")));
 			selected_filter->set_button_icon(get_editor_theme_icon(SNAME("AnimationFilter")));
 			imported_anim_warning->set_button_icon(get_editor_theme_icon(SNAME("NodeWarning")));
 			dummy_player_warning->set_button_icon(get_editor_theme_icon(SNAME("NodeWarning")));
@@ -5150,6 +5151,8 @@ void AnimationTrackEditor::_notification(int p_what) {
 
 			const int track_separation = get_theme_constant(SNAME("track_v_separation"), SNAME("AnimationTrackEditor"));
 			track_vbox->add_theme_constant_override("separation", track_separation);
+
+			function_name_toggler->add_theme_color_override("icon_pressed_color", get_theme_color("icon_disabled_color", EditorStringName(Editor)));
 		} break;
 
 		case NOTIFICATION_READY: {
@@ -7319,6 +7322,10 @@ void AnimationTrackEditor::_cleanup_animation(Ref<Animation> p_animation) {
 	_update_tracks();
 }
 
+void AnimationTrackEditor::_toggle_function_name() {
+	_redraw_tracks();
+}
+
 void AnimationTrackEditor::_view_group_toggle() {
 	_update_tracks();
 	view_group->set_button_icon(get_editor_theme_icon(view_group->is_pressed() ? SNAME("AnimationTrackList") : SNAME("AnimationTrackGroup")));
@@ -7331,6 +7338,10 @@ bool AnimationTrackEditor::is_grouping_tracks() {
 	}
 
 	return !view_group->is_pressed();
+}
+
+bool AnimationTrackEditor::is_function_name_pressed() {
+	return function_name_toggler->is_pressed();
 }
 
 void AnimationTrackEditor::_auto_fit() {
@@ -7623,6 +7634,19 @@ AnimationTrackEditor::AnimationTrackEditor() {
 	bezier_edit_icon->set_tooltip_text(TTR("Toggle between the bezier curve editor and track editor."));
 
 	bottom_hb->add_child(bezier_edit_icon);
+
+	ED_SHORTCUT("animation_editor/toggle_function_name", TTR("Toggle function name"));
+
+	function_name_toggler = memnew(Button);
+	function_name_toggler->set_flat(true);
+	function_name_toggler->set_disabled(false);
+	function_name_toggler->connect(SceneStringName(pressed), callable_mp(this, &AnimationTrackEditor::_toggle_function_name));
+	function_name_toggler->set_shortcut(ED_GET_SHORTCUT("animation_editor/toggle_function_name"));
+	function_name_toggler->set_toggle_mode(true);
+	function_name_toggler->set_shortcut_in_tooltip(false);
+	function_name_toggler->set_tooltip_text(TTR("Toggle function names on the track editor."));
+
+	bottom_hb->add_child(function_name_toggler);
 
 	selected_filter = memnew(Button);
 	selected_filter->set_flat(true);
