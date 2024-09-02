@@ -1,5 +1,5 @@
 /**************************************************************************/
-/*  editor_debugger_inspector.h                                           */
+/*  multiplayer_editor_plugin.h                                           */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                             GODOT ENGINE                               */
@@ -28,81 +28,79 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef EDITOR_DEBUGGER_INSPECTOR_H
-#define EDITOR_DEBUGGER_INSPECTOR_H
+#ifndef SNAPSHOT_DATA_H
+#define SNAPSHOT_DATA_H
 
-#include "editor/editor_inspector.h"
+#include "editor/debugger/editor_debugger_inspector.h"
+#include "scene/debugger/scene_debugger.h"
+#include "core/object/script_language.h"
+#include "modules/gdscript/gdscript.h"
 
-class SceneDebuggerObject;
+#include "core/io/missing_resource.h"
+#include "scene/gui/tree.h"
 
-class EditorDebuggerRemoteObject : public Object {
-	GDCLASS(EditorDebuggerRemoteObject, Object);
 
-protected:
-	bool _set(const StringName &p_name, const Variant &p_value);
-	bool _get(const StringName &p_name, Variant &r_ret) const;
-	void _get_property_list(List<PropertyInfo> *p_list) const;
-	static void _bind_methods();
+struct SnapshotDataTransportObject : public SceneDebuggerObject {
+	SnapshotDataTransportObject(): SceneDebuggerObject() {}
+	SnapshotDataTransportObject(Object* obj): SceneDebuggerObject(obj) {}
+	Dictionary extra_debug_data;
+};
 
-	bool readonly;
-	bool _is_read_only();
+
+class SnapshotDataObject : public EditorDebuggerRemoteObject {
+	GDCLASS(SnapshotDataObject, EditorDebuggerRemoteObject);
+	
 
 public:
-	ObjectID remote_object_id;
-	String type_name;
-	List<PropertyInfo> prop_list;
-	HashMap<StringName, Variant> prop_values;
+	class GameStateSnapshot* snapshot;
+	SnapshotDataObject(SceneDebuggerObject& obj, GameStateSnapshot* snapshot): EditorDebuggerRemoteObject(obj), snapshot(snapshot) {}
+	Dictionary extra_debug_data;
 
-	ObjectID get_remote_object_id() { return remote_object_id; };
-	String get_title();
+	HashMap<String, ObjectID> outbound_references;
+	HashMap<String, ObjectID> inbound_references;
 
-	int update_props(SceneDebuggerObject& obj, HashSet<String>* changed, HashSet<Ref<Resource>>* remote_dependencies);
+	String get_name();
+	String get_node_path();
 
-	void set_readonly(bool p_readonly);
-	bool get_readonly();
-
-	Variant get_variant(const StringName &p_name);
-
-	void clear() {
-		prop_list.clear();
-		prop_values.clear();
+	bool is_refcounted() {
+		return is_class(RefCounted::get_class_static());
 	}
-
-	void update() { notify_property_list_changed(); }
-
-	EditorDebuggerRemoteObject() {}
-	EditorDebuggerRemoteObject(SceneDebuggerObject& obj);
+	
+	bool is_node() {
+		return is_class(Node::get_class_static());
+	}
+	
+	bool is_class(const String& base_class) {
+		return ClassDB::is_parent_class(type_name, base_class);
+	}
 };
 
-class EditorDebuggerInspector : public EditorInspector {
-	GDCLASS(EditorDebuggerInspector, EditorInspector);
+class GameStateSnapshot : public Object {
+	GDCLASS(GameStateSnapshot, Object);
 
-private:
-	ObjectID inspected_object_id;
-	HashMap<ObjectID, EditorDebuggerRemoteObject *> remote_objects;
-	HashSet<Ref<Resource>> remote_dependencies;
-	EditorDebuggerRemoteObject *variables = nullptr;
-
-	void _object_selected(ObjectID p_object);
-	void _object_edited(ObjectID p_id, const String &p_prop, const Variant &p_value);
-
-protected:
-	void _notification(int p_what);
-	static void _bind_methods();
+	void get_outbound_references(Variant& var, HashMap<String, ObjectID>& ret_val, String current_path = "");
+	void get_rc_cycles(SnapshotDataObject* obj, SnapshotDataObject* source_obj, HashSet<SnapshotDataObject*> traversed_objs, List<String>& ret_val, String current_path = "");
 
 public:
-	EditorDebuggerInspector();
-	~EditorDebuggerInspector();
+	GameStateSnapshot() {}
 
-	// Remote Object cache
-	ObjectID add_object(const Array &p_arr);
-	Object *get_object(ObjectID p_id);
-	void clear_cache();
+	String name;
+	TreeItem* snapshot_button;
+	HashMap<ObjectID, SnapshotDataObject*> Data;
 
-	// Stack Dump variables
-	String get_stack_variable(const String &p_var);
-	void add_stack_variable(const Array &p_arr);
-	void clear_stack_variables();
+	SnapshotDataObject* get_object(ObjectID id) { return Data[id]; }
+	void recompute_references();
+
+
+	bool do_nulls_exist() {
+		for (const KeyValue<ObjectID, SnapshotDataObject*>& obj : Data) {
+			if (obj.value == nullptr) {
+				return true;
+			}
+		}
+		return false;
+	}
 };
 
-#endif // EDITOR_DEBUGGER_INSPECTOR_H
+
+#endif // SNAPSHOT_DATA_H

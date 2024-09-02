@@ -1,0 +1,22 @@
+# # SCsub
+
+# Import('env')
+
+# env.add_source_files(env.modules_sources, "*.cpp") # Add all cpp files to the build
+
+
+#!/usr/bin/env python
+
+Import("env")
+Import("env_modules")
+
+env_mp = env_modules.Clone()
+
+module_obj = []
+env_mp.add_source_files(module_obj, "*.cpp")
+env_mp.add_source_files(module_obj, "data_viewers/*.cpp")
+
+if env.editor_build:
+    env_mp.add_source_files(module_obj, "editor/*.cpp")
+
+env.modules_sources += module_obj

@@ -1,5 +1,5 @@
 /**************************************************************************/
-/*  editor_debugger_inspector.h                                           */
+/*  multiplayer_editor_plugin.h                                           */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                             GODOT ENGINE                               */
@@ -28,81 +28,47 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef EDITOR_DEBUGGER_INSPECTOR_H
-#define EDITOR_DEBUGGER_INSPECTOR_H
+#ifndef SNAPSHOT_EDITOR_PLUGIN_H
+#define SNAPSHOT_EDITOR_PLUGIN_H
 
-#include "editor/editor_inspector.h"
+// #include "editor/debugger/editor_debugger_inspector.h"
+// #include "scene/debugger/scene_debugger.h"
+#include "editor/plugins/editor_debugger_plugin.h"
+#include "editor/plugins/editor_plugin.h"
+#include "snapshot_data.h"
 
-class SceneDebuggerObject;
+class SnapshotEditorPanel;
 
-class EditorDebuggerRemoteObject : public Object {
-	GDCLASS(EditorDebuggerRemoteObject, Object);
+
+// Boostrapped by the plugin
+class SnapshotEditorDebugger : public EditorDebuggerPlugin {
+	GDCLASS(SnapshotEditorDebugger, EditorDebuggerPlugin);
 
 protected:
-	bool _set(const StringName &p_name, const Variant &p_value);
-	bool _get(const StringName &p_name, Variant &r_ret) const;
-	void _get_property_list(List<PropertyInfo> *p_list) const;
-	static void _bind_methods();
+	SnapshotEditorPanel* debugger_panel;
 
-	bool readonly;
-	bool _is_read_only();
-
+	void request_object_snapshot();
+	void receive_object_snapshot(const Array& p_data);
+	
 public:
-	ObjectID remote_object_id;
-	String type_name;
-	List<PropertyInfo> prop_list;
-	HashMap<StringName, Variant> prop_values;
+	virtual bool has_capture(const String &p_capture) const override;
+	virtual bool capture(const String &p_message, const Array &p_data, int p_index) override;
+	virtual void setup_session(int p_session_id) override;
 
-	ObjectID get_remote_object_id() { return remote_object_id; };
-	String get_title();
-
-	int update_props(SceneDebuggerObject& obj, HashSet<String>* changed, HashSet<Ref<Resource>>* remote_dependencies);
-
-	void set_readonly(bool p_readonly);
-	bool get_readonly();
-
-	Variant get_variant(const StringName &p_name);
-
-	void clear() {
-		prop_list.clear();
-		prop_values.clear();
-	}
-
-	void update() { notify_property_list_changed(); }
-
-	EditorDebuggerRemoteObject() {}
-	EditorDebuggerRemoteObject(SceneDebuggerObject& obj);
+	SnapshotEditorDebugger();
 };
 
-class EditorDebuggerInspector : public EditorInspector {
-	GDCLASS(EditorDebuggerInspector, EditorInspector);
-
-private:
-	ObjectID inspected_object_id;
-	HashMap<ObjectID, EditorDebuggerRemoteObject *> remote_objects;
-	HashSet<Ref<Resource>> remote_dependencies;
-	EditorDebuggerRemoteObject *variables = nullptr;
-
-	void _object_selected(ObjectID p_object);
-	void _object_edited(ObjectID p_id, const String &p_prop, const Variant &p_value);
+// Loaded first as a plugin. The plugin can then add the debugger when it starts up
+class SnapshotEditorPlugin : public EditorPlugin {
+	GDCLASS(SnapshotEditorPlugin, EditorPlugin);
 
 protected:
+	Ref<SnapshotEditorDebugger> debugger;
 	void _notification(int p_what);
-	static void _bind_methods();
 
 public:
-	EditorDebuggerInspector();
-	~EditorDebuggerInspector();
-
-	// Remote Object cache
-	ObjectID add_object(const Array &p_arr);
-	Object *get_object(ObjectID p_id);
-	void clear_cache();
-
-	// Stack Dump variables
-	String get_stack_variable(const String &p_var);
-	void add_stack_variable(const Array &p_arr);
-	void clear_stack_variables();
+	SnapshotEditorPlugin();
 };
 
-#endif // EDITOR_DEBUGGER_INSPECTOR_H
+
+#endif // SNAPSHOT_EDITOR_PLUGIN_H

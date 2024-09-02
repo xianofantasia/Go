@@ -3277,19 +3277,22 @@ Error Main::setup2(bool p_show_boot_logo) {
 	OS::get_singleton()->benchmark_end_measure("Startup", "Scene");
 
 #ifdef TOOLS_ENABLED
-	ClassDB::set_current_api(ClassDB::API_EDITOR);
-	register_editor_types();
 
-	{
-		OS::get_singleton()->benchmark_begin_measure("Editor", "Modules and Extensions");
+	if (editor) {
+		ClassDB::set_current_api(ClassDB::API_EDITOR);
+		register_editor_types();
 
-		initialize_modules(MODULE_INITIALIZATION_LEVEL_EDITOR);
-		GDExtensionManager::get_singleton()->initialize_extensions(GDExtension::INITIALIZATION_LEVEL_EDITOR);
+		{
+			OS::get_singleton()->benchmark_begin_measure("Editor", "Modules and Extensions");
 
-		OS::get_singleton()->benchmark_end_measure("Editor", "Modules and Extensions");
+			initialize_modules(MODULE_INITIALIZATION_LEVEL_EDITOR);
+			GDExtensionManager::get_singleton()->initialize_extensions(GDExtension::INITIALIZATION_LEVEL_EDITOR);
+
+			OS::get_singleton()->benchmark_end_measure("Editor", "Modules and Extensions");
+		}
+
+		ClassDB::set_current_api(ClassDB::API_CORE);
 	}
-
-	ClassDB::set_current_api(ClassDB::API_CORE);
 
 #endif
 
@@ -3301,7 +3304,7 @@ Error Main::setup2(bool p_show_boot_logo) {
 
 	OS::get_singleton()->benchmark_end_measure("Startup", "Platforms");
 
-	GLOBAL_DEF_BASIC(PropertyInfo(Variant::STRING, "display/mouse_cursor/custom_image", PROPERTY_HINT_FILE, "*.png,*.bmp,*.hdr,*.jpg,*.jpeg,*.svg,*.tga,*.exr,*.webp"), String());
+	GLOBAL_DEF_BASIC(PropertyInfo(Variant::STRING, "display/mouse_cursor/custom_image", PROPERTY_HINT_FILE, "*.png,*.webp"), String());
 	GLOBAL_DEF_BASIC("display/mouse_cursor/custom_image_hotspot", Vector2());
 	GLOBAL_DEF_BASIC("display/mouse_cursor/tooltip_position_offset", Point2(10, 10));
 
