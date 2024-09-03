@@ -1523,7 +1523,7 @@ void ParticlesStorage::update_particles() {
 			}
 		}
 
-		double time_scale = MAX(Engine::get_singleton()->get_time_scale() * particles->speed_scale, 0.0);
+		double time_scale = MAX(particles->speed_scale, 0.0);
 
 		if (fixed_fps > 0) {
 			double frame_time = 1.0 / fixed_fps;
