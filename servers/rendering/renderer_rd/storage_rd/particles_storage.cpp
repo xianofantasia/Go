@@ -788,7 +788,7 @@ void ParticlesStorage::_particles_process(Particles *p_particles, double p_delta
 		p_particles->particles_material_uniform_set = RD::get_singleton()->uniform_set_create(uniforms, particles_shader.default_shader_rd, 1);
 	}
 
-	double new_phase = Math::fmod((double)p_particles->phase + (p_delta / p_particles->lifetime) * p_particles->speed_scale, 1.0);
+	double new_phase = Math::fmod((double)p_particles->phase + (p_delta / p_particles->lifetime), 1.0);
 
 	//move back history (if there is any)
 	for (uint32_t i = p_particles->frame_history.size() - 1; i > 0; i--) {
@@ -814,7 +814,7 @@ void ParticlesStorage::_particles_process(Particles *p_particles, double p_delta
 	p_particles->phase = new_phase;
 
 	frame_params.time = RendererCompositorRD::get_singleton()->get_total_time();
-	frame_params.delta = p_delta * p_particles->speed_scale;
+	frame_params.delta = p_delta;
 	frame_params.random_seed = p_particles->random_seed;
 	frame_params.explosiveness = p_particles->explosiveness;
 	frame_params.randomness = p_particles->randomness;

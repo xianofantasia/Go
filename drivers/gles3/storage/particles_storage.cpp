@@ -500,7 +500,7 @@ void ParticlesStorage::_particles_process(Particles *p_particles, double p_delta
 	GLES3::TextureStorage *texture_storage = GLES3::TextureStorage::get_singleton();
 	GLES3::MaterialStorage *material_storage = GLES3::MaterialStorage::get_singleton();
 
-	double new_phase = Math::fmod(p_particles->phase + (p_delta / p_particles->lifetime) * p_particles->speed_scale, 1.0);
+	double new_phase = Math::fmod(p_particles->phase + (p_delta / p_particles->lifetime), 1.0);
 
 	//update current frame
 	ParticlesFrameParams frame_params;
@@ -522,7 +522,7 @@ void ParticlesStorage::_particles_process(Particles *p_particles, double p_delta
 	p_particles->phase = new_phase;
 
 	frame_params.time = RSG::rasterizer->get_total_time();
-	frame_params.delta = p_delta * p_particles->speed_scale;
+	frame_params.delta = p_delta;
 	frame_params.random_seed = p_particles->random_seed;
 	frame_params.explosiveness = p_particles->explosiveness;
 	frame_params.randomness = p_particles->randomness;
