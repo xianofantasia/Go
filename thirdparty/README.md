@@ -179,6 +179,17 @@ Files extracted from upstream source:
 - `doctest/doctest.h` as `doctest.h`
 - `LICENSE.txt`
 
+## dr_libs
+
+- Upstream: https://github.com/mackron/dr_libs
+- Version: git (da35f9d6c7374a95353fd1df1d394d44ab66cf01, 2024)
+- License: Public Domain or Unlicense or MIT
+
+Files extracted from upstream source:
+
+- `dr_mp3.h`
+- `LICENSE`
+
 
 ## embree
 
@@ -593,22 +604,6 @@ Files extracted from upstream repository:
 
 Once copied, apply `godot.patch` (needed because Godot is built without exceptions
 and to avoid std:: replacements leak in Clang builds).
-
-
-## minimp3
-
-- Upstream: https://github.com/lieff/minimp3
-- Version: git (afb604c06bc8beb145fecd42c0ceb5bda8795144, 2021)
-- License: CC0 1.0
-
-Files extracted from upstream repository:
-
-- `minimp3.h`
-- `minimp3_ex.h`
-- `LICENSE`
-
-Some changes have been made in order to fix Windows on ARM build errors, and
-to solve some MSVC warnings. See the patches in the `patches` directory.
 
 
 ## miniupnpc
