@@ -428,7 +428,7 @@ String EditorProperty::get_label() const {
 	return label;
 }
 
-Object *EditorProperty::get_edited_object() {
+Object *EditorProperty::get_edited_object() const {
 	return object;
 }
 

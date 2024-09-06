@@ -630,12 +630,14 @@ class EditorPropertyNodePath : public EditorProperty {
 	Vector<StringName> valid_types;
 	void _node_selected(const NodePath &p_path);
 	void _node_assign();
-	Node *get_base_node();
+	void _select_node_in_scene_tree(const Ref<InputEvent> &p_ev);
+	Node *get_base_node() const;
 	void _update_menu();
 	void _menu_option(int p_idx);
 	void _accept_text();
 	void _text_submitted(const String &p_text);
 	const NodePath _get_node_path() const;
+	Node *_get_node_in_scene_tree() const;
 
 	bool can_drop_data_fw(const Point2 &p_point, const Variant &p_data, Control *p_from) const;
 	void drop_data_fw(const Point2 &p_point, const Variant &p_data, Control *p_from);
