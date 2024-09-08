@@ -2674,7 +2674,12 @@ void EditorPropertyNodePath::_node_selected(const NodePath &p_path) {
 	update_property();
 }
 
-void EditorPropertyNodePath::_node_assign() {
+void EditorPropertyNodePath::_on_click() {
+	if (Input::get_singleton()->is_key_pressed(Key::CMD_OR_CTRL)) {
+		_select_node_in_scene_tree();
+		return;
+	}
+
 	if (!scene_tree) {
 		scene_tree = memnew(SceneTreeDialog);
 		scene_tree->get_scene_tree()->set_show_enabled_subscene(true);
@@ -2859,16 +2864,6 @@ bool EditorPropertyNodePath::is_drop_valid(const Dictionary &p_drag_data) const 
 	return false;
 }
 
-void EditorPropertyNodePath::gui_input(const Ref<InputEvent> &p_ev) {
-	Ref<InputEventMouseButton> mb = p_ev;
-
-	if (!mb.is_valid() || !mb->is_pressed() || mb->get_button_index() != MouseButton::MIDDLE) {
-		return;
-	}
-
-	_select_node_in_scene_tree();
-}
-
 void EditorPropertyNodePath::update_property() {
 	const Node *base_node = get_base_node();
 	const NodePath &p = _get_node_path();
@@ -2956,8 +2951,7 @@ EditorPropertyNodePath::EditorPropertyNodePath() {
 	assign->set_clip_text(true);
 	assign->set_auto_translate_mode(AUTO_TRANSLATE_MODE_DISABLED);
 	assign->set_expand_icon(true);
-	assign->connect(SceneStringName(pressed), callable_mp(this, &EditorPropertyNodePath::_node_assign));
-	assign->connect(SceneStringName(gui_input), callable_mp(this, &EditorPropertyNodePath::gui_input));
+	assign->connect(SceneStringName(pressed), callable_mp(this, &EditorPropertyNodePath::_on_click));
 	SET_DRAG_FORWARDING_CD(assign, EditorPropertyNodePath);
 	hbc->add_child(assign);
 

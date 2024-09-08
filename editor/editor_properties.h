@@ -629,7 +629,7 @@ class EditorPropertyNodePath : public EditorProperty {
 
 	Vector<StringName> valid_types;
 	void _node_selected(const NodePath &p_path);
-	void _node_assign();
+	void _on_click();
 	Node *get_base_node();
 	void _update_menu();
 	void _menu_option(int p_idx);
@@ -650,7 +650,6 @@ protected:
 	void _notification(int p_what);
 
 public:
-	void gui_input(const Ref<InputEvent> &p_ev) override;
 	virtual void update_property() override;
 	void setup(const Vector<StringName> &p_valid_types, bool p_use_path_from_scene_root = true, bool p_editing_node = false);
 	EditorPropertyNodePath();
