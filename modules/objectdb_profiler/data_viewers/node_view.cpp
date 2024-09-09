@@ -1,6 +1,6 @@
 
 /**************************************************************************/
-/*  multiplayer_editor_plugin.cpp                                         */
+/*  node_view.cpp                                                         */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                             GODOT ENGINE                               */
@@ -56,7 +56,6 @@ SnapshotNodeView::SnapshotNodeView() {
 
 void SnapshotNodeView::show_snapshot(GameStateSnapshot* p_data) {
     SnapshotView::show_snapshot(p_data);
-	summary_details.root_object_names.clear();
 
     set_v_size_flags(SizeFlags::SIZE_EXPAND_FILL);
     set_h_size_flags(SizeFlags::SIZE_EXPAND_FILL);
@@ -86,7 +85,6 @@ void SnapshotNodeView::show_snapshot(GameStateSnapshot* p_data) {
 			TreeItem* root_item = node_tree->create_item();
 			root_item->set_text(0, kv.value->extra_debug_data["node_name"]);
 			root_item->set_metadata(0, kv.key);
-			summary_details.root_object_names.push_back(kv.value->extra_debug_data["node_name"]);
 			_add_children_recursive(root_item);
 		}
 	}
@@ -108,19 +106,3 @@ void SnapshotNodeView::_node_selected() {
 	EditorNode::get_singleton()->push_item((Object*)(snapshot_data->Data[object_id]));
 }
 
-
-RichTextLabel* SnapshotNodeView::get_summary_blurb() {
-    if (summary_details.root_object_names.size() <= 1) return nullptr;
-    
-	RichTextLabel* root = SnapshotView::get_summary_blurb();
-	root->add_newline();
-	root->append_text("Multiple root nodes [i](possible call to 'remove_child' without 'queue_free')[/i]");
-
-    root->push_list(0, RichTextLabel::ListType::LIST_DOTS, false);
-    for (const String& root_object_name : summary_details.root_object_names) {
-        root->add_text(root_object_name);
-        root->add_newline();
-    }
-    root->pop();
-    return root;
-}

@@ -1,5 +1,7 @@
+
+
 /**************************************************************************/
-/*  multiplayer_editor_plugin.h                                           */
+/*  object_view.h                                                         */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                             GODOT ENGINE                               */
@@ -28,79 +30,29 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef SNAPSHOT_DATA_H
-#define SNAPSHOT_DATA_H
+#ifndef SNAPSHOT_OBJECT_VIEW_H
+#define SNAPSHOT_OBJECT_VIEW_H
 
-#include "editor/debugger/editor_debugger_inspector.h"
-#include "scene/debugger/scene_debugger.h"
-#include "core/object/script_language.h"
-#include "modules/gdscript/gdscript.h"
-
-#include "core/io/missing_resource.h"
 #include "scene/gui/tree.h"
+#include "../snapshot_data.h"
+#include "snapshot_view.h"
 
 
-struct SnapshotDataTransportObject : public SceneDebuggerObject {
-	SnapshotDataTransportObject(): SceneDebuggerObject() {}
-	SnapshotDataTransportObject(Object* obj): SceneDebuggerObject(obj) {}
-	Dictionary extra_debug_data;
-};
+class SnapshotObjectView : public SnapshotView {
+	GDCLASS(SnapshotObjectView, SnapshotView);
 
+protected:
+	Tree* object_tree;
+	VBoxContainer* object_details;
 
-class SnapshotDataObject : public EditorDebuggerRemoteObject {
-	GDCLASS(SnapshotDataObject, EditorDebuggerRemoteObject);
-	
-
-public:
-	class GameStateSnapshot* snapshot;
-	SnapshotDataObject(SceneDebuggerObject& obj, GameStateSnapshot* snapshot): EditorDebuggerRemoteObject(obj), snapshot(snapshot) {}
-	Dictionary extra_debug_data;
-
-	HashMap<String, ObjectID> outbound_references;
-	HashMap<String, ObjectID> inbound_references;
-
-	String get_name();
-	String get_node_path();
-
-	bool is_refcounted() {
-		return is_class(RefCounted::get_class_static());
-	}
-	
-	bool is_node() {
-		return is_class(Node::get_class_static());
-	}
-	
-	bool is_class(const String& base_class) {
-		return ClassDB::is_parent_class(type_name, base_class);
-	}
-};
-
-class GameStateSnapshot : public Object {
-	GDCLASS(GameStateSnapshot, Object);
-
-	void get_outbound_references(Variant& var, HashMap<String, ObjectID>& ret_val, String current_path = "");
-	void get_rc_cycles(SnapshotDataObject* obj, SnapshotDataObject* source_obj, HashSet<SnapshotDataObject*> traversed_objs, List<String>& ret_val, String current_path = "");
+	void _object_selected();
 
 public:
-	GameStateSnapshot() {}
-
-	String name;
-	TreeItem* snapshot_button;
-	HashMap<ObjectID, SnapshotDataObject*> Data;
-
-	SnapshotDataObject* get_object(ObjectID id) { return Data[id]; }
-	void recompute_references();
-
-
-	bool do_nulls_exist() {
-		for (const KeyValue<ObjectID, SnapshotDataObject*>& obj : Data) {
-			if (obj.value == nullptr) {
-				return true;
-			}
-		}
-		return false;
-	}
+	SnapshotObjectView();
+	virtual void show_snapshot(GameStateSnapshot* data) override;
 };
 
 
-#endif // SNAPSHOT_DATA_H
+
+#endif // SNAPSHOT_OBJECT_VIEW_H
+

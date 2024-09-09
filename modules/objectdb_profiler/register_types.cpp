@@ -7,12 +7,12 @@
 #include "editor/debugger/editor_debugger_node.h"
 
 #include "snapshot_collector.h"
-#include "snapshot_editor_plugin.h"
+#include "objectdb_profiler_plugin.h"
 
 
-void initialize_snapshot_debugger_module(ModuleInitializationLevel p_level) {
+void initialize_objectdb_profiler_module(ModuleInitializationLevel p_level) {
 	if (p_level == MODULE_INITIALIZATION_LEVEL_EDITOR) {
-		EditorPlugins::add_by_type<SnapshotEditorPlugin>();
+		EditorPlugins::add_by_type<ObjectDBProfilerPlugin>();
 	}
 
 	if (p_level == MODULE_INITIALIZATION_LEVEL_SCENE) {
@@ -20,7 +20,7 @@ void initialize_snapshot_debugger_module(ModuleInitializationLevel p_level) {
 	}
 }
 
-void uninitialize_snapshot_debugger_module(ModuleInitializationLevel p_level) {
+void uninitialize_objectdb_profiler_module(ModuleInitializationLevel p_level) {
 	if (p_level == MODULE_INITIALIZATION_LEVEL_EDITOR) {
 		// don't need to unregister the type, as there's no such thing
 	}

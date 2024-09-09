@@ -1,5 +1,5 @@
 /**************************************************************************/
-/*  editor_object_monitor.h                                               */
+/*  objectdb_profiler_plugin.h                                            */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                             GODOT ENGINE                               */
@@ -28,17 +28,46 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef SNAPSHOT_COLLECTOR_H
-#define SNAPSHOT_COLLECTOR_H
+#ifndef OBJECTDB_PROFILER_PLUGIN_H
+#define OBJECTDB_PROFILER_PLUGIN_H
 
-#include "core/os/os.h"
+// #include "editor/debugger/editor_debugger_inspector.h"
+// #include "scene/debugger/scene_debugger.h"
+#include "editor/plugins/editor_debugger_plugin.h"
+#include "editor/plugins/editor_plugin.h"
+#include "snapshot_data.h"
 
-class SnapshotCollector {
+class ObjectDBProfilerPanel;
+
+
+// Boostrapped by the plugin
+class ObjectDBProfilerDebuggerPlugin : public EditorDebuggerPlugin {
+	GDCLASS(ObjectDBProfilerDebuggerPlugin, EditorDebuggerPlugin);
+
+protected:
+	ObjectDBProfilerPanel* debugger_panel;
+
+	void request_object_snapshot();
+	
 public:
-	static void snapshot_objects(Array* p_arr);
-	static Error parse_message(void *p_user, const String &p_msg, const Array &p_args, bool &r_captured);
-	static void initialize();
-	static void deinitialize();
+	virtual bool has_capture(const String &p_capture) const override;
+	virtual bool capture(const String &p_message, const Array &p_data, int p_index) override;
+	virtual void setup_session(int p_session_id) override;
+
+	ObjectDBProfilerDebuggerPlugin();
 };
 
-#endif // SNAPSHOT_COLLECTOR_H
+// Loaded first as a plugin. The plugin can then add the debugger when it starts up
+class ObjectDBProfilerPlugin : public EditorPlugin {
+	GDCLASS(ObjectDBProfilerPlugin, EditorPlugin);
+
+protected:
+	Ref<ObjectDBProfilerDebuggerPlugin> debugger;
+	void _notification(int p_what);
+
+public:
+	ObjectDBProfilerPlugin();
+};
+
+
+#endif // OBJECTDB_PROFILER_PLUGIN_H

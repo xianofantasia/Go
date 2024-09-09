@@ -1,7 +1,6 @@
 
-
 /**************************************************************************/
-/*  multiplayer_editor_plugin.h                                           */
+/*  objectdb_profiler_panel.h                                             */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                             GODOT ENGINE                               */
@@ -30,30 +29,65 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef SNAPSHOT_RAW_VIEW_H
-#define SNAPSHOT_RAW_VIEW_H
+#ifndef OBJECTDB_PROFILER_PANEL_H
+#define OBJECTDB_PROFILER_PANEL_H
 
+#include "editor/debugger/editor_debugger_inspector.h"
+#include "scene/debugger/scene_debugger.h"
+#include "editor/plugins/editor_debugger_plugin.h"
 #include "scene/gui/tree.h"
-#include "../snapshot_data.h"
-#include "snapshot_view.h"
+#include "scene/gui/tab_container.h"
+#include "snapshot_data.h"
+#include "editor/plugins/editor_plugin.h"
 
-#include "scene/gui/code_edit.h"
+#include "snapshot_data.h"
+#include "data_viewers/snapshot_view.h"
+#include "core/io/dir_access.h"
+#include "core/templates/lru.h"
 
+const int SNAPSHOT_CACHE_MAX_SIZE = 10;
 
-class SnapshotRawView : public SnapshotView {
-	GDCLASS(SnapshotRawView, Control);
+// UI loaded by the debugger
+class ObjectDBProfilerPanel : public Control {
+	GDCLASS(ObjectDBProfilerPanel, Control);
 
 protected:
-	RichTextLabel* json_content;
+	Tree* snapshot_list;
+	Button* take_snapshot;
 
+	TabContainer* view_tabs;
+    List<SnapshotView*> views;
+
+	PopupMenu* rmb_menu;
+
+	List<String> snapshot_names;
+    Ref<GameStateSnapshotRef> current_snapshot;
+    Ref<GameStateSnapshotRef> diff_snapshot;
+
+	void _request_object_snapshot();
+	void _show_selected_snapshot();
+
+	Ref<DirAccess> _get_and_create_snapshot_storage_dir();
+
+	void _add_snapshot_button(String snapshot_name);
+	String _snapshot_filename_to_name(const String& filename);
+
+	LRUCache<String, Ref<GameStateSnapshotRef>> snapshot_cache;
+
+	void _snapshot_rmb(const Vector2 &p_pos, MouseButton p_button);
+	void _rmb_menu_pressed(int p_tool, bool p_confirm_override);
+	
 public:
-	SnapshotRawView();
+	ObjectDBProfilerPanel();
+	static void _bind_methods();
 
-	virtual void show_snapshot(GameStateSnapshot* data) override;
-	virtual RichTextLabel* get_summary_blurb() override;
+	void receive_snapshot(const Array& p_data);
+    void show_snapshot(const String& snapshot_file_name);
+	void clear_snapshot();
+	void set_enabled(bool enabled);
+
+    void add_view(SnapshotView* to_add);
 };
 
 
-
-#endif // SNAPSHOT_RAW_VIEW_H
-
+#endif // OBJECTDB_PROFILER_PANEL_H

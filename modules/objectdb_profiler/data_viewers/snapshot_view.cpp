@@ -1,7 +1,6 @@
 
-
 /**************************************************************************/
-/*  multiplayer_editor_plugin.h                                           */
+/*  snapshot_view.cpp                                                     */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                             GODOT ENGINE                               */
@@ -30,34 +29,21 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef SNAPSHOT_OBJECT_VIEW_H
-#define SNAPSHOT_OBJECT_VIEW_H
-
-#include "scene/gui/tree.h"
-#include "../snapshot_data.h"
+#include "scene/gui/label.h"
 #include "snapshot_view.h"
-
-
-class SnapshotObjectView : public SnapshotView {
-	GDCLASS(SnapshotObjectView, Control);
-
-protected:
-	Tree* object_tree;
-	VBoxContainer* object_details;
-
-	struct {
-		List<ObjectID> isolated_script_objects;
-	} summary_details;
-
-	void _object_selected();
-
-public:
-	SnapshotObjectView();
-	virtual void show_snapshot(GameStateSnapshot* data) override;
-	virtual RichTextLabel* get_summary_blurb() override;
-};
+#include "scene/gui/rich_text_label.h"
+#include "../snapshot_data.h"
 
 
 
-#endif // SNAPSHOT_OBJECT_VIEW_H
+void SnapshotView::clear_snapshot() {
+    snapshot_data = nullptr;
+    for (int i = 0; i < get_child_count(); i++) {
+        get_child(i)->queue_free();
+	}
+}
 
+void SnapshotView::show_snapshot(GameStateSnapshot* p_data) {
+    clear_snapshot();
+    snapshot_data = p_data;
+}

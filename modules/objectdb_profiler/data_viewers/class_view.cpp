@@ -1,6 +1,6 @@
 
 /**************************************************************************/
-/*  multiplayer_editor_plugin.cpp                                         */
+/*  class_view.cpp                                                        */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                             GODOT ENGINE                               */
@@ -176,8 +176,4 @@ void SnapshotClassView::_class_selected() {
 			item->set_metadata(0, pair.value->remote_object_id);
 		}
 	}
-}
-
-RichTextLabel* SnapshotClassView::get_summary_blurb() {
-    return nullptr;
 }

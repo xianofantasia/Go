@@ -1,6 +1,6 @@
 
 /**************************************************************************/
-/*  multiplayer_editor_plugin.h                                           */
+/*  json_view.h                                                           */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                             GODOT ENGINE                               */
@@ -29,31 +29,27 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef SNAPSHOT_CLASS_VIEW_H
-#define SNAPSHOT_CLASS_VIEW_H
+#ifndef SNAPSHOT_JSON_VIEW_H
+#define SNAPSHOT_JSON_VIEW_H
 
 #include "scene/gui/tree.h"
 #include "../snapshot_data.h"
 #include "snapshot_view.h"
 
+#include "scene/gui/code_edit.h"
 
-// Boostrapped by the plugin
-class SnapshotClassView : public SnapshotView {
-	GDCLASS(SnapshotClassView, Control);
+
+class SnapshotJsonView : public SnapshotView {
+	GDCLASS(SnapshotJsonView, SnapshotView);
 
 protected:
-	Tree* class_tree;
-	Tree* object_list;
-
-	void _object_selected();
-	void _class_selected();
+	RichTextLabel* json_content;
 
 public:
-	SnapshotClassView();
+	SnapshotJsonView();
+
 	virtual void show_snapshot(GameStateSnapshot* data) override;
-	virtual RichTextLabel* get_summary_blurb() override;
 };
 
+#endif // SNAPSHOT_JSON_VIEW_H
 
-
-#endif // SNAPSHOT_CLASS_VIEW_H

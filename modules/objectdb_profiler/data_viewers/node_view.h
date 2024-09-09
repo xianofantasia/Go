@@ -1,6 +1,7 @@
 
+
 /**************************************************************************/
-/*  multiplayer_editor_plugin.cpp                                         */
+/*  node_view.h                                                           */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                             GODOT ENGINE                               */
@@ -29,77 +30,28 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "raw_view.h"
+#ifndef SNAPSHOT_NODE_VIEW_H
+#define SNAPSHOT_NODE_VIEW_H
 
-#include "scene/gui/control.h"
-#include "core/object/object.h"
-#include "core/os/memory.h"
-#include "core/os/time.h"
 #include "scene/gui/tree.h"
-#include "scene/gui/button.h"
-#include "editor/debugger/editor_debugger_node.h"
-#include "editor/debugger/script_editor_debugger.h"
-#include "scene/gui/label.h"
-#include "scene/gui/panel_container.h"
-#include "scene/gui/tab_container.h"
-#include "editor/themes/editor_scale.h"
-#include "editor/editor_node.h"
-#include "core/object/ref_counted.h"
-#include "modules/gdscript/gdscript.h"
-#include "scene/gui/code_edit.h"
-#include "core/io/json.h"
 #include "../snapshot_data.h"
-
-#include <thirdparty/harfbuzz/src/hb-ot-cff-common.hh>
-
-
-SnapshotRawView::SnapshotRawView() {
-	set_name("Raw");
-}
-
-void SnapshotRawView::show_snapshot(GameStateSnapshot* p_data) {
-    SnapshotView::show_snapshot(p_data);
-
-	VBoxContainer* box = memnew(VBoxContainer);
-	box->set_anchors_preset(LayoutPreset::PRESET_FULL_RECT);
-	add_child(box);
-
-	json_content = memnew(RichTextLabel);
-	json_content->set_v_size_flags(SizeFlags::SIZE_EXPAND_FILL);
-	json_content->set_h_size_flags(SizeFlags::SIZE_EXPAND_FILL);
-	box->add_child(json_content);
-	json_content->set_selection_enabled(true);
-
-	// Should really do this on a thread, but IDK how to get the data back onto the main thread to add it to the text box...
-	String json_view;
-	Dictionary json_data;
-	json_data["name"] = snapshot_data->name;
-	Dictionary objects;
-	for (const KeyValue<ObjectID, SnapshotDataObject*>& obj : snapshot_data->Data) {
-		Dictionary obj_data;
-		obj_data["type_name"] = obj.value->type_name;
-
-		Array prop_list;
-		for (const PropertyInfo& prop : obj.value->prop_list) {
-			prop_list.push_back((Dictionary)prop);
-		}
-		objects["prop_list"] = prop_list;
-		
-		Dictionary prop_values;
-		for (const KeyValue<StringName, Variant>& prop : obj.value->prop_values) {
-			prop_values[prop.key] = prop.value;
-		}
-		obj_data["prop_values"] = prop_values;
-
-		objects[obj.key] = obj_data;
-	}
-	json_data["objects"] = objects;
-
-	json_content->add_text(JSON::stringify(json_data, "    ", true, true));
-}
+#include "snapshot_view.h"
 
 
+// Boostrapped by the plugin
+class SnapshotNodeView : public SnapshotView {
+	GDCLASS(SnapshotNodeView, SnapshotView);
 
-RichTextLabel* SnapshotRawView::get_summary_blurb() {
-	return nullptr;
-}
+protected:
+	Tree* node_tree;
+
+	void _node_selected();
+	void _add_children_recursive(TreeItem* node);
+
+public:
+	SnapshotNodeView();
+	virtual void show_snapshot(GameStateSnapshot* data) override;
+};
+
+
+#endif // SNAPSHOT_NODE_VIEW_H

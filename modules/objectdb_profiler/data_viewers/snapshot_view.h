@@ -1,6 +1,6 @@
 
 /**************************************************************************/
-/*  multiplayer_editor_plugin.h                                           */
+/*  snapshot_view.h                                                       */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                             GODOT ENGINE                               */
@@ -48,8 +48,6 @@ public:
 	String view_name;
 	virtual void show_snapshot(GameStateSnapshot* data);
 	virtual void clear_snapshot();
-
-	virtual RichTextLabel* get_summary_blurb();
 };
 
 

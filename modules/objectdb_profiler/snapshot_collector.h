@@ -1,7 +1,5 @@
-
-
 /**************************************************************************/
-/*  multiplayer_editor_plugin.h                                           */
+/*  snapshot_collector.h                                                  */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                             GODOT ENGINE                               */
@@ -30,34 +28,17 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef SNAPSHOT_REFCOUNTED_VIEW_H
-#define SNAPSHOT_REFCOUNTED_VIEW_H
+#ifndef SNAPSHOT_COLLECTOR_H
+#define SNAPSHOT_COLLECTOR_H
 
-#include "scene/gui/tree.h"
-#include "../snapshot_data.h"
-#include "snapshot_view.h"
+#include "core/os/os.h"
 
-
-class SnapshotRefCountedView : public SnapshotView {
-	GDCLASS(SnapshotRefCountedView, Control);
-
-protected:
-	Tree* object_tree;
-	VBoxContainer* object_details;
-
-	struct {
-		List<ObjectID> object_in_definite_cycles;
-	} summary_details;
-
-	void _object_selected();
-
+class SnapshotCollector {
 public:
-	SnapshotRefCountedView();
-	virtual void show_snapshot(GameStateSnapshot* data) override;
-	virtual RichTextLabel* get_summary_blurb() override;
+	static void snapshot_objects(Array* p_arr);
+	static Error parse_message(void *p_user, const String &p_msg, const Array &p_args, bool &r_captured);
+	static void initialize();
+	static void deinitialize();
 };
 
-
-
-#endif // SNAPSHOT_REFCOUNTED_VIEW_H
-
+#endif // SNAPSHOT_COLLECTOR_H

@@ -1,7 +1,7 @@
 
 
 /**************************************************************************/
-/*  multiplayer_editor_plugin.h                                           */
+/*  summary_view.h                                                        */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                             GODOT ENGINE                               */
@@ -35,23 +35,40 @@
 
 #include "scene/gui/tree.h"
 #include "scene/gui/center_container.h"
+#include "scene/gui/margin_container.h"
 #include "../snapshot_data.h"
 #include "snapshot_view.h"
 
 
+class SummaryBlurb : public MarginContainer {
+	GDCLASS(SummaryBlurb, MarginContainer);
+
+public:
+	RichTextLabel* label;
+	SummaryBlurb(const String& blurb_name, const String& blurb_description, bool open_list = true);
+
+	void start_list();
+	void add_line(const String& line);
+	void end_list();
+};
+
+
 class SnapshotSummaryView : public SnapshotView {
-	GDCLASS(SnapshotSummaryView, Control);
+	GDCLASS(SnapshotSummaryView, SnapshotView);
 
 protected:
     VBoxContainer* blurb_list;
 	CenterContainer* explainer_text;
+	
+	SummaryBlurb* object_blurb;
+	SummaryBlurb* node_blurb;
+	SummaryBlurb* refcounted_blurb;
 
 public:
 	SnapshotSummaryView();
 	virtual void show_snapshot(GameStateSnapshot* data) override;
 	virtual void clear_snapshot() override;
 
-    void add_blurb(RichTextLabel* new_blurb);
 };
 
 

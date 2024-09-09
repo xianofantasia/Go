@@ -1,6 +1,6 @@
 
 /**************************************************************************/
-/*  multiplayer_editor_plugin.cpp                                         */
+/*  class_view.h                                                          */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                             GODOT ENGINE                               */
@@ -29,31 +29,30 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "scene/gui/label.h"
-#include "snapshot_view.h"
-#include "scene/gui/rich_text_label.h"
+#ifndef SNAPSHOT_CLASS_VIEW_H
+#define SNAPSHOT_CLASS_VIEW_H
+
+#include "scene/gui/tree.h"
 #include "../snapshot_data.h"
+#include "snapshot_view.h"
+
+
+// Boostrapped by the plugin
+class SnapshotClassView : public SnapshotView {
+	GDCLASS(SnapshotClassView, SnapshotView);
+
+protected:
+	Tree* class_tree;
+	Tree* object_list;
+
+	void _object_selected();
+	void _class_selected();
+
+public:
+	SnapshotClassView();
+	virtual void show_snapshot(GameStateSnapshot* data) override;
+};
 
 
 
-void SnapshotView::clear_snapshot() {
-    snapshot_data = nullptr;
-    for (int i = 0; i < get_child_count(); i++) {
-        get_child(i)->queue_free();
-	}
-}
-
-void SnapshotView::show_snapshot(GameStateSnapshot* p_data) {
-    clear_snapshot();
-    snapshot_data = p_data;
-}
-
-RichTextLabel* SnapshotView::get_summary_blurb() {
-    RichTextLabel* lbl = memnew(RichTextLabel);
-    lbl->set_fit_content(true);
-    lbl->set_use_bbcode(true);
-    lbl->push_underline();
-    lbl->add_text(get_name());
-    lbl->pop();
-    return lbl;
-}
+#endif // SNAPSHOT_CLASS_VIEW_H

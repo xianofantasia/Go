@@ -1,5 +1,5 @@
 /**************************************************************************/
-/*  multiplayer_editor_plugin.cpp                                         */
+/*  snapshot_data.cpp                                                     */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                             GODOT ENGINE                               */
@@ -28,7 +28,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "snapshot_editor_plugin.h"
+#include "objectdb_profiler_plugin.h"
 
 #include "scene/gui/control.h"
 #include "core/object/object.h"
@@ -127,7 +127,7 @@ void GameStateSnapshot::get_outbound_references(Variant& var, HashMap<String, Ob
 			Array arr = (Array)var;
 			int i = 0;
 			for (Variant& v : arr) {
-				get_outbound_references(v, ret_val, current_path + path_divider + i);
+				get_outbound_references(v, ret_val, current_path + path_divider + itos(i));
 				i++;
 			}
 			break;

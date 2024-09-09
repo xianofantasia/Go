@@ -1,8 +1,5 @@
-
-
-
 /**************************************************************************/
-/*  multiplayer_editor_plugin.h                                           */
+/*  objectdb_profiler_plugin.cpp                                          */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                             GODOT ENGINE                               */
@@ -31,51 +28,69 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef SNAPSHOT_EDITOR_PANEL_H
-#define SNAPSHOT_EDITOR_PANEL_H
+#include "objectdb_profiler_plugin.h"
 
-#include "editor/debugger/editor_debugger_inspector.h"
-#include "scene/debugger/scene_debugger.h"
-#include "editor/plugins/editor_debugger_plugin.h"
+#include "scene/gui/control.h"
+#include "core/object/object.h"
+#include "core/os/memory.h"
+#include "core/os/time.h"
 #include "scene/gui/tree.h"
+#include "scene/gui/button.h"
+#include "editor/debugger/editor_debugger_node.h"
+#include "editor/debugger/script_editor_debugger.h"
+#include "scene/gui/label.h"
+#include "scene/gui/panel_container.h"
 #include "scene/gui/tab_container.h"
+#include "editor/themes/editor_scale.h"
+#include "editor/editor_node.h"
+#include "core/object/ref_counted.h"
 #include "snapshot_data.h"
-#include "editor/plugins/editor_plugin.h"
-
-#include "snapshot_data.h"
-#include "data_viewers/snapshot_view.h"
-#include "data_viewers/summary_view.h"
+#include "objectdb_profiler_panel.h"
 
 
-// UI loaded by the debugger
-class SnapshotEditorPanel : public Control {
-	GDCLASS(SnapshotEditorPanel, Control);
+ObjectDBProfilerDebuggerPlugin::ObjectDBProfilerDebuggerPlugin() {
 
-protected:
-	Tree* snapshot_list;
-	Button* take_snapshot;
+}
 
-	TabContainer* view_tabs;
-    List<SnapshotView*> views;
-	SnapshotSummaryView* summary_view;
+bool ObjectDBProfilerDebuggerPlugin::has_capture(const String &p_capture) const {
+	return p_capture == "snapshot";
+}
 
-	HashMap<String, GameStateSnapshot*> snapshots;
-    GameStateSnapshot* current_snapshot;
-
-	void _request_object_snapshot();
-	void _show_selected_snapshot();
+bool ObjectDBProfilerDebuggerPlugin::capture(const String &p_message, const Array &p_data, int p_index) {
+	ERR_FAIL_COND_V(debugger_panel == nullptr, false);
 	
-public:
-	SnapshotEditorPanel();
-	static void _bind_methods();
+	if (p_message == "snapshot:object_snapshot") {
+		debugger_panel->receive_snapshot(p_data);
+		return true;
+	}
+	return false;
+}
 
-    void add_snapshot(GameStateSnapshot* snapshot);
-    void show_snapshot(const String& snapshot_name);
-	void clear_snapshot();
-	void set_enabled(bool enabled);
-    
-    void add_view(SnapshotView* to_add);
-};
+void ObjectDBProfilerDebuggerPlugin::setup_session(int p_session_id) {
+	Ref<EditorDebuggerSession> session = get_session(p_session_id);
+	ERR_FAIL_COND(session.is_null());
+	debugger_panel = memnew(ObjectDBProfilerPanel);
+	session->connect(SNAME("started"), callable_mp(debugger_panel, &ObjectDBProfilerPanel::set_enabled).bind(true));
+	session->connect(SNAME("stopped"), callable_mp(debugger_panel, &ObjectDBProfilerPanel::set_enabled).bind(false));
+	debugger_panel->connect(SNAME("request_snapshot"), callable_mp(this, &ObjectDBProfilerDebuggerPlugin::request_object_snapshot));
+	session->add_session_tab(debugger_panel);
+}
 
+void ObjectDBProfilerDebuggerPlugin::request_object_snapshot() {
+	EditorDebuggerNode::get_singleton()->get_current_debugger()->send_message("snapshot:request_object_snapshot", Array());
+}
 
-#endif // SNAPSHOT_EDITOR_PANEL_H
+ObjectDBProfilerPlugin::ObjectDBProfilerPlugin() {
+	debugger.instantiate();
+}
+
+void ObjectDBProfilerPlugin::_notification(int p_what) {
+	switch (p_what) {
+		case Node::NOTIFICATION_ENTER_TREE: {
+			add_debugger_plugin(debugger);
+		} break;
+		case Node::NOTIFICATION_EXIT_TREE: {
+			remove_debugger_plugin(debugger);
+		}
+	}
+}

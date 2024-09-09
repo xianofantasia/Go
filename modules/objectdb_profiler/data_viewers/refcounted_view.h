@@ -1,5 +1,7 @@
+
+
 /**************************************************************************/
-/*  multiplayer_editor_plugin.h                                           */
+/*  refcounted_view.h                                                     */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                             GODOT ENGINE                               */
@@ -28,47 +30,29 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef SNAPSHOT_EDITOR_PLUGIN_H
-#define SNAPSHOT_EDITOR_PLUGIN_H
+#ifndef SNAPSHOT_REFCOUNTED_VIEW_H
+#define SNAPSHOT_REFCOUNTED_VIEW_H
 
-// #include "editor/debugger/editor_debugger_inspector.h"
-// #include "scene/debugger/scene_debugger.h"
-#include "editor/plugins/editor_debugger_plugin.h"
-#include "editor/plugins/editor_plugin.h"
-#include "snapshot_data.h"
-
-class SnapshotEditorPanel;
+#include "scene/gui/tree.h"
+#include "../snapshot_data.h"
+#include "snapshot_view.h"
 
 
-// Boostrapped by the plugin
-class SnapshotEditorDebugger : public EditorDebuggerPlugin {
-	GDCLASS(SnapshotEditorDebugger, EditorDebuggerPlugin);
+class SnapshotRefCountedView : public SnapshotView {
+	GDCLASS(SnapshotRefCountedView, SnapshotView);
 
 protected:
-	SnapshotEditorPanel* debugger_panel;
+	Tree* object_tree;
+	VBoxContainer* object_details;
 
-	void request_object_snapshot();
-	void receive_object_snapshot(const Array& p_data);
-	
-public:
-	virtual bool has_capture(const String &p_capture) const override;
-	virtual bool capture(const String &p_message, const Array &p_data, int p_index) override;
-	virtual void setup_session(int p_session_id) override;
-
-	SnapshotEditorDebugger();
-};
-
-// Loaded first as a plugin. The plugin can then add the debugger when it starts up
-class SnapshotEditorPlugin : public EditorPlugin {
-	GDCLASS(SnapshotEditorPlugin, EditorPlugin);
-
-protected:
-	Ref<SnapshotEditorDebugger> debugger;
-	void _notification(int p_what);
+	void _object_selected();
 
 public:
-	SnapshotEditorPlugin();
+	SnapshotRefCountedView();
+	virtual void show_snapshot(GameStateSnapshot* data) override;
 };
 
 
-#endif // SNAPSHOT_EDITOR_PLUGIN_H
+
+#endif // SNAPSHOT_REFCOUNTED_VIEW_H
+
