@@ -124,9 +124,10 @@ class WindowWrapper;
 
 struct EditorProgress {
 	String task;
+	bool force_background = false;
 	bool step(const String &p_state, int p_step = -1, bool p_force_refresh = true);
 
-	EditorProgress(const String &p_task, const String &p_label, int p_amount, bool p_can_cancel = false);
+	EditorProgress(const String &p_task, const String &p_label, int p_amount, bool p_can_cancel = false, bool p_force_background = false);
 	~EditorProgress();
 };
 
@@ -461,6 +462,7 @@ private:
 
 	bool requested_first_scan = false;
 	bool waiting_for_first_scan = true;
+	bool load_editor_layout_done = false;
 
 	int current_menu_option = 0;
 
@@ -487,6 +489,7 @@ private:
 	String import_reload_fn;
 
 	HashSet<String> textfile_extensions;
+	HashSet<String> other_file_extensions;
 	HashSet<FileDialog *> file_dialogs;
 	HashSet<EditorFileDialog *> editor_file_dialogs;
 
@@ -498,6 +501,8 @@ private:
 	SurfaceUpgradeTool *surface_upgrade_tool = nullptr;
 	SurfaceUpgradeDialog *surface_upgrade_dialog = nullptr;
 	bool run_surface_upgrade_tool = false;
+
+	bool was_window_windowed_last = false;
 
 	static EditorBuildCallback build_callbacks[MAX_BUILD_CALLBACKS];
 	static EditorPluginInitializeCallback plugin_init_callbacks[MAX_INIT_CALLBACKS];
@@ -580,6 +585,7 @@ private:
 	void _show_messages();
 	void _vp_resized();
 	void _titlebar_resized();
+	void _viewport_resized();
 
 	void _update_undo_redo_allowed();
 
@@ -650,6 +656,8 @@ private:
 
 	void _save_central_editor_layout_to_config(Ref<ConfigFile> p_config_file);
 	void _load_central_editor_layout_from_config(Ref<ConfigFile> p_config_file);
+
+	void _save_window_settings_to_config(Ref<ConfigFile> p_layout, const String &p_section);
 
 	void _save_open_scenes_to_config(Ref<ConfigFile> p_layout);
 	void _load_open_scenes_from_config(Ref<ConfigFile> p_layout);
@@ -844,9 +852,18 @@ public:
 		HashMap<NodePath, ModificationNodeEntry> other_instances_modifications;
 	};
 
+	struct SceneEditorDataEntry {
+		bool is_editable;
+		bool is_display_folded;
+	};
+
 	HashMap<int, SceneModificationsEntry> scenes_modification_table;
+	List<String> scenes_reimported;
+	List<String> resources_reimported;
 
 	void update_node_from_node_modification_entry(Node *p_node, ModificationNodeEntry &p_node_modification);
+
+	void get_scene_editor_data_for_node(Node *p_root, Node *p_node, HashMap<NodePath, SceneEditorDataEntry> &p_table);
 
 	void get_preload_scene_modification_table(
 			Node *p_edited_scene,
@@ -856,7 +873,7 @@ public:
 	void get_preload_modifications_reference_to_nodes(
 			Node *p_root,
 			Node *p_node,
-			List<Node *> &p_excluded_nodes,
+			HashSet<Node *> &p_excluded_nodes,
 			List<Node *> &p_instance_list_with_children,
 			HashMap<NodePath, ModificationNodeEntry> &p_modification_table);
 	void get_children_nodes(Node *p_node, List<Node *> &p_nodes);
@@ -917,7 +934,7 @@ public:
 
 	void reload_scene(const String &p_path);
 
-	void find_all_instances_inheriting_path_in_node(Node *p_root, Node *p_node, const String &p_instance_path, List<Node *> &p_instance_list);
+	void find_all_instances_inheriting_path_in_node(Node *p_root, Node *p_node, const String &p_instance_path, HashSet<Node *> &p_instance_list);
 	void preload_reimporting_with_path_in_edited_scenes(const List<String> &p_scenes);
 	void reload_instances_with_path_in_edited_scenes();
 
