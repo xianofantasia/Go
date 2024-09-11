@@ -48,6 +48,7 @@
 #include "modules/gdscript/gdscript.h"
 #include "scene/resources/style_box_flat.h"
 #include "core/object/class_db.h"
+#include "scene/gui/split_container.h"
 
 #include "../snapshot_data.h"
 
@@ -65,7 +66,7 @@ void SnapshotRefCountedView::show_snapshot(GameStateSnapshot* p_data) {
     set_v_size_flags(SizeFlags::SIZE_EXPAND_FILL);
     set_h_size_flags(SizeFlags::SIZE_EXPAND_FILL);
 
-    HBoxContainer* objects_view = memnew(HBoxContainer);
+    HSplitContainer* objects_view = memnew(HSplitContainer);
     add_child(objects_view);
     objects_view->set_anchors_preset(LayoutPreset::PRESET_FULL_RECT);
 

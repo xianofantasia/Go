@@ -45,8 +45,13 @@ protected:
 	Tree* class_tree;
 	Tree* object_list;
 
+	LineEdit* classes_filter;
+	Button* sort_button;
+
 	void _object_selected();
 	void _class_selected();
+	void _apply_diff();
+	void _notification(int p_what);
 
 public:
 	SnapshotClassView();

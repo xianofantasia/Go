@@ -60,12 +60,15 @@
 #include "core/io/json.h"
 #include "core/core_bind.h"
 #include "core/config/project_settings.h"
+#include "scene/gui/split_container.h"
 
 
 enum RC_MENU_OPERATIONS {
 	SHOW_IN_FOLDER,
 	DELETE,
 };
+
+ObjectDBProfilerPanel *ObjectDBProfilerPanel::singleton = nullptr;
 
 
 void ObjectDBProfilerPanel::receive_snapshot(const Array& p_data) {
@@ -89,7 +92,7 @@ void ObjectDBProfilerPanel::receive_snapshot(const Array& p_data) {
 	show_snapshot(snapshot_file_name);
 }
 
-String ObjectDBProfilerPanel::_snapshot_filename_to_name(const String& filename) {
+String ObjectDBProfilerPanel::snapshot_filename_to_name(const String& filename) {
 	return Time::get_singleton()->get_datetime_string_from_unix_time((String::to_float(filename.replace("_", ".").get_data())));
 }
 
@@ -112,8 +115,9 @@ Ref<DirAccess> ObjectDBProfilerPanel::_get_and_create_snapshot_storage_dir() {
 }
 
 void ObjectDBProfilerPanel::_add_snapshot_button(String snapshot_file_name) {
+	snapshot_names.push_back(snapshot_file_name);
 	TreeItem* item = snapshot_list->create_item(snapshot_list->get_root());
-	item->set_text(0, _snapshot_filename_to_name(snapshot_file_name));
+	item->set_text(0, snapshot_filename_to_name(snapshot_file_name));
 	item->set_metadata(0, snapshot_file_name);
 	item->move_before(snapshot_list->get_root()->get_first_child());
 }
@@ -144,7 +148,7 @@ void ObjectDBProfilerPanel::show_snapshot(const String& snapshot_file_name) {
 		Array content_arr = core_bind::Marshalls::get_singleton()->base64_to_variant(content, true);
 		// Make a GameStateSnapshot (doesn't extend RefCounted), wrap it in a GameStateSnapshotRef (proxies to GameStateSnapshot, and is RefCounted), the make a Ref to wrap the RefCounted (idk why RefCounteds need to be wrapped in Refs)
 		// When refs <= 0, the Ref will memdelete the GameStateSnapshotRef, which will then memdelete the GameStateSnapshot. Couldn't be simpler, really.
-		current_snapshot = Ref<GameStateSnapshotRef>(memnew(GameStateSnapshotRef(memnew(GameStateSnapshot(_snapshot_filename_to_name(snapshot_file_name), content_arr)))));
+		current_snapshot = Ref<GameStateSnapshotRef>(memnew(GameStateSnapshotRef(memnew(GameStateSnapshot(snapshot_filename_to_name(snapshot_file_name), content_arr)))));
 		snapshot_cache.insert(snapshot_file_name, current_snapshot);
 	}
 
@@ -208,20 +212,20 @@ void ObjectDBProfilerPanel::_rmb_menu_pressed(int p_tool, bool p_confirm_overrid
 }
 
 ObjectDBProfilerPanel::ObjectDBProfilerPanel() {
+	singleton = this;
 	set_name("ObjectDB Profiler"); 
 
 	snapshot_cache = LRUCache<String, Ref<GameStateSnapshotRef>>(SNAPSHOT_CACHE_MAX_SIZE);
 
 	// ===== ROOT CONTAINER =====
-	HBoxContainer* root_container = memnew(HBoxContainer);
+	HSplitContainer* root_container = memnew(HSplitContainer);
 	root_container->set_anchors_preset(Control::LayoutPreset::PRESET_FULL_RECT);
 	root_container->set_v_size_flags(Control::SizeFlags::SIZE_EXPAND_FILL);
 	root_container->set_h_size_flags(Control::SizeFlags::SIZE_EXPAND_FILL);
-	root_container->add_theme_constant_override("separation", 5);
+	root_container->set_split_offset(300 * EDSCALE); // give the snapshot list some 'room to breath' by default
 	add_child(root_container);
 
 	VBoxContainer* snapshot_column = memnew(VBoxContainer);
-	snapshot_column->set_v_size_flags(Control::SizeFlags::SIZE_EXPAND_FILL);
 	root_container->add_child(snapshot_column);
 	
 	// snapshot button
@@ -231,7 +235,6 @@ ObjectDBProfilerPanel::ObjectDBProfilerPanel() {
 
 	snapshot_list = memnew(Tree);
 	snapshot_list->create_item();
-	snapshot_list->set_custom_minimum_size(Size2(300, 0) * EDSCALE);
     snapshot_list->set_hide_folding(true);
     snapshot_column->add_child(snapshot_list);
     snapshot_list->set_hide_root(true);
@@ -239,8 +242,7 @@ ObjectDBProfilerPanel::ObjectDBProfilerPanel() {
     snapshot_list->set_column_titles_visible(true);
     snapshot_list->set_column_title(0, "Snapshots");
     snapshot_list->set_column_expand(0, true);
-    snapshot_list->set_column_clip_content(0, false);
-    snapshot_list->set_column_custom_minimum_width(0, 300 * EDSCALE);
+    snapshot_list->set_column_clip_content(0, true);
     snapshot_list->connect("cell_selected", callable_mp(this, &ObjectDBProfilerPanel::_show_selected_snapshot));
     snapshot_list->set_h_size_flags(SizeFlags::SIZE_EXPAND_FILL);
     snapshot_list->set_v_size_flags(SizeFlags::SIZE_EXPAND_FILL);
@@ -248,18 +250,16 @@ ObjectDBProfilerPanel::ObjectDBProfilerPanel() {
 
 	snapshot_list->set_allow_rmb_select(true);
 	snapshot_list->connect(SNAME("item_mouse_selected"), callable_mp(this, &ObjectDBProfilerPanel::_snapshot_rmb));
-
-	// tabs of various views right for each snapshot
-	view_tabs = memnew(TabContainer);
-	root_container->add_child(view_tabs);
-	view_tabs->set_anchors_preset(LayoutPreset::PRESET_FULL_RECT);
-	view_tabs->set_v_size_flags(SizeFlags::SIZE_EXPAND_FILL);
-	view_tabs->set_h_size_flags(SizeFlags::SIZE_EXPAND_FILL);
-
+	
 	rmb_menu = memnew(PopupMenu);
 	add_child(rmb_menu);
 	rmb_menu->connect(SceneStringName(id_pressed), callable_mp(this, &ObjectDBProfilerPanel::_rmb_menu_pressed).bind(false));
 
+	// tabs of various views right for each snapshot
+	view_tabs = memnew(TabContainer);
+	root_container->add_child(view_tabs);
+	view_tabs->set_custom_minimum_size(Size2(300 * EDSCALE, 0));
+	view_tabs->set_v_size_flags(SizeFlags::SIZE_EXPAND_FILL);
 
 
     add_view(memnew(SnapshotSummaryView));
@@ -294,4 +294,9 @@ ObjectDBProfilerPanel::ObjectDBProfilerPanel() {
 void ObjectDBProfilerPanel::add_view(SnapshotView* to_add) {
     views.push_back(to_add);
     view_tabs->add_child(to_add);
+}
+
+
+ObjectDBProfilerPanel::~ObjectDBProfilerPanel() {
+	singleton = nullptr;
 }

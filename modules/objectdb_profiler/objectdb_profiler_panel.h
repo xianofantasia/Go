@@ -51,6 +51,8 @@ const int SNAPSHOT_CACHE_MAX_SIZE = 10;
 class ObjectDBProfilerPanel : public Control {
 	GDCLASS(ObjectDBProfilerPanel, Control);
 
+	static ObjectDBProfilerPanel *singleton;
+
 protected:
 	Tree* snapshot_list;
 	Button* take_snapshot;
@@ -70,7 +72,6 @@ protected:
 	Ref<DirAccess> _get_and_create_snapshot_storage_dir();
 
 	void _add_snapshot_button(String snapshot_name);
-	String _snapshot_filename_to_name(const String& filename);
 
 	LRUCache<String, Ref<GameStateSnapshotRef>> snapshot_cache;
 
@@ -79,6 +80,7 @@ protected:
 	
 public:
 	ObjectDBProfilerPanel();
+	~ObjectDBProfilerPanel();
 	static void _bind_methods();
 
 	void receive_snapshot(const Array& p_data);
@@ -87,6 +89,10 @@ public:
 	void set_enabled(bool enabled);
 
     void add_view(SnapshotView* to_add);
+	String snapshot_filename_to_name(const String& filename);
+
+	static ObjectDBProfilerPanel *get_singleton() { return singleton; }
+	const List<String>& get_snapshot_names() { return snapshot_names; }
 };
 
 
