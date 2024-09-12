@@ -50,7 +50,7 @@ protected:
 
 public:
 	SnapshotNodeView();
-	virtual void show_snapshot(GameStateSnapshot* data) override;
+	virtual void show_snapshot(GameStateSnapshot* data, GameStateSnapshot* p_diff_data) override;
 };
 
 

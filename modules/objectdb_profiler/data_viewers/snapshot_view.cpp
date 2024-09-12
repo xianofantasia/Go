@@ -43,7 +43,8 @@ void SnapshotView::clear_snapshot() {
 	}
 }
 
-void SnapshotView::show_snapshot(GameStateSnapshot* p_data) {
+void SnapshotView::show_snapshot(GameStateSnapshot* p_data, GameStateSnapshot* p_diff_data) {
     clear_snapshot();
     snapshot_data = p_data;
+    diff_data = p_diff_data;
 }

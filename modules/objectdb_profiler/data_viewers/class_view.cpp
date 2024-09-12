@@ -48,7 +48,6 @@
 #include "modules/gdscript/gdscript.h"
 #include "scene/gui/split_container.h"
 #include "scene/gui/text_edit.h"
-#include "scene/gui/option_button.h"
 #include "../objectdb_profiler_panel.h"
 #include "scene/gui/flow_container.h"
 #include "editor/editor_node.h"
@@ -61,62 +60,45 @@ SnapshotClassView::SnapshotClassView() {
     set_name("Classes");
 }
 
-void SnapshotClassView::show_snapshot(GameStateSnapshot* p_data) {
-    SnapshotView::show_snapshot(p_data);
+void SnapshotClassView::show_snapshot(GameStateSnapshot* p_data, GameStateSnapshot* p_diff_data) {
+    SnapshotView::show_snapshot(p_data, p_diff_data);
 
     set_v_size_flags(SizeFlags::SIZE_EXPAND_FILL);
     set_h_size_flags(SizeFlags::SIZE_EXPAND_FILL);
 
-    VBoxContainer* buttons_and_body = memnew(VBoxContainer);
-    buttons_and_body->set_v_size_flags(SizeFlags::SIZE_EXPAND_FILL);
-    buttons_and_body->set_h_size_flags(SizeFlags::SIZE_EXPAND_FILL);
-    buttons_and_body->set_anchors_preset(LayoutPreset::PRESET_FULL_RECT);
-    add_child(buttons_and_body);
+    HSplitContainer* classes_view = memnew(HSplitContainer);
+    add_child(classes_view);
+    classes_view->set_anchors_preset(LayoutPreset::PRESET_FULL_RECT);
+    classes_view->set_v_size_flags(SizeFlags::SIZE_EXPAND_FILL);
+    classes_view->set_h_size_flags(SizeFlags::SIZE_EXPAND_FILL);
+    classes_view->set_split_offset(0);
 
-    FlowContainer* classes_filter_buttons = memnew(FlowContainer);
-    buttons_and_body->add_child(classes_filter_buttons);
+    VBoxContainer* class_list_column = memnew(VBoxContainer);
+    class_list_column->set_v_size_flags(SizeFlags::SIZE_EXPAND_FILL);
+    class_list_column->set_h_size_flags(SizeFlags::SIZE_EXPAND_FILL);
+    classes_view->add_child(class_list_column);
+
+    
+    HBoxContainer* classes_filter_buttons = memnew(HBoxContainer);
+    class_list_column->add_child(classes_filter_buttons);
     classes_filter_buttons->set_h_size_flags(SizeFlags::SIZE_EXPAND_FILL);
     classes_filter_buttons->add_theme_constant_override("h_separation", 10 * EDSCALE);
     classes_filter = memnew(LineEdit);
-    classes_filter->set_custom_minimum_size(Size2(150 * EDSCALE, 0));
+    classes_filter->set_h_size_flags(SizeFlags::SIZE_EXPAND_FILL);
     classes_filter->set_right_icon(get_editor_theme_icon(SNAME("Search")));
     classes_filter->set_placeholder("Filter Classes");
-    classes_filter->set_v_size_flags(SizeFlags::SIZE_EXPAND_FILL);
     classes_filter_buttons->add_child(classes_filter);
     sort_button = memnew(Button);
     sort_button->set_icon(get_editor_theme_icon(SNAME("Sort")));
     classes_filter_buttons->add_child(sort_button);
 
-
-    HBoxContainer* diff_button_and_label = memnew(HBoxContainer);
-    diff_button_and_label->set_v_size_flags(SizeFlags::SIZE_EXPAND_FILL);
-    diff_button_and_label->set_h_size_flags(SizeFlags::SIZE_EXPAND_FILL);
-    classes_filter_buttons->add_child(diff_button_and_label);
-    Label* diff_against = memnew(Label("Diff against:"));
-    diff_button_and_label->add_child(diff_against);
-
-    OptionButton* diff_option = memnew(OptionButton);   
-    diff_option->add_item("none");
-    for (const String& name : ObjectDBProfilerPanel::get_singleton()->get_snapshot_names()) {
-        diff_option->add_item(ObjectDBProfilerPanel::get_singleton()->snapshot_filename_to_name(name));
-    }
-    diff_option->connect("item_selected", callable_mp(this, &SnapshotClassView::_apply_diff));
-    diff_button_and_label->add_child(diff_option);
-
-
-    HSplitContainer* classes_view = memnew(HSplitContainer);
-    buttons_and_body->add_child(classes_view);
-    classes_view->set_anchors_preset(LayoutPreset::PRESET_FULL_RECT);
-    classes_view->set_v_size_flags(SizeFlags::SIZE_EXPAND_FILL);
-    classes_view->set_h_size_flags(SizeFlags::SIZE_EXPAND_FILL);
-    classes_view->set_split_offset(0);
     
 
     // Tree of classes 
     class_tree = memnew(Tree);
     class_tree->set_custom_minimum_size(Size2(200 * EDSCALE, 0));
     class_tree->set_hide_folding(false);
-    classes_view->add_child(class_tree);
+    class_list_column->add_child(class_tree);
     class_tree->set_hide_root(true);
     class_tree->set_columns(2);
     class_tree->set_column_titles_visible(true);
@@ -242,10 +224,6 @@ void SnapshotClassView::_class_selected() {
 		}
 	}
     object_list->set_column_title(0, "Objects (" + itos(object_count) + ")");
-}
-
-void SnapshotClassView::_apply_diff() {
-    print_line("applying some diff");
 }
 
 void SnapshotClassView::_notification(int p_what) {

@@ -61,10 +61,13 @@ protected:
     List<SnapshotView*> views;
 
 	PopupMenu* rmb_menu;
+	OptionButton* diff_button;
 
 	List<String> snapshot_names;
     Ref<GameStateSnapshotRef> current_snapshot;
     Ref<GameStateSnapshotRef> diff_snapshot;
+
+	HashMap<int, String> diff_options;
 
 	void _request_object_snapshot();
 	void _show_selected_snapshot();
@@ -77,6 +80,8 @@ protected:
 
 	void _snapshot_rmb(const Vector2 &p_pos, MouseButton p_button);
 	void _rmb_menu_pressed(int p_tool, bool p_confirm_override);
+	void _apply_diff(int item_idx);
+	void _update_diff_items();
 	
 public:
 	ObjectDBProfilerPanel();
@@ -84,9 +89,11 @@ public:
 	static void _bind_methods();
 
 	void receive_snapshot(const Array& p_data);
-    void show_snapshot(const String& snapshot_file_name);
+    void show_snapshot(const String& snapshot_file_name, const String& snapshot_diff_file_name);
 	void clear_snapshot();
 	void set_enabled(bool enabled);
+
+	Ref<GameStateSnapshotRef> get_snapshot(const String& snapshot_file_name);
 
     void add_view(SnapshotView* to_add);
 	String snapshot_filename_to_name(const String& filename);

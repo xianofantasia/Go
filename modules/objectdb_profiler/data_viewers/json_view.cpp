@@ -56,8 +56,8 @@ SnapshotJsonView::SnapshotJsonView() {
 	set_name("JSON");
 }
 
-void SnapshotJsonView::show_snapshot(GameStateSnapshot* p_data) {
-    SnapshotView::show_snapshot(p_data);
+void SnapshotJsonView::show_snapshot(GameStateSnapshot* p_data, GameStateSnapshot* p_diff_data) {
+    SnapshotView::show_snapshot(p_data, p_diff_data);
 
 	VBoxContainer* box = memnew(VBoxContainer);
 	box->set_anchors_preset(LayoutPreset::PRESET_FULL_RECT);

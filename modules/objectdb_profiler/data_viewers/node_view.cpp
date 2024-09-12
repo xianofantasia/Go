@@ -54,8 +54,8 @@ SnapshotNodeView::SnapshotNodeView() {
     set_name("Nodes");
 }
 
-void SnapshotNodeView::show_snapshot(GameStateSnapshot* p_data) {
-    SnapshotView::show_snapshot(p_data);
+void SnapshotNodeView::show_snapshot(GameStateSnapshot* p_data, GameStateSnapshot* p_diff_data) {
+    SnapshotView::show_snapshot(p_data, p_diff_data);
 
     set_v_size_flags(SizeFlags::SIZE_EXPAND_FILL);
     set_h_size_flags(SizeFlags::SIZE_EXPAND_FILL);

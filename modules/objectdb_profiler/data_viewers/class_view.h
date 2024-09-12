@@ -50,12 +50,11 @@ protected:
 
 	void _object_selected();
 	void _class_selected();
-	void _apply_diff();
 	void _notification(int p_what);
 
 public:
 	SnapshotClassView();
-	virtual void show_snapshot(GameStateSnapshot* data) override;
+	virtual void show_snapshot(GameStateSnapshot* data, GameStateSnapshot* p_diff_data) override;
 };
 
 

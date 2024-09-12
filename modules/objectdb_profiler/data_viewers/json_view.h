@@ -48,7 +48,7 @@ protected:
 public:
 	SnapshotJsonView();
 
-	virtual void show_snapshot(GameStateSnapshot* data) override;
+	virtual void show_snapshot(GameStateSnapshot* data, GameStateSnapshot* p_diff_data) override;
 };
 
 #endif // SNAPSHOT_JSON_VIEW_H

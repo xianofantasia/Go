@@ -61,6 +61,7 @@
 #include "core/core_bind.h"
 #include "core/config/project_settings.h"
 #include "scene/gui/split_container.h"
+#include "scene/gui/option_button.h"
 
 
 enum RC_MENU_OPERATIONS {
@@ -89,7 +90,8 @@ void ObjectDBProfilerPanel::receive_snapshot(const Array& p_data) {
 	}
 	
 	_add_snapshot_button(snapshot_file_name);
-	show_snapshot(snapshot_file_name);
+	snapshot_list->set_selected(snapshot_list->get_root()->get_first_child());
+	_show_selected_snapshot();
 }
 
 String ObjectDBProfilerPanel::snapshot_filename_to_name(const String& filename) {
@@ -115,45 +117,54 @@ Ref<DirAccess> ObjectDBProfilerPanel::_get_and_create_snapshot_storage_dir() {
 }
 
 void ObjectDBProfilerPanel::_add_snapshot_button(String snapshot_file_name) {
-	snapshot_names.push_back(snapshot_file_name);
+	snapshot_names.push_front(snapshot_file_name);
 	TreeItem* item = snapshot_list->create_item(snapshot_list->get_root());
 	item->set_text(0, snapshot_filename_to_name(snapshot_file_name));
 	item->set_metadata(0, snapshot_file_name);
 	item->move_before(snapshot_list->get_root()->get_first_child());
+	_update_diff_items();
 }
 
 void ObjectDBProfilerPanel::_show_selected_snapshot() {
-	show_snapshot(snapshot_list->get_selected()->get_metadata(0));
+	show_snapshot(snapshot_list->get_selected()->get_metadata(0), diff_options[diff_button->get_selected_id()]);
 }
 
-void ObjectDBProfilerPanel::show_snapshot(const String& snapshot_file_name) {
-	clear_snapshot();
-
+Ref<GameStateSnapshotRef> ObjectDBProfilerPanel::get_snapshot(const String& snapshot_file_name) {
 	if (snapshot_cache.has(snapshot_file_name)) {
-		current_snapshot = snapshot_cache.get(snapshot_file_name);
+		return snapshot_cache.get(snapshot_file_name);
 	} else {
 		Ref<DirAccess> snapshot_dir = _get_and_create_snapshot_storage_dir();
 		if (snapshot_dir.is_null()) {
 			ERR_PRINT("Could not access ObjectDB Snapshot directory");
-			return;
+			return nullptr;
 		}
 
 		String full_file_path = snapshot_dir->get_current_dir().path_join(snapshot_file_name) + ".odb_snapshot";
 		String content = FileAccess::get_file_as_string(full_file_path);
 		if (content == "") {
 			ERR_PRINT("ObjectDB Snapshot file is empty: " + full_file_path);
-			return;
+			return nullptr;
 		}
 
 		Array content_arr = core_bind::Marshalls::get_singleton()->base64_to_variant(content, true);
-		// Make a GameStateSnapshot (doesn't extend RefCounted), wrap it in a GameStateSnapshotRef (proxies to GameStateSnapshot, and is RefCounted), the make a Ref to wrap the RefCounted (idk why RefCounteds need to be wrapped in Refs)
-		// When refs <= 0, the Ref will memdelete the GameStateSnapshotRef, which will then memdelete the GameStateSnapshot. Couldn't be simpler, really.
-		current_snapshot = Ref<GameStateSnapshotRef>(memnew(GameStateSnapshotRef(memnew(GameStateSnapshot(snapshot_filename_to_name(snapshot_file_name), content_arr)))));
-		snapshot_cache.insert(snapshot_file_name, current_snapshot);
+		Ref<GameStateSnapshotRef> snapshot = Ref<GameStateSnapshotRef>(memnew(GameStateSnapshotRef(memnew(GameStateSnapshot(snapshot_filename_to_name(snapshot_file_name), content_arr)))));
+		snapshot_cache.insert(snapshot_file_name, snapshot);
+		return snapshot;
+	}
+}
+
+void ObjectDBProfilerPanel::show_snapshot(const String& snapshot_file_name, const String& snapshot_diff_file_name) {
+	clear_snapshot();
+
+	current_snapshot = get_snapshot(snapshot_file_name);
+	if (snapshot_diff_file_name != "none") {
+		diff_snapshot = get_snapshot(snapshot_diff_file_name);
+	} else {
+		diff_snapshot = nullptr;
 	}
 
 	for (SnapshotView* view : views) {
-		view->show_snapshot(current_snapshot->ptr());
+		view->show_snapshot(current_snapshot->ptr(), diff_snapshot == nullptr ? nullptr : diff_snapshot->ptr());
 	}
 }
 
@@ -206,6 +217,8 @@ void ObjectDBProfilerPanel::_rmb_menu_pressed(int p_tool, bool p_confirm_overrid
 			DirAccess::remove_file_or_error(global_path);
 			snapshot_list->get_root()->remove_child(snapshot_list->get_selected());
 			snapshot_list->set_selected(snapshot_list->get_root()->get_first_child());
+			snapshot_names.erase(current_snapshot_filename);
+			_update_diff_items();
 			break;
 		}
 	}
@@ -255,6 +268,18 @@ ObjectDBProfilerPanel::ObjectDBProfilerPanel() {
 	add_child(rmb_menu);
 	rmb_menu->connect(SceneStringName(id_pressed), callable_mp(this, &ObjectDBProfilerPanel::_rmb_menu_pressed).bind(false));
 
+    HBoxContainer* diff_button_and_label = memnew(HBoxContainer);
+    diff_button_and_label->set_h_size_flags(SizeFlags::SIZE_EXPAND_FILL);
+    snapshot_column->add_child(diff_button_and_label);
+    Label* diff_against = memnew(Label("Diff against:"));
+    diff_button_and_label->add_child(diff_against);
+
+    diff_button = memnew(OptionButton);
+	diff_button->set_h_size_flags(SizeFlags::SIZE_EXPAND_FILL);
+    diff_button->connect("item_selected", callable_mp(this, &ObjectDBProfilerPanel::_apply_diff));
+    diff_button_and_label->add_child(diff_button);
+	_update_diff_items();
+
 	// tabs of various views right for each snapshot
 	view_tabs = memnew(TabContainer);
 	root_container->add_child(view_tabs);
@@ -299,4 +324,21 @@ void ObjectDBProfilerPanel::add_view(SnapshotView* to_add) {
 
 ObjectDBProfilerPanel::~ObjectDBProfilerPanel() {
 	singleton = nullptr;
+}
+
+void ObjectDBProfilerPanel::_update_diff_items() {
+   diff_button->clear();
+    diff_button->add_item("none", 0);
+	diff_options[0] = "none";
+	
+	int idx = 1;
+    for (const String& name : snapshot_names) {
+        diff_button->add_item(snapshot_filename_to_name(name));
+		diff_options[idx] = name;
+		idx++;
+    }
+}
+
+void ObjectDBProfilerPanel::_apply_diff(int item_idx) {
+	_show_selected_snapshot();
 }

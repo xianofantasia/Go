@@ -43,10 +43,11 @@ class SnapshotView : public Control {
 
 protected:
     GameStateSnapshot* snapshot_data;
+    GameStateSnapshot* diff_data;
 
 public:
 	String view_name;
-	virtual void show_snapshot(GameStateSnapshot* data);
+	virtual void show_snapshot(GameStateSnapshot* data, GameStateSnapshot* p_diff_data = nullptr);
 	virtual void clear_snapshot();
 };
 

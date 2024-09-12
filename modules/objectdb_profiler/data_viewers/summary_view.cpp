@@ -125,8 +125,8 @@ SnapshotSummaryView::SnapshotSummaryView() {
 
 }
 
-void SnapshotSummaryView::show_snapshot(GameStateSnapshot* p_data) {
-    SnapshotView::show_snapshot(p_data);
+void SnapshotSummaryView::show_snapshot(GameStateSnapshot* p_data, GameStateSnapshot* p_diff_data) {
+    SnapshotView::show_snapshot(p_data, p_diff_data);
     explainer_text->set_visible(false);
     
     object_blurb = memnew(SummaryBlurb("Objects", "Objects with scripts not referenced by any user objects [i](a user created object has no connections to other objects)[/i]"));
