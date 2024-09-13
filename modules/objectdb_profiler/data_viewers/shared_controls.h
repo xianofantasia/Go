@@ -1,6 +1,7 @@
 
+
 /**************************************************************************/
-/*  json_view.h                                                           */
+/*  shared_controls.h                                                     */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                             GODOT ENGINE                               */
@@ -29,30 +30,36 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef SNAPSHOT_JSON_VIEW_H
-#define SNAPSHOT_JSON_VIEW_H
+#ifndef SHARED_CONTROLS_H
+#define SHARED_CONTROLS_H
 
 #include "scene/gui/tree.h"
+#include "scene/gui/center_container.h"
+#include "scene/gui/margin_container.h"
 #include "../snapshot_data.h"
+#include "scene/gui/panel_container.h"
+#include "editor/editor_node.h"
+#include "scene/resources/style_box_flat.h"
+#include "scene/gui/label.h"
 #include "snapshot_view.h"
 
-#include "scene/gui/code_edit.h"
 
-
-class SnapshotJsonView : public SnapshotView {
-	GDCLASS(SnapshotJsonView, SnapshotView);
-
-protected:
-	RichTextLabel* json_content;
-	RichTextLabel* diff_json_content;
-
-	String _snapshot_to_json(GameStateSnapshot* snapshot);
+class SpanningHeader : public PanelContainer {
+    GDCLASS(SpanningHeader, PanelContainer);
 
 public:
-	SnapshotJsonView();
-
-	virtual void show_snapshot(GameStateSnapshot* data, GameStateSnapshot* p_diff_data) override;
+    SpanningHeader(const String& text) {
+        StyleBoxFlat* title_sbf = memnew(StyleBoxFlat);
+        title_sbf->set_bg_color(EditorNode::get_singleton()->get_editor_theme()->get_color("dark_color_3", "Editor"));
+        add_theme_style_override("panel", title_sbf);
+        set_h_size_flags(SizeFlags::SIZE_EXPAND_FILL);
+        Label* title = memnew(Label(text));
+        add_child(title);
+        title->set_horizontal_alignment(HorizontalAlignment::HORIZONTAL_ALIGNMENT_CENTER);
+        title->set_vertical_alignment(VerticalAlignment::VERTICAL_ALIGNMENT_CENTER);
+    }
 };
 
-#endif // SNAPSHOT_JSON_VIEW_H
+
+#endif // SHARED_CONTROLS_H
 

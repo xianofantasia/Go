@@ -49,6 +49,7 @@
 #include "scene/resources/style_box_flat.h"
 #include "core/object/class_db.h"
 #include "scene/gui/split_container.h"
+#include "shared_controls.h"
 
 #include "../snapshot_data.h"
 
@@ -172,16 +173,8 @@ void SnapshotRefCountedView::_object_selected() {
     content_wrapper->add_child(vert_content);
     vert_content->add_theme_constant_override("separation", 5);
 
-    PanelContainer* title_panel = memnew(PanelContainer);
-    StyleBoxFlat* title_sbf = memnew(StyleBoxFlat);
-    title_sbf->set_bg_color(EditorNode::get_singleton()->get_editor_theme()->get_color("dark_color_3", "Editor"));
-    title_panel->add_theme_style_override("panel", title_sbf);
+    PanelContainer* title_panel = memnew(SpanningHeader(d->get_name()));
     vert_content->add_child(title_panel);
-    title_panel->set_h_size_flags(SizeFlags::SIZE_EXPAND_FILL);
-    Label* title = memnew(Label(d->get_name()));
-    title_panel->add_child(title);
-    title->set_horizontal_alignment(HorizontalAlignment::HORIZONTAL_ALIGNMENT_CENTER);
-    title->set_vertical_alignment(VerticalAlignment::VERTICAL_ALIGNMENT_CENTER);
 
     int ref_count = d->extra_debug_data.has("ref_count") ? (uint64_t)d->extra_debug_data["ref_count"] : 0;
     vert_content->add_child(memnew(Label("Total RC: " + String::num_uint64( ref_count ) )));

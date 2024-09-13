@@ -48,6 +48,8 @@
 #include "modules/gdscript/gdscript.h"
 #include "scene/gui/code_edit.h"
 #include "core/io/json.h"
+#include "scene/gui/split_container.h"
+#include "shared_controls.h"
 #include "../snapshot_data.h"
 
 
@@ -59,22 +61,48 @@ SnapshotJsonView::SnapshotJsonView() {
 void SnapshotJsonView::show_snapshot(GameStateSnapshot* p_data, GameStateSnapshot* p_diff_data) {
     SnapshotView::show_snapshot(p_data, p_diff_data);
 
-	VBoxContainer* box = memnew(VBoxContainer);
+	HSplitContainer* box = memnew(HSplitContainer);
 	box->set_anchors_preset(LayoutPreset::PRESET_FULL_RECT);
 	add_child(box);
 
+	VBoxContainer* json_box = memnew(VBoxContainer);
+	json_box->set_v_size_flags(SizeFlags::SIZE_EXPAND_FILL);
+	json_box->set_h_size_flags(SizeFlags::SIZE_EXPAND_FILL);
+	box->add_child(json_box);
+	json_box->add_child(memnew(SpanningHeader(diff_data ? "Snapshot A JSON" : "Snapshot JSON")));
 	json_content = memnew(RichTextLabel);
 	json_content->set_v_size_flags(SizeFlags::SIZE_EXPAND_FILL);
 	json_content->set_h_size_flags(SizeFlags::SIZE_EXPAND_FILL);
-	box->add_child(json_content);
 	json_content->set_selection_enabled(true);
+	json_box->add_child(json_content);
+	json_content->add_text(_snapshot_to_json(snapshot_data));
 
-	// Should really do this on a thread, but IDK how to get the data back onto the main thread to add it to the text box...
+	if (diff_data) {
+		VBoxContainer* diff_json_box = memnew(VBoxContainer);
+		diff_json_box->set_v_size_flags(SizeFlags::SIZE_EXPAND_FILL);
+		diff_json_box->set_h_size_flags(SizeFlags::SIZE_EXPAND_FILL);
+		box->add_child(diff_json_box);
+		diff_json_box->add_child(memnew(SpanningHeader("Snapshot B JSON")));
+		diff_json_content = memnew(RichTextLabel);
+		diff_json_content->set_v_size_flags(SizeFlags::SIZE_EXPAND_FILL);
+		diff_json_content->set_h_size_flags(SizeFlags::SIZE_EXPAND_FILL);
+		diff_json_content->set_selection_enabled(true);
+		diff_json_box->add_child(diff_json_content);
+		diff_json_content->add_text(_snapshot_to_json(diff_data));
+	}
+
+
+
+
+}
+
+
+String SnapshotJsonView::_snapshot_to_json(GameStateSnapshot* snapshot) {
 	String json_view;
 	Dictionary json_data;
-	json_data["name"] = snapshot_data->name;
+	json_data["name"] = snapshot->name;
 	Dictionary objects;
-	for (const KeyValue<ObjectID, SnapshotDataObject*>& obj : snapshot_data->Data) {
+	for (const KeyValue<ObjectID, SnapshotDataObject*>& obj : snapshot->Data) {
 		Dictionary obj_data;
 		obj_data["type_name"] = obj.value->type_name;
 
@@ -93,6 +121,5 @@ void SnapshotJsonView::show_snapshot(GameStateSnapshot* p_data, GameStateSnapsho
 		objects[obj.key] = obj_data;
 	}
 	json_data["objects"] = objects;
-
-	json_content->add_text(JSON::stringify(json_data, "    ", true, true));
+	return JSON::stringify(json_data, "    ", true, true);
 }
