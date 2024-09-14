@@ -37,19 +37,6 @@
 #include "snapshot_view.h"
 #include "scene/gui/menu_button.h"
 
-enum FileSortOption {
-	FILE_SORT_NAME_ASCENDING = 0,
-	FILE_SORT_NAME_DESCENDING,
-	FILE_SORT_COUNT_ASCENDING,
-	FILE_SORT_COUNT_DESCENDING,
-	FILE_SORT_DIFF_COUNT_ASCENDING,
-	FILE_SORT_DIFF_COUNT_DESCENDING,
-	FILE_SORT_DELTA_COUNT_ASCENDING,
-	FILE_SORT_DELTA_COUNT_DESCENDING,
-	FILE_SORT_MAX
-};
-const FileSortOption DEFAULT_SORT = FILE_SORT_COUNT_DESCENDING;
-
 struct ClassData {
 	ClassData() {}
 	ClassData(String name, String parent): class_name(name), parent_class_name(parent) {}
@@ -88,30 +75,8 @@ protected:
 	Tree* object_list;
 	Tree* diff_object_list;
 
-	LineEdit* classes_filter;
-	MenuButton* sort_button;
-
-	template<int T_column>
-	struct TreeItemAlphaComparator {
-		bool operator()(const TreeItem* p_a, const TreeItem* p_b) const {
-			return NoCaseComparator()(p_a->get_text(T_column), p_b->get_text(T_column));
-		}
-	};
-	
-	template<int T_column>
-	struct TreeItemNumericComparator {
-		bool operator()(const TreeItem* p_a, const TreeItem* p_b) const {
-			return p_a->get_text(T_column).to_int() > p_b->get_text(T_column).to_int();
-		}
-	};
-
 	void _object_selected(Tree* tree);
 	void _class_selected();
-	void _filter_changed(const String &p_filter);
-	void _update_filter(TreeItem* current_node = nullptr);
-	FileSortOption current_sort = DEFAULT_SORT;
-	void _file_sort_popup(int p_id);
-	void _update_sort();
 	void _add_objects_to_class_map(HashMap<String, ClassData>& class_map, GameStateSnapshot* objects);
 	void _notification(int p_what);
 

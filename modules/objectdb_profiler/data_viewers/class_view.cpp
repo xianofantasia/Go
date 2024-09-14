@@ -53,6 +53,7 @@
 #include "editor/editor_node.h"
 #include "editor/editor_string_names.h"
 #include "scene/gui/menu_button.h"
+#include "shared_controls.h"
 #include "../snapshot_data.h"
 
 
@@ -79,50 +80,23 @@ void SnapshotClassView::show_snapshot(GameStateSnapshot* p_data, GameStateSnapsh
     class_list_column->set_h_size_flags(SizeFlags::SIZE_EXPAND_FILL);
     classes_view->add_child(class_list_column);
 
+    class_tree = memnew(Tree);
     
-    HBoxContainer* classes_filter_buttons = memnew(HBoxContainer);
-    class_list_column->add_child(classes_filter_buttons);
-    classes_filter_buttons->set_h_size_flags(SizeFlags::SIZE_EXPAND_FILL);
-    classes_filter_buttons->add_theme_constant_override("h_separation", 10 * EDSCALE);
-    classes_filter = memnew(LineEdit);
-	classes_filter->set_clear_button_enabled(true);
-    classes_filter->set_h_size_flags(SizeFlags::SIZE_EXPAND_FILL);
-    classes_filter->set_right_icon(get_editor_theme_icon(SNAME("Search")));
-    classes_filter->set_placeholder("Filter Classes");
-    classes_filter_buttons->add_child(classes_filter);
-    classes_filter->connect(SceneStringName(text_changed), callable_mp(this, &SnapshotClassView::_filter_changed));
+    TreeSortAndFilterBar* classes_filter_bar = memnew(TreeSortAndFilterBar(class_tree, "Filter Classes"));
+    classes_filter_bar->add_sort_option("Name", TreeSortAndFilterBar::SortType::ALPHA_SORT, 0);
 
-
-	sort_button = memnew(MenuButton);
-    sort_button->set_icon(get_editor_theme_icon(SNAME("Sort")));
-	sort_button->set_flat(false);
-	sort_button->set_theme_type_variation("FlatMenuButton");
-	PopupMenu *p = sort_button->get_popup();
-	p->connect(SceneStringName(id_pressed), callable_mp(this, &SnapshotClassView::_file_sort_popup));
-	p->add_radio_check_item(TTR("Sort by Name (Ascending)"), FILE_SORT_NAME_ASCENDING);
-	p->add_radio_check_item(TTR("Sort by Name (Descending)"), FILE_SORT_NAME_DESCENDING);
+    TreeSortAndFilterBar::SortOptionIndexes default_sort;
     if (!diff_data) {
-        p->add_radio_check_item(TTR("Sort by Count (Ascending)"), FILE_SORT_COUNT_ASCENDING);
-        p->add_radio_check_item(TTR("Sort by Count (Descending)"), FILE_SORT_COUNT_DESCENDING);
+        default_sort = classes_filter_bar->add_sort_option("Count", TreeSortAndFilterBar::SortType::NUMERIC_SORT, 1);
     } else {
-        p->add_radio_check_item(TTR("Sort by A Count (Ascending)"), FILE_SORT_COUNT_ASCENDING);
-        p->add_radio_check_item(TTR("Sort by A Count (Descending)"), FILE_SORT_DIFF_COUNT_DESCENDING);
-        p->add_radio_check_item(TTR("Sort by B Count (Ascending)"), FILE_SORT_DIFF_COUNT_ASCENDING);
-        p->add_radio_check_item(TTR("Sort by B Count (Descending)"), FILE_SORT_COUNT_DESCENDING);
-        p->add_radio_check_item(TTR("Sort by Delta (Ascending)"), FILE_SORT_DELTA_COUNT_ASCENDING);
-        p->add_radio_check_item(TTR("Sort by Delta (Descending)"), FILE_SORT_DELTA_COUNT_DESCENDING);
+        classes_filter_bar->add_sort_option("A Count", TreeSortAndFilterBar::SortType::NUMERIC_SORT, 1);
+        classes_filter_bar->add_sort_option("B Count", TreeSortAndFilterBar::SortType::NUMERIC_SORT, 2);
+        default_sort = classes_filter_bar->add_sort_option("Delta", TreeSortAndFilterBar::SortType::NUMERIC_SORT, 3);
     }
-    
-    if (current_sort > p->get_item_count()) {
-        current_sort = DEFAULT_SORT;
-    }
-    
-	p->set_item_checked(current_sort, true);
-    classes_filter_buttons->add_child(sort_button);
+    class_list_column->add_child(classes_filter_bar);
     
 
     // Tree of classes 
-    class_tree = memnew(Tree);
     class_tree->set_custom_minimum_size(Size2(200 * EDSCALE, 0));
     class_tree->set_hide_folding(false);
     class_list_column->add_child(class_tree);
@@ -197,8 +171,9 @@ void SnapshotClassView::show_snapshot(GameStateSnapshot* p_data, GameStateSnapsh
     // Icons won't load until the frame after show_snapshot is called. Not sure why, but just defer the load
     callable_mp(this, &SnapshotClassView::_notification).call_deferred(NOTIFICATION_THEME_CHANGED);
 
-    _update_filter();
-    _update_sort();
+    // default to sort by descending count. Putting the biggest groups at the top is generally pretty interesting
+    classes_filter_bar->select_sort(default_sort.descending); 
+    classes_filter_bar->apply();
 }
 
 Tree* SnapshotClassView::_make_object_list_tree(const String& column_name) {
@@ -292,10 +267,6 @@ void SnapshotClassView::_notification(int p_what) {
 		case NOTIFICATION_LAYOUT_DIRECTION_CHANGED:
 		case NOTIFICATION_THEME_CHANGED:
 		case NOTIFICATION_TRANSLATION_CHANGED: {
-            // Icon caching, how does that work? (I copied this from editor_profiler.cpp obviously)
-            classes_filter->set_right_icon(get_editor_theme_icon(SNAME("Search")));
-            sort_button->set_icon(get_editor_theme_icon(SNAME("Sort")));
-
             // love writing a tree traversal just to update icons...
             List<TreeItem*> items;
             items.push_back(class_tree->get_root());
@@ -310,111 +281,6 @@ void SnapshotClassView::_notification(int p_what) {
                 top->set_icon(0, EditorNode::get_singleton()->get_class_icon(top->get_metadata(0), ""));
             }
 
-            _update_filter();
-            _update_sort();
-
 		} break;
 	}
-}
-
-void SnapshotClassView::_filter_changed(const String &p_filter) {
-    _update_filter();
-}
-
-void SnapshotClassView::_update_filter(TreeItem* current_node) {
-    if (!current_node) {
-        current_node = class_tree->get_root();
-    }
-
-    if (!current_node) {
-        return;
-    }
-
-    // reset ourself to default state
-    current_node->set_visible(true);
-    current_node->clear_custom_color(0);
-
-    // go through each child and filter them
-    bool any_child_visible = false;
-    for (TreeItem *child = current_node->get_first_child(); child; child = child->get_next()) {
-        _update_filter(child);
-        if (child->is_visible()) {
-            any_child_visible = true;
-        }
-    }
-
-    // check if we match the filter
-    String filter_str = classes_filter->get_text().strip_edges(true, true).to_lower();
-
-    // we are visible
-    if (current_node->get_text(0).to_lower().contains(filter_str) || filter_str.is_empty()) {
-        current_node->set_visible(true);
-    // we have a visible child
-    } else if (any_child_visible) {
-		current_node->set_custom_color(0, get_theme_color(SNAME("font_disabled_color"), EditorStringName(Editor)));
-
-    // we and out children aren't visible
-    } else {
-        current_node->set_visible(false);
-    }
-}
-
-void SnapshotClassView::_update_sort() {
-    for (int i = 0; i != sort_button->get_popup()->get_item_count(); i++) {
-		sort_button->get_popup()->set_item_checked(i, (i == (int)current_sort));
-	}
-
-    List<TreeItem*> items_to_sort;
-    items_to_sort.push_back(class_tree->get_root());
-
-    while (items_to_sort.size() > 0) {
-        TreeItem* to_sort = items_to_sort.get(0);
-        items_to_sort.pop_front();
-        
-        List<TreeItem*> items;
-        for (int i = 0; i < to_sort->get_child_count(); i++) {
-            items.push_back(to_sort->get_child(i));
-        }
-        switch(current_sort) {
-            case FILE_SORT_NAME_ASCENDING:
-                items.sort_custom<TreeItemAlphaComparator<0>>();
-                break;
-            case FILE_SORT_NAME_DESCENDING:
-                items.sort_custom<TreeItemAlphaComparator<0>>();
-                items.reverse();
-                break;
-            case FILE_SORT_COUNT_ASCENDING:
-                items.sort_custom<TreeItemNumericComparator<1>>();
-                items.reverse();
-                break;
-            case FILE_SORT_COUNT_DESCENDING:
-                items.sort_custom<TreeItemNumericComparator<1>>();
-                break;
-            case FILE_SORT_DIFF_COUNT_ASCENDING:
-                items.sort_custom<TreeItemNumericComparator<2>>();
-                items.reverse();
-                break;
-            case FILE_SORT_DIFF_COUNT_DESCENDING:
-                items.sort_custom<TreeItemNumericComparator<2>>();
-                break;
-            case FILE_SORT_DELTA_COUNT_ASCENDING:
-                items.sort_custom<TreeItemNumericComparator<3>>();
-                items.reverse();
-                break;
-            case FILE_SORT_DELTA_COUNT_DESCENDING:
-                items.sort_custom<TreeItemNumericComparator<3>>();
-                break;
-        }
-
-        for (int i = 0; i < items.size(); i++) {
-            items.get(i)->move_before(to_sort->get_child(i));
-            items_to_sort.push_back(items.get(i));
-        }
-    }
-}
-
-
-void SnapshotClassView::_file_sort_popup(int p_id) {
-    current_sort = (FileSortOption)p_id;
-    _update_sort();
 }
