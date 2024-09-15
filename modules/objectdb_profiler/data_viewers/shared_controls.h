@@ -274,6 +274,10 @@ public:
         indexes.descending = item_descending.id;
         return indexes;
     }
+
+    void clear_filter() {
+        filter_edit->clear();
+    }
     
     void clear() {
         sort_button->set_visible(false);

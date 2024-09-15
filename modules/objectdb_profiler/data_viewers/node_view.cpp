@@ -109,6 +109,7 @@ NodeTreeElements SnapshotNodeView::_make_node_tree(const String& tree_name, Game
     elements.tree = memnew(Tree);
     elements.filter_bar = memnew(TreeSortAndFilterBar(elements.tree, "Filter Nodes"));
     elements.root->add_child(elements.filter_bar);
+	elements.tree->set_select_mode(Tree::SelectMode::SELECT_ROW);
     elements.tree->set_custom_minimum_size(Size2(150, 0) * EDSCALE);
     elements.tree->set_hide_folding(false);
     elements.root->add_child(elements.tree);
@@ -120,7 +121,7 @@ NodeTreeElements SnapshotNodeView::_make_node_tree(const String& tree_name, Game
     elements.tree->set_column_expand(0, true);
     elements.tree->set_column_clip_content(0, false);
     elements.tree->set_column_custom_minimum_width(0, 150 * EDSCALE);
-    elements.tree->connect("cell_selected", callable_mp(this, &SnapshotNodeView::_node_selected).bind(elements.tree));
+    elements.tree->connect("item_selected", callable_mp(this, &SnapshotNodeView::_node_selected).bind(elements.tree));
     elements.tree->set_h_size_flags(SizeFlags::SIZE_EXPAND_FILL);
     elements.tree->set_v_size_flags(SizeFlags::SIZE_EXPAND_FILL);
 	elements.tree->set_anchors_preset(LayoutPreset::PRESET_FULL_RECT);

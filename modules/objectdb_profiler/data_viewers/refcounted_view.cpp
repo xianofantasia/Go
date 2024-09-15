@@ -73,6 +73,7 @@ void SnapshotRefCountedView::show_snapshot(GameStateSnapshot* p_data, GameStateS
 
     // Tree of objects
     object_tree = memnew(Tree);
+    object_tree->set_select_mode(Tree::SelectMode::SELECT_ROW);
     object_tree->set_custom_minimum_size(Size2(500, 0) * EDSCALE);
     object_tree->set_hide_folding(false);
     objects_view->add_child(object_tree);
@@ -99,7 +100,7 @@ void SnapshotRefCountedView::show_snapshot(GameStateSnapshot* p_data, GameStateS
 	object_tree->set_column_clip_content(3, false);
 	object_tree->set_column_custom_minimum_width(3, 100 * EDSCALE);
 
-    object_tree->connect("cell_selected", callable_mp(this, &SnapshotRefCountedView::_object_selected));
+    object_tree->connect("item_selected", callable_mp(this, &SnapshotRefCountedView::_object_selected));
     object_tree->set_h_size_flags(SizeFlags::SIZE_EXPAND_FILL);
     object_tree->set_v_size_flags(SizeFlags::SIZE_EXPAND_FILL);
 
@@ -187,6 +188,7 @@ void SnapshotRefCountedView::_object_selected() {
         Tree* inbound_tree = memnew(Tree);
         inbound_tree->set_hide_folding(true);
         vert_content->add_child(inbound_tree);
+        inbound_tree->set_select_mode(Tree::SelectMode::SELECT_ROW);
         inbound_tree->set_hide_root(true);
         inbound_tree->set_columns(2);
         inbound_tree->set_column_titles_visible(true);
@@ -212,6 +214,7 @@ void SnapshotRefCountedView::_object_selected() {
         Tree* cycles_tree = memnew(Tree);
         cycles_tree->set_hide_folding(true);
         vert_content->add_child(cycles_tree);
+        cycles_tree->set_select_mode(Tree::SelectMode::SELECT_ROW);
         cycles_tree->set_hide_root(true);
         cycles_tree->set_columns(1);
         cycles_tree->set_column_titles_visible(true);

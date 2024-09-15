@@ -97,6 +97,7 @@ void SnapshotClassView::show_snapshot(GameStateSnapshot* p_data, GameStateSnapsh
     
 
     // Tree of classes 
+    class_tree->set_select_mode(Tree::SelectMode::SELECT_ROW);
     class_tree->set_custom_minimum_size(Size2(200 * EDSCALE, 0));
     class_tree->set_hide_folding(false);
     class_list_column->add_child(class_tree);
@@ -114,7 +115,7 @@ void SnapshotClassView::show_snapshot(GameStateSnapshot* p_data, GameStateSnapsh
         class_tree->set_column_title(3, "Delta");
         class_tree->set_column_expand(3, false);
     }
-    class_tree->connect("cell_selected", callable_mp(this, &SnapshotClassView::_class_selected));
+    class_tree->connect("item_selected", callable_mp(this, &SnapshotClassView::_class_selected));
     class_tree->set_h_size_flags(SizeFlags::SIZE_EXPAND_FILL);
     class_tree->set_v_size_flags(SizeFlags::SIZE_EXPAND_FILL);
 	class_tree->set_anchors_preset(LayoutPreset::PRESET_FULL_RECT);
@@ -174,13 +175,14 @@ void SnapshotClassView::show_snapshot(GameStateSnapshot* p_data, GameStateSnapsh
 
 Tree* SnapshotClassView::_make_object_list_tree(const String& column_name) {
     Tree* list = memnew(Tree);
+    list->set_select_mode(Tree::SelectMode::SELECT_ROW);
     list->set_hide_folding(true);
     list->set_hide_root(true);
     list->set_columns(1);
     list->set_column_titles_visible(true);
     list->set_column_title(0, column_name);
     list->set_column_expand(0, true);
-    list->connect("cell_selected", callable_mp(this, &SnapshotClassView::_object_selected).bind(list));
+    list->connect("item_selected", callable_mp(this, &SnapshotClassView::_object_selected).bind(list));
     list->set_h_size_flags(SizeFlags::SIZE_EXPAND_FILL);
     list->set_v_size_flags(SizeFlags::SIZE_EXPAND_FILL);
     return list;

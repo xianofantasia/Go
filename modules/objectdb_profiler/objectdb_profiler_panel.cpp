@@ -250,13 +250,14 @@ ObjectDBProfilerPanel::ObjectDBProfilerPanel() {
 	snapshot_list->create_item();
     snapshot_list->set_hide_folding(true);
     snapshot_column->add_child(snapshot_list);
+    snapshot_list->set_select_mode(Tree::SelectMode::SELECT_ROW);
     snapshot_list->set_hide_root(true);
     snapshot_list->set_columns(1);
     snapshot_list->set_column_titles_visible(true);
     snapshot_list->set_column_title(0, "Snapshots");
     snapshot_list->set_column_expand(0, true);
     snapshot_list->set_column_clip_content(0, true);
-    snapshot_list->connect("cell_selected", callable_mp(this, &ObjectDBProfilerPanel::_show_selected_snapshot));
+    snapshot_list->connect("item_selected", callable_mp(this, &ObjectDBProfilerPanel::_show_selected_snapshot));
     snapshot_list->set_h_size_flags(SizeFlags::SIZE_EXPAND_FILL);
     snapshot_list->set_v_size_flags(SizeFlags::SIZE_EXPAND_FILL);
 	snapshot_list->set_anchors_preset(LayoutPreset::PRESET_FULL_RECT);
