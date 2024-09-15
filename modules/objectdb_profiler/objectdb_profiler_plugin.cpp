@@ -30,26 +30,24 @@
 
 #include "objectdb_profiler_plugin.h"
 
-#include "scene/gui/control.h"
 #include "core/object/object.h"
+#include "core/object/ref_counted.h"
 #include "core/os/memory.h"
 #include "core/os/time.h"
-#include "scene/gui/tree.h"
-#include "scene/gui/button.h"
 #include "editor/debugger/editor_debugger_node.h"
 #include "editor/debugger/script_editor_debugger.h"
+#include "editor/editor_node.h"
+#include "editor/themes/editor_scale.h"
+#include "objectdb_profiler_panel.h"
+#include "scene/gui/button.h"
+#include "scene/gui/control.h"
 #include "scene/gui/label.h"
 #include "scene/gui/panel_container.h"
 #include "scene/gui/tab_container.h"
-#include "editor/themes/editor_scale.h"
-#include "editor/editor_node.h"
-#include "core/object/ref_counted.h"
+#include "scene/gui/tree.h"
 #include "snapshot_data.h"
-#include "objectdb_profiler_panel.h"
-
 
 ObjectDBProfilerDebuggerPlugin::ObjectDBProfilerDebuggerPlugin() {
-
 }
 
 bool ObjectDBProfilerDebuggerPlugin::has_capture(const String &p_capture) const {
@@ -58,7 +56,7 @@ bool ObjectDBProfilerDebuggerPlugin::has_capture(const String &p_capture) const 
 
 bool ObjectDBProfilerDebuggerPlugin::capture(const String &p_message, const Array &p_data, int p_index) {
 	ERR_FAIL_COND_V(debugger_panel == nullptr, false);
-	
+
 	if (p_message == "snapshot:object_snapshot") {
 		debugger_panel->receive_snapshot(p_data);
 		return true;

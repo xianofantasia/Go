@@ -1,6 +1,5 @@
-
 /**************************************************************************/
-/*  json_view.cpp                                                          */
+/*  json_view.cpp                                                         */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                             GODOT ENGINE                               */
@@ -31,41 +30,39 @@
 
 #include "json_view.h"
 
-#include "scene/gui/control.h"
+#include "../snapshot_data.h"
+#include "core/io/json.h"
 #include "core/object/object.h"
+#include "core/object/ref_counted.h"
 #include "core/os/memory.h"
 #include "core/os/time.h"
-#include "scene/gui/tree.h"
-#include "scene/gui/button.h"
 #include "editor/debugger/editor_debugger_node.h"
 #include "editor/debugger/script_editor_debugger.h"
+#include "editor/editor_node.h"
+#include "editor/themes/editor_scale.h"
+#include "modules/gdscript/gdscript.h"
+#include "scene/gui/button.h"
+#include "scene/gui/code_edit.h"
+#include "scene/gui/control.h"
 #include "scene/gui/label.h"
 #include "scene/gui/panel_container.h"
-#include "scene/gui/tab_container.h"
-#include "editor/themes/editor_scale.h"
-#include "editor/editor_node.h"
-#include "core/object/ref_counted.h"
-#include "modules/gdscript/gdscript.h"
-#include "scene/gui/code_edit.h"
-#include "core/io/json.h"
 #include "scene/gui/split_container.h"
+#include "scene/gui/tab_container.h"
+#include "scene/gui/tree.h"
 #include "shared_controls.h"
-#include "../snapshot_data.h"
-
-
 
 SnapshotJsonView::SnapshotJsonView() {
 	set_name("JSON");
 }
 
-void SnapshotJsonView::show_snapshot(GameStateSnapshot* p_data, GameStateSnapshot* p_diff_data) {
-    SnapshotView::show_snapshot(p_data, p_diff_data);
+void SnapshotJsonView::show_snapshot(GameStateSnapshot *p_data, GameStateSnapshot *p_diff_data) {
+	SnapshotView::show_snapshot(p_data, p_diff_data);
 
-	HSplitContainer* box = memnew(HSplitContainer);
+	HSplitContainer *box = memnew(HSplitContainer);
 	box->set_anchors_preset(LayoutPreset::PRESET_FULL_RECT);
 	add_child(box);
 
-	VBoxContainer* json_box = memnew(VBoxContainer);
+	VBoxContainer *json_box = memnew(VBoxContainer);
 	json_box->set_v_size_flags(SizeFlags::SIZE_EXPAND_FILL);
 	json_box->set_h_size_flags(SizeFlags::SIZE_EXPAND_FILL);
 	box->add_child(json_box);
@@ -78,7 +75,7 @@ void SnapshotJsonView::show_snapshot(GameStateSnapshot* p_data, GameStateSnapsho
 	json_content->add_text(_snapshot_to_json(snapshot_data));
 
 	if (diff_data) {
-		VBoxContainer* diff_json_box = memnew(VBoxContainer);
+		VBoxContainer *diff_json_box = memnew(VBoxContainer);
 		diff_json_box->set_v_size_flags(SizeFlags::SIZE_EXPAND_FILL);
 		diff_json_box->set_h_size_flags(SizeFlags::SIZE_EXPAND_FILL);
 		box->add_child(diff_json_box);
@@ -90,30 +87,25 @@ void SnapshotJsonView::show_snapshot(GameStateSnapshot* p_data, GameStateSnapsho
 		diff_json_box->add_child(diff_json_content);
 		diff_json_content->add_text(_snapshot_to_json(diff_data));
 	}
-
-
-
-
 }
 
-
-String SnapshotJsonView::_snapshot_to_json(GameStateSnapshot* snapshot) {
+String SnapshotJsonView::_snapshot_to_json(GameStateSnapshot *snapshot) {
 	String json_view;
 	Dictionary json_data;
 	json_data["name"] = snapshot->name;
 	Dictionary objects;
-	for (const KeyValue<ObjectID, SnapshotDataObject*>& obj : snapshot->Data) {
+	for (const KeyValue<ObjectID, SnapshotDataObject *> &obj : snapshot->Data) {
 		Dictionary obj_data;
 		obj_data["type_name"] = obj.value->type_name;
 
 		Array prop_list;
-		for (const PropertyInfo& prop : obj.value->prop_list) {
+		for (const PropertyInfo &prop : obj.value->prop_list) {
 			prop_list.push_back((Dictionary)prop);
 		}
 		objects["prop_list"] = prop_list;
-		
+
 		Dictionary prop_values;
-		for (const KeyValue<StringName, Variant>& prop : obj.value->prop_values) {
+		for (const KeyValue<StringName, Variant> &prop : obj.value->prop_values) {
 			prop_values[prop.key] = prop.value;
 		}
 		obj_data["prop_values"] = prop_values;

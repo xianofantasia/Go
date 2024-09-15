@@ -39,16 +39,15 @@
 
 class ObjectDBProfilerPanel;
 
-
-// Boostrapped by the plugin
+// Bootstrapped by the plugin
 class ObjectDBProfilerDebuggerPlugin : public EditorDebuggerPlugin {
 	GDCLASS(ObjectDBProfilerDebuggerPlugin, EditorDebuggerPlugin);
 
 protected:
-	ObjectDBProfilerPanel* debugger_panel;
+	ObjectDBProfilerPanel *debugger_panel;
 
 	void request_object_snapshot();
-	
+
 public:
 	virtual bool has_capture(const String &p_capture) const override;
 	virtual bool capture(const String &p_message, const Array &p_data, int p_index) override;
@@ -68,6 +67,5 @@ protected:
 public:
 	ObjectDBProfilerPlugin();
 };
-
 
 #endif // OBJECTDB_PROFILER_PLUGIN_H

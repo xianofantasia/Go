@@ -1,4 +1,3 @@
-
 /**************************************************************************/
 /*  objectdb_profiler_panel.h                                             */
 /**************************************************************************/
@@ -33,17 +32,17 @@
 #define OBJECTDB_PROFILER_PANEL_H
 
 #include "editor/debugger/editor_debugger_inspector.h"
-#include "scene/debugger/scene_debugger.h"
 #include "editor/plugins/editor_debugger_plugin.h"
-#include "scene/gui/tree.h"
-#include "scene/gui/tab_container.h"
-#include "snapshot_data.h"
 #include "editor/plugins/editor_plugin.h"
-
+#include "scene/debugger/scene_debugger.h"
+#include "scene/gui/tab_container.h"
+#include "scene/gui/tree.h"
 #include "snapshot_data.h"
-#include "data_viewers/snapshot_view.h"
+
 #include "core/io/dir_access.h"
 #include "core/templates/lru.h"
+#include "data_viewers/snapshot_view.h"
+#include "snapshot_data.h"
 
 const int SNAPSHOT_CACHE_MAX_SIZE = 10;
 
@@ -54,18 +53,18 @@ class ObjectDBProfilerPanel : public Control {
 	static ObjectDBProfilerPanel *singleton;
 
 protected:
-	Tree* snapshot_list;
-	Button* take_snapshot;
+	Tree *snapshot_list;
+	Button *take_snapshot;
 
-	TabContainer* view_tabs;
-    List<SnapshotView*> views;
+	TabContainer *view_tabs;
+	List<SnapshotView *> views;
 
-	PopupMenu* rmb_menu;
-	OptionButton* diff_button;
+	PopupMenu *rmb_menu;
+	OptionButton *diff_button;
 
 	List<String> snapshot_names;
-    Ref<GameStateSnapshotRef> current_snapshot;
-    Ref<GameStateSnapshotRef> diff_snapshot;
+	Ref<GameStateSnapshotRef> current_snapshot;
+	Ref<GameStateSnapshotRef> diff_snapshot;
 
 	HashMap<int, String> diff_options;
 
@@ -82,25 +81,24 @@ protected:
 	void _rmb_menu_pressed(int p_tool, bool p_confirm_override);
 	void _apply_diff(int item_idx);
 	void _update_diff_items();
-	
+
 public:
 	ObjectDBProfilerPanel();
 	~ObjectDBProfilerPanel();
 	static void _bind_methods();
 
-	void receive_snapshot(const Array& p_data);
-    void show_snapshot(const String& snapshot_file_name, const String& snapshot_diff_file_name);
+	void receive_snapshot(const Array &p_data);
+	void show_snapshot(const String &snapshot_file_name, const String &snapshot_diff_file_name);
 	void clear_snapshot();
 	void set_enabled(bool enabled);
 
-	Ref<GameStateSnapshotRef> get_snapshot(const String& snapshot_file_name);
+	Ref<GameStateSnapshotRef> get_snapshot(const String &snapshot_file_name);
 
-    void add_view(SnapshotView* to_add);
-	String snapshot_filename_to_name(const String& filename);
+	void add_view(SnapshotView *to_add);
+	String snapshot_filename_to_name(const String &filename);
 
 	static ObjectDBProfilerPanel *get_singleton() { return singleton; }
-	const List<String>& get_snapshot_names() { return snapshot_names; }
+	const List<String> &get_snapshot_names() { return snapshot_names; }
 };
-
 
 #endif // OBJECTDB_PROFILER_PANEL_H

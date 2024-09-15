@@ -31,30 +31,30 @@
 #ifndef SNAPSHOT_DATA_H
 #define SNAPSHOT_DATA_H
 
-#include "editor/debugger/editor_debugger_inspector.h"
-#include "scene/debugger/scene_debugger.h"
 #include "core/object/script_language.h"
+#include "editor/debugger/editor_debugger_inspector.h"
 #include "modules/gdscript/gdscript.h"
+#include "scene/debugger/scene_debugger.h"
 
 #include "core/io/missing_resource.h"
-#include "scene/gui/tree.h"
 #include "core/os/time.h"
-
+#include "scene/gui/tree.h"
 
 struct SnapshotDataTransportObject : public SceneDebuggerObject {
-	SnapshotDataTransportObject(): SceneDebuggerObject() {}
-	SnapshotDataTransportObject(Object* obj): SceneDebuggerObject(obj) {}
+	SnapshotDataTransportObject() :
+			SceneDebuggerObject() {}
+	SnapshotDataTransportObject(Object *obj) :
+			SceneDebuggerObject(obj) {}
 	Dictionary extra_debug_data;
 };
 
-
 class SnapshotDataObject : public EditorDebuggerRemoteObject {
 	GDCLASS(SnapshotDataObject, EditorDebuggerRemoteObject);
-	
 
 public:
-	class GameStateSnapshot* snapshot;
-	SnapshotDataObject(SceneDebuggerObject& obj, GameStateSnapshot* snapshot): EditorDebuggerRemoteObject(obj), snapshot(snapshot) {}
+	class GameStateSnapshot *snapshot;
+	SnapshotDataObject(SceneDebuggerObject &obj, GameStateSnapshot *snapshot) :
+			EditorDebuggerRemoteObject(obj), snapshot(snapshot) {}
 	Dictionary extra_debug_data;
 
 	HashMap<String, ObjectID> outbound_references;
@@ -66,12 +66,12 @@ public:
 	bool is_refcounted() {
 		return is_class(RefCounted::get_class_static());
 	}
-	
+
 	bool is_node() {
 		return is_class(Node::get_class_static());
 	}
-	
-	bool is_class(const String& base_class) {
+
+	bool is_class(const String &base_class) {
 		return ClassDB::is_parent_class(type_name, base_class);
 	}
 };
@@ -79,21 +79,23 @@ public:
 class GameStateSnapshot : public Object {
 	GDCLASS(GameStateSnapshot, Object);
 
-	void get_outbound_references(Variant& var, HashMap<String, ObjectID>& ret_val, String current_path = "");
-	void get_rc_cycles(SnapshotDataObject* obj, SnapshotDataObject* source_obj, HashSet<SnapshotDataObject*> traversed_objs, List<String>& ret_val, String current_path = "");
+	void get_outbound_references(Variant &var, HashMap<String, ObjectID> &ret_val, String current_path = "");
+	void get_rc_cycles(SnapshotDataObject *obj, SnapshotDataObject *source_obj, HashSet<SnapshotDataObject *> traversed_objs, List<String> &ret_val, String current_path = "");
 
 public:
-	GameStateSnapshot(const String& snapshot_name, const Array& snapshot_data) : name(snapshot_name) {
+	GameStateSnapshot(const String &snapshot_name, const Array &snapshot_data) :
+			name(snapshot_name) {
 		// snapshot_context = snapshot_data.get(0);
 
 		// for (int i = 1; i < snapshot_data.size(); i+= 4) {
-		for (int i = 0; i < snapshot_data.size(); i+= 4) {
+		for (int i = 0; i < snapshot_data.size(); i += 4) {
 			Array sliced = snapshot_data.slice(i);
 			SceneDebuggerObject obj;
 			obj.deserialize(sliced);
 
 			ERR_FAIL_COND(sliced[3].get_type() != Variant::DICTIONARY);
-			if (obj.id.is_null()) continue;
+			if (obj.id.is_null())
+				continue;
 
 			Data[obj.id] = memnew(SnapshotDataObject(obj, this));
 			Data[obj.id]->extra_debug_data = (Dictionary)sliced[3];
@@ -104,28 +106,27 @@ public:
 	}
 
 	~GameStateSnapshot() {
-		for (const KeyValue<ObjectID, SnapshotDataObject*>& item : Data) {
+		for (const KeyValue<ObjectID, SnapshotDataObject *> &item : Data) {
 			memfree(item.value);
 		}
 	}
 
 	String name;
-	HashMap<ObjectID, SnapshotDataObject*> Data;
+	HashMap<ObjectID, SnapshotDataObject *> Data;
 	Dictionary snapshot_context;
 
-	SnapshotDataObject* get_object(ObjectID id) { return Data[id]; }
+	SnapshotDataObject *get_object(ObjectID id) { return Data[id]; }
 	void recompute_references();
-
-
 };
 
 class GameStateSnapshotRef : public RefCounted {
 	GDCLASS(GameStateSnapshotRef, RefCounted);
 
-	GameStateSnapshot* gamestate_snapshot;
-	
+	GameStateSnapshot *gamestate_snapshot;
+
 public:
-	GameStateSnapshotRef(GameStateSnapshot* p_gss): gamestate_snapshot(p_gss) {}
+	GameStateSnapshotRef(GameStateSnapshot *p_gss) :
+			gamestate_snapshot(p_gss) {}
 
 	bool unreference() {
 		bool die = RefCounted::unreference();
@@ -148,5 +149,4 @@ public:
 	}
 };
 
-	
 #endif // SNAPSHOT_DATA_H

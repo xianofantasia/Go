@@ -26,57 +26,54 @@
 /* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
 /* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/***********n***************************************************************/
-
+/**************************************************************************/
 
 #include "snapshot_collector.h"
 #include "snapshot_data.h"
 
-#include "core/object/object.h"
 #include "core/debugger/engine_debugger.h"
-
+#include "core/object/object.h"
 
 void SnapshotCollector::initialize() {
 	EngineDebugger::register_message_capture("snapshot", EngineDebugger::Capture(nullptr, SnapshotCollector::parse_message));
 }
 
 void SnapshotCollector::deinitialize() {
-
 }
 
-void SnapshotCollector::snapshot_objects(Array* p_arr) {
+void SnapshotCollector::snapshot_objects(Array *p_arr) {
 	print_line("Starting to snapshot");
 	List<SnapshotDataTransportObject> debugger_objects;
 	p_arr->clear();
-	ObjectDB::debug_objects([](Object *p_obj, void* user_data) {
-		List<SnapshotDataTransportObject>* debugger_objects = (List<SnapshotDataTransportObject>*)user_data;
+	ObjectDB::debug_objects([](Object *p_obj, void *user_data) {
+		List<SnapshotDataTransportObject> *debugger_objects = (List<SnapshotDataTransportObject> *)user_data;
 		SnapshotDataTransportObject debug_data(p_obj);
 
-		// If we're RefCounted, send over our RefCount too. Could add code here to add a few other interesting proeprties
+		// If we're RefCounted, send over our RefCount too. Could add code here to add a few other interesting properties
 		if (ClassDB::is_parent_class(p_obj->get_class_name(), RefCounted::get_class_static())) {
-			RefCounted* ref = (RefCounted*)p_obj;
+			RefCounted *ref = (RefCounted *)p_obj;
 			debug_data.extra_debug_data["ref_count"] = ref->get_reference_count();
 		}
 
 		if (ClassDB::is_parent_class(p_obj->get_class_name(), Node::get_class_static())) {
-			Node* node = (Node*)p_obj;
+			Node *node = (Node *)p_obj;
 			debug_data.extra_debug_data["node_name"] = node->get_name();
 			if (node->get_parent() != nullptr) {
 				debug_data.extra_debug_data["node_parent"] = node->get_parent()->get_instance_id();
 			}
 
 			debug_data.extra_debug_data["node_is_scene_root"] = SceneTree::get_singleton()->get_root() == node;
-			
+
 			Array children;
 			for (int i = 0; i < node->get_child_count(); i++) {
 				children.push_back(node->get_child(i)->get_instance_id());
 			}
 			debug_data.extra_debug_data["node_children"] = children;
-
 		}
 
 		debugger_objects->push_back(debug_data);
-	}, (void*)&debugger_objects);
+	},
+			(void *)&debugger_objects);
 
 	// Dictionary snapshot_context;
 	// Dictionary mem_data;
@@ -85,7 +82,7 @@ void SnapshotCollector::snapshot_objects(Array* p_arr) {
 	// mem_data["max_usage"] = Memory::get_mem_max_usage();
 	// snapshot_context["memory"] = mem_data;
 	// p_arr->push_back(snapshot_context);
-	for (SnapshotDataTransportObject& debug_data : debugger_objects) {
+	for (SnapshotDataTransportObject &debug_data : debugger_objects) {
 		debug_data.serialize(*p_arr);
 		p_arr->push_back(debug_data.extra_debug_data);
 	}

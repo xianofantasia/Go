@@ -1,4 +1,3 @@
-
 /**************************************************************************/
 /*  snapshot_view.cpp                                                     */
 /**************************************************************************/
@@ -29,22 +28,20 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "scene/gui/label.h"
 #include "snapshot_view.h"
-#include "scene/gui/rich_text_label.h"
 #include "../snapshot_data.h"
-
-
+#include "scene/gui/label.h"
+#include "scene/gui/rich_text_label.h"
 
 void SnapshotView::clear_snapshot() {
-    snapshot_data = nullptr;
-    for (int i = 0; i < get_child_count(); i++) {
-        get_child(i)->queue_free();
+	snapshot_data = nullptr;
+	for (int i = 0; i < get_child_count(); i++) {
+		get_child(i)->queue_free();
 	}
 }
 
-void SnapshotView::show_snapshot(GameStateSnapshot* p_data, GameStateSnapshot* p_diff_data) {
-    clear_snapshot();
-    snapshot_data = p_data;
-    diff_data = p_diff_data;
+void SnapshotView::show_snapshot(GameStateSnapshot *p_data, GameStateSnapshot *p_diff_data) {
+	clear_snapshot();
+	snapshot_data = p_data;
+	diff_data = p_diff_data;
 }

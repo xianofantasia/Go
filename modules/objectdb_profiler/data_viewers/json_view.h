@@ -1,4 +1,3 @@
-
 /**************************************************************************/
 /*  json_view.h                                                           */
 /**************************************************************************/
@@ -29,30 +28,28 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef SNAPSHOT_JSON_VIEW_H
-#define SNAPSHOT_JSON_VIEW_H
+#ifndef JSON_VIEW_H
+#define JSON_VIEW_H
 
-#include "scene/gui/tree.h"
 #include "../snapshot_data.h"
+#include "scene/gui/tree.h"
 #include "snapshot_view.h"
 
 #include "scene/gui/code_edit.h"
-
 
 class SnapshotJsonView : public SnapshotView {
 	GDCLASS(SnapshotJsonView, SnapshotView);
 
 protected:
-	RichTextLabel* json_content;
-	RichTextLabel* diff_json_content;
+	RichTextLabel *json_content;
+	RichTextLabel *diff_json_content;
 
-	String _snapshot_to_json(GameStateSnapshot* snapshot);
+	String _snapshot_to_json(GameStateSnapshot *snapshot);
 
 public:
 	SnapshotJsonView();
 
-	virtual void show_snapshot(GameStateSnapshot* data, GameStateSnapshot* p_diff_data) override;
+	virtual void show_snapshot(GameStateSnapshot *data, GameStateSnapshot *p_diff_data) override;
 };
 
-#endif // SNAPSHOT_JSON_VIEW_H
-
+#endif // JSON_VIEW_H

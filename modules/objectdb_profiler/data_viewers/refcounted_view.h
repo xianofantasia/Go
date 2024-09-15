@@ -1,5 +1,3 @@
-
-
 /**************************************************************************/
 /*  refcounted_view.h                                                     */
 /**************************************************************************/
@@ -30,37 +28,33 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef SNAPSHOT_REFCOUNTED_VIEW_H
-#define SNAPSHOT_REFCOUNTED_VIEW_H
+#ifndef REFCOUNTED_VIEW_H
+#define REFCOUNTED_VIEW_H
 
-#include "scene/gui/tree.h"
 #include "../snapshot_data.h"
+#include "scene/gui/tree.h"
 #include "shared_controls.h"
 #include "snapshot_view.h"
-
 
 class SnapshotRefCountedView : public SnapshotView {
 	GDCLASS(SnapshotRefCountedView, SnapshotView);
 
 protected:
-	Tree* refs_list;
-	VBoxContainer* ref_details;
-	TreeSortAndFilterBar* filter_bar;
-	
-	HashMap<TreeItem*, SnapshotDataObject*> item_data_map;
-	HashMap<SnapshotDataObject*, TreeItem*> data_item_map;
-	HashMap<TreeItem*, TreeItem*> reference_item_map;
+	Tree *refs_list;
+	VBoxContainer *ref_details;
+	TreeSortAndFilterBar *filter_bar;
+
+	HashMap<TreeItem *, SnapshotDataObject *> item_data_map;
+	HashMap<SnapshotDataObject *, TreeItem *> data_item_map;
+	HashMap<TreeItem *, TreeItem *> reference_item_map;
 
 	void _refcounted_selected();
-	void _insert_data(GameStateSnapshot* snapshot, const String& name);
-	void _ref_selected(Tree* source_tree);
+	void _insert_data(GameStateSnapshot *snapshot, const String &name);
+	void _ref_selected(Tree *source_tree);
 
 public:
 	SnapshotRefCountedView();
-	virtual void show_snapshot(GameStateSnapshot* data, GameStateSnapshot* p_diff_data) override;
+	virtual void show_snapshot(GameStateSnapshot *data, GameStateSnapshot *p_diff_data) override;
 };
 
-
-
-#endif // SNAPSHOT_REFCOUNTED_VIEW_H
-
+#endif // REFCOUNTED_VIEW_H

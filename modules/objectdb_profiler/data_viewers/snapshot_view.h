@@ -1,4 +1,3 @@
-
 /**************************************************************************/
 /*  snapshot_view.h                                                       */
 /**************************************************************************/
@@ -36,22 +35,21 @@
 #include "scene/gui/control.h"
 #include "scene/gui/rich_text_label.h"
 
-
-// Boostrapped by the plugin
+// Bootstrapped by the plugin
 class SnapshotView : public Control {
 	GDCLASS(SnapshotView, Control);
 
 protected:
-    GameStateSnapshot* snapshot_data;
-    GameStateSnapshot* diff_data;
+	GameStateSnapshot *snapshot_data;
+	GameStateSnapshot *diff_data;
 
-	List<TreeItem*> get_children_recursive(Tree* tree) {
+	List<TreeItem *> get_children_recursive(Tree *tree) {
 		// love writing a tree traversal just to update icons...
-		List<TreeItem*> found_items;
-		List<TreeItem*> items_to_check;
+		List<TreeItem *> found_items;
+		List<TreeItem *> items_to_check;
 		items_to_check.push_back(tree->get_root());
 		while (items_to_check.size() > 0) {
-			TreeItem* to_check = items_to_check.get(0);
+			TreeItem *to_check = items_to_check.get(0);
 			items_to_check.pop_front();
 			found_items.push_back(to_check);
 			for (int i = 0; i < to_check->get_child_count(); i++) {
@@ -61,13 +59,10 @@ protected:
 		return found_items;
 	}
 
-
-
 public:
 	String view_name;
-	virtual void show_snapshot(GameStateSnapshot* data, GameStateSnapshot* p_diff_data = nullptr);
+	virtual void show_snapshot(GameStateSnapshot *data, GameStateSnapshot *p_diff_data = nullptr);
 	virtual void clear_snapshot();
 };
-
 
 #endif // SNAPSHOT_VIEW_H

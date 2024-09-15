@@ -316,11 +316,12 @@ void SceneDebugger::remove_from_cache(const String &p_filename, Node *p_node) {
 	}
 }
 
-SceneDebuggerObject::SceneDebuggerObject(ObjectID p_id) : SceneDebuggerObject(ObjectDB::get_instance(p_id)) {
+SceneDebuggerObject::SceneDebuggerObject(ObjectID p_id) :
+		SceneDebuggerObject(ObjectDB::get_instance(p_id)) {
 }
 
 /// SceneDebuggerObject
-SceneDebuggerObject::SceneDebuggerObject(Object* obj) {
+SceneDebuggerObject::SceneDebuggerObject(Object *obj) {
 	if (!obj) {
 		return;
 	}

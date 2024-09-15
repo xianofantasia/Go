@@ -1,5 +1,3 @@
-
-
 /**************************************************************************/
 /*  node_view.h                                                           */
 /**************************************************************************/
@@ -30,37 +28,37 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef SNAPSHOT_NODE_VIEW_H
-#define SNAPSHOT_NODE_VIEW_H
+#ifndef NODE_VIEW_H
+#define NODE_VIEW_H
 
-#include "scene/gui/tree.h"
 #include "../snapshot_data.h"
-#include "snapshot_view.h"
+#include "scene/gui/tree.h"
 #include "shared_controls.h"
+#include "snapshot_view.h"
 
 struct NodeTreeElements {
-	Tree* tree;
-	TreeSortAndFilterBar* filter_bar;
-	VBoxContainer* root;
+	Tree *tree;
+	TreeSortAndFilterBar *filter_bar;
+	VBoxContainer *root;
 };
 
-// Boostrapped by the plugin
+// Bootstrapped by the plugin
 class SnapshotNodeView : public SnapshotView {
 	GDCLASS(SnapshotNodeView, SnapshotView);
 
 protected:
 	NodeTreeElements main_tree;
 	NodeTreeElements diff_tree;
-	Tree* active_tree = nullptr;
+	Tree *active_tree = nullptr;
 	bool combined_diff_view = true;
-	
-	PopupMenu* choose_object_menu;
 
-	HashMap<TreeItem*, List<SnapshotDataObject*>> tree_item_owners;
+	PopupMenu *choose_object_menu;
 
-	void _node_selected(Tree* tree_selected_from);
-	void _notification(int p_what);	
-	NodeTreeElements _make_node_tree(const String& tree_name, GameStateSnapshot* snapshot);
+	HashMap<TreeItem *, List<SnapshotDataObject *>> tree_item_owners;
+
+	void _node_selected(Tree *tree_selected_from);
+	void _notification(int p_what);
+	NodeTreeElements _make_node_tree(const String &tree_name, GameStateSnapshot *snapshot);
 	void _apply_filters();
 	void _refresh_icons();
 	void _toggle_diff_mode(bool state);
@@ -68,18 +66,17 @@ protected:
 	void _choose_object_pressed(int object_idx, bool p_confirm_override);
 	void _show_choose_object_menu();
 
-	void _add_snapshot_to_tree(Tree* tree, GameStateSnapshot* snapshot, const String& diff_group_name = "");
-	void _add_object_to_tree(TreeItem* parent_item, SnapshotDataObject* data, const String& diff_group_name = "");
-	TreeItem* _add_child_named(Tree* tree, TreeItem* item, SnapshotDataObject* item_owner, const String& diff_group_name = "");
+	void _add_snapshot_to_tree(Tree *tree, GameStateSnapshot *snapshot, const String &diff_group_name = "");
+	void _add_object_to_tree(TreeItem *parent_item, SnapshotDataObject *data, const String &diff_group_name = "");
+	TreeItem *_add_child_named(Tree *tree, TreeItem *item, SnapshotDataObject *item_owner, const String &diff_group_name = "");
 
-	void _add_tree_item_owner(TreeItem* item, SnapshotDataObject* owner);
+	void _add_tree_item_owner(TreeItem *item, SnapshotDataObject *owner);
 
 public:
 	SnapshotNodeView();
-	virtual void show_snapshot(GameStateSnapshot* data, GameStateSnapshot* p_diff_data) override;
+	virtual void show_snapshot(GameStateSnapshot *data, GameStateSnapshot *p_diff_data) override;
 
 	virtual void clear_snapshot() override;
 };
 
-
-#endif // SNAPSHOT_NODE_VIEW_H
+#endif // NODE_VIEW_H

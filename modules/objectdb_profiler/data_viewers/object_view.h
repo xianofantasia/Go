@@ -1,5 +1,3 @@
-
-
 /**************************************************************************/
 /*  object_view.h                                                         */
 /**************************************************************************/
@@ -30,40 +28,36 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef SNAPSHOT_OBJECT_VIEW_H
-#define SNAPSHOT_OBJECT_VIEW_H
+#ifndef OBJECT_VIEW_H
+#define OBJECT_VIEW_H
 
-#include "scene/gui/tree.h"
 #include "../snapshot_data.h"
-#include "snapshot_view.h"
+#include "scene/gui/tree.h"
 #include "shared_controls.h"
+#include "snapshot_view.h"
 
 class SnapshotObjectView : public SnapshotView {
 	GDCLASS(SnapshotObjectView, SnapshotView);
 
-
 protected:
-	Tree* object_list;
-	Tree* inbound_tree;
-	Tree* outbound_tree;
-	VBoxContainer* object_details;
-	TreeSortAndFilterBar* filter_bar;
+	Tree *object_list;
+	Tree *inbound_tree;
+	Tree *outbound_tree;
+	VBoxContainer *object_details;
+	TreeSortAndFilterBar *filter_bar;
 
-	HashMap<TreeItem*, SnapshotDataObject*> item_data_map;
-	HashMap<SnapshotDataObject*, TreeItem*> data_item_map;
-	HashMap<TreeItem*, TreeItem*> reference_item_map;
+	HashMap<TreeItem *, SnapshotDataObject *> item_data_map;
+	HashMap<SnapshotDataObject *, TreeItem *> data_item_map;
+	HashMap<TreeItem *, TreeItem *> reference_item_map;
 
 	void _object_selected();
-	void _insert_data(GameStateSnapshot* snapshot, const String& name);
-	Tree* _make_references_list(Control* container, const String& name, const String& col_1, const String& col_2);
-	void _reference_selected(Tree* source_tree);
+	void _insert_data(GameStateSnapshot *snapshot, const String &name);
+	Tree *_make_references_list(Control *container, const String &name, const String &col_1, const String &col_2);
+	void _reference_selected(Tree *source_tree);
 
 public:
 	SnapshotObjectView();
-	virtual void show_snapshot(GameStateSnapshot* data, GameStateSnapshot* p_diff_data) override;
+	virtual void show_snapshot(GameStateSnapshot *data, GameStateSnapshot *p_diff_data) override;
 };
 
-
-
-#endif // SNAPSHOT_OBJECT_VIEW_H
-
+#endif // OBJECT_VIEW_H

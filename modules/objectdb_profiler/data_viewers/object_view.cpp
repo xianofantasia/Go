@@ -1,4 +1,3 @@
-
 /**************************************************************************/
 /*  object_view.cpp                                                       */
 /**************************************************************************/
@@ -31,222 +30,216 @@
 
 #include "object_view.h"
 
-#include "scene/gui/control.h"
+#include "../snapshot_data.h"
 #include "core/object/object.h"
+#include "core/object/ref_counted.h"
 #include "core/os/memory.h"
 #include "core/os/time.h"
-#include "scene/gui/tree.h"
-#include "scene/gui/button.h"
 #include "editor/debugger/editor_debugger_node.h"
 #include "editor/debugger/script_editor_debugger.h"
+#include "editor/editor_node.h"
+#include "editor/themes/editor_scale.h"
+#include "modules/gdscript/gdscript.h"
+#include "scene/gui/button.h"
+#include "scene/gui/control.h"
 #include "scene/gui/label.h"
 #include "scene/gui/panel_container.h"
-#include "scene/gui/tab_container.h"
-#include "editor/themes/editor_scale.h"
-#include "editor/editor_node.h"
-#include "core/object/ref_counted.h"
-#include "modules/gdscript/gdscript.h"
 #include "scene/gui/rich_text_label.h"
-#include "scene/resources/style_box_flat.h"
 #include "scene/gui/split_container.h"
-#include "../snapshot_data.h"
-
+#include "scene/gui/tab_container.h"
+#include "scene/gui/tree.h"
+#include "scene/resources/style_box_flat.h"
 
 SnapshotObjectView::SnapshotObjectView() {
 	set_name("Objects");
 }
 
-void SnapshotObjectView::show_snapshot(GameStateSnapshot* p_data, GameStateSnapshot* p_diff_data) {
-    SnapshotView::show_snapshot(p_data, p_diff_data);
+void SnapshotObjectView::show_snapshot(GameStateSnapshot *p_data, GameStateSnapshot *p_diff_data) {
+	SnapshotView::show_snapshot(p_data, p_diff_data);
 
-    item_data_map.clear();
-    data_item_map.clear();
+	item_data_map.clear();
+	data_item_map.clear();
 
-    set_v_size_flags(SizeFlags::SIZE_EXPAND_FILL);
-    set_h_size_flags(SizeFlags::SIZE_EXPAND_FILL);
+	set_v_size_flags(SizeFlags::SIZE_EXPAND_FILL);
+	set_h_size_flags(SizeFlags::SIZE_EXPAND_FILL);
 
-    HSplitContainer* objects_view = memnew(HSplitContainer);
-    add_child(objects_view);
-    objects_view->set_anchors_preset(LayoutPreset::PRESET_FULL_RECT);
+	HSplitContainer *objects_view = memnew(HSplitContainer);
+	add_child(objects_view);
+	objects_view->set_anchors_preset(LayoutPreset::PRESET_FULL_RECT);
 
-    VBoxContainer* object_column = memnew(VBoxContainer);
-    object_column->set_anchors_preset(LayoutPreset::PRESET_FULL_RECT);
-    objects_view->add_child(object_column);
+	VBoxContainer *object_column = memnew(VBoxContainer);
+	object_column->set_anchors_preset(LayoutPreset::PRESET_FULL_RECT);
+	objects_view->add_child(object_column);
 
-    object_list = memnew(Tree);
+	object_list = memnew(Tree);
 
-    filter_bar = memnew(TreeSortAndFilterBar(object_list, "Filter Objects"));
-    object_column->add_child(filter_bar);
-    int sort_idx = 0;
-    if (diff_data) {
-        filter_bar->add_sort_option("Snapshot", TreeSortAndFilterBar::SortType::ALPHA_SORT, sort_idx++);
-    }
-    filter_bar->add_sort_option("Class", TreeSortAndFilterBar::SortType::ALPHA_SORT, sort_idx++);
-    filter_bar->add_sort_option("Name", TreeSortAndFilterBar::SortType::ALPHA_SORT, sort_idx++);
-    filter_bar->add_sort_option("Inbound References", TreeSortAndFilterBar::SortType::NUMERIC_SORT, sort_idx++);
-    TreeSortAndFilterBar::SortOptionIndexes default_sort = filter_bar->add_sort_option(
-        "Outbound References", TreeSortAndFilterBar::SortType::NUMERIC_SORT, sort_idx++);
+	filter_bar = memnew(TreeSortAndFilterBar(object_list, "Filter Objects"));
+	object_column->add_child(filter_bar);
+	int sort_idx = 0;
+	if (diff_data) {
+		filter_bar->add_sort_option("Snapshot", TreeSortAndFilterBar::SortType::ALPHA_SORT, sort_idx++);
+	}
+	filter_bar->add_sort_option("Class", TreeSortAndFilterBar::SortType::ALPHA_SORT, sort_idx++);
+	filter_bar->add_sort_option("Name", TreeSortAndFilterBar::SortType::ALPHA_SORT, sort_idx++);
+	filter_bar->add_sort_option("Inbound References", TreeSortAndFilterBar::SortType::NUMERIC_SORT, sort_idx++);
+	TreeSortAndFilterBar::SortOptionIndexes default_sort = filter_bar->add_sort_option(
+			"Outbound References", TreeSortAndFilterBar::SortType::NUMERIC_SORT, sort_idx++);
 
-    // Tree of objects
-    object_list->set_select_mode(Tree::SelectMode::SELECT_ROW);
-    object_list->set_custom_minimum_size(Size2(200, 0) * EDSCALE);
-    object_list->set_hide_folding(false);
-    object_column->add_child(object_list);
-    object_list->set_hide_root(true);
-    object_list->set_columns(diff_data ? 5 : 4);
-    object_list->set_column_titles_visible(true);
-    int col_idx = 0;
-    if (diff_data) {
-        object_list->set_column_title(col_idx, "Snapshot");
-        object_list->set_column_expand(col_idx, false);
-        col_idx++;
-    }
-    object_list->set_column_title(col_idx, "Class");
+	// Tree of objects
+	object_list->set_select_mode(Tree::SelectMode::SELECT_ROW);
+	object_list->set_custom_minimum_size(Size2(200, 0) * EDSCALE);
+	object_list->set_hide_folding(false);
+	object_column->add_child(object_list);
+	object_list->set_hide_root(true);
+	object_list->set_columns(diff_data ? 5 : 4);
+	object_list->set_column_titles_visible(true);
+	int col_idx = 0;
+	if (diff_data) {
+		object_list->set_column_title(col_idx, "Snapshot");
+		object_list->set_column_expand(col_idx, false);
+		col_idx++;
+	}
+	object_list->set_column_title(col_idx, "Class");
 	object_list->set_column_expand(col_idx, true);
-    col_idx++;
-    object_list->set_column_title(col_idx, "Object");
-    object_list->set_column_expand(col_idx, true);
+	col_idx++;
+	object_list->set_column_title(col_idx, "Object");
+	object_list->set_column_expand(col_idx, true);
 	object_list->set_column_expand_ratio(col_idx, 2);
-    col_idx++;
-    object_list->set_column_title(col_idx, "In");
-    object_list->set_column_expand(col_idx, false);
-    col_idx++;
+	col_idx++;
+	object_list->set_column_title(col_idx, "In");
+	object_list->set_column_expand(col_idx, false);
+	col_idx++;
 	object_list->set_column_title(col_idx, "Out");
 	object_list->set_column_expand(col_idx, false);
-    col_idx++;
-    object_list->connect("item_selected", callable_mp(this, &SnapshotObjectView::_object_selected));
-    object_list->set_h_size_flags(SizeFlags::SIZE_EXPAND_FILL);
-    object_list->set_v_size_flags(SizeFlags::SIZE_EXPAND_FILL);
+	col_idx++;
+	object_list->connect("item_selected", callable_mp(this, &SnapshotObjectView::_object_selected));
+	object_list->set_h_size_flags(SizeFlags::SIZE_EXPAND_FILL);
+	object_list->set_v_size_flags(SizeFlags::SIZE_EXPAND_FILL);
 
-    // list of objects within the selected class
-    object_details = memnew(VBoxContainer);
-    object_details->set_custom_minimum_size(Size2(200, 0) * EDSCALE);
-    objects_view->add_child(object_details);
-    object_details->set_h_size_flags(SizeFlags::SIZE_EXPAND_FILL);
-    object_details->set_v_size_flags(SizeFlags::SIZE_EXPAND_FILL);
+	// list of objects within the selected class
+	object_details = memnew(VBoxContainer);
+	object_details->set_custom_minimum_size(Size2(200, 0) * EDSCALE);
+	objects_view->add_child(object_details);
+	object_details->set_h_size_flags(SizeFlags::SIZE_EXPAND_FILL);
+	object_details->set_v_size_flags(SizeFlags::SIZE_EXPAND_FILL);
 
-    object_list->create_item();
-    _insert_data(snapshot_data, "A");
-    if (diff_data) {
-        _insert_data(diff_data, "B");
-    }
+	object_list->create_item();
+	_insert_data(snapshot_data, "A");
+	if (diff_data) {
+		_insert_data(diff_data, "B");
+	}
 
-
-    objects_view->set_split_offset(INFINITY);
-    filter_bar->select_sort(default_sort.descending); 
+	objects_view->set_split_offset(INFINITY);
+	filter_bar->select_sort(default_sort.descending);
 	filter_bar->apply();
-    object_list->set_selected(object_list->get_root()->get_first_child());
+	object_list->set_selected(object_list->get_root()->get_first_child());
 }
 
-void SnapshotObjectView::_insert_data(GameStateSnapshot* snapshot, const String& name) {
-
-    for (const KeyValue<ObjectID, SnapshotDataObject*>& pair : snapshot->Data) {
-    	TreeItem* item = object_list->create_item(object_list->get_root());
-        int idx = 0;
-        if (diff_data) {
-            item->set_text(idx, name);
-            idx++;
-        }
-    	item->set_text(idx++,  pair.value->type_name);
-    	item->set_text(idx++,  pair.value->get_name());
-    	item->set_text(idx++,  String::num_uint64(pair.value->inbound_references.size()));
-    	item->set_text(idx++,  String::num_uint64(pair.value->outbound_references.size()));
-        item_data_map[item] = pair.value;
-        data_item_map[pair.value] = item;
-    }
+void SnapshotObjectView::_insert_data(GameStateSnapshot *snapshot, const String &name) {
+	for (const KeyValue<ObjectID, SnapshotDataObject *> &pair : snapshot->Data) {
+		TreeItem *item = object_list->create_item(object_list->get_root());
+		int idx = 0;
+		if (diff_data) {
+			item->set_text(idx, name);
+			idx++;
+		}
+		item->set_text(idx++, pair.value->type_name);
+		item->set_text(idx++, pair.value->get_name());
+		item->set_text(idx++, String::num_uint64(pair.value->inbound_references.size()));
+		item->set_text(idx++, String::num_uint64(pair.value->outbound_references.size()));
+		item_data_map[item] = pair.value;
+		data_item_map[pair.value] = item;
+	}
 }
 
 void SnapshotObjectView::_object_selected() {
-    reference_item_map.clear();
+	reference_item_map.clear();
 
-    for (int i = 0; i < object_details->get_child_count(); i++) {
-        object_details->get_child(i)->queue_free();
-    }
+	for (int i = 0; i < object_details->get_child_count(); i++) {
+		object_details->get_child(i)->queue_free();
+	}
 
-    SnapshotDataObject* d = item_data_map[object_list->get_selected()];
-	EditorNode::get_singleton()->push_item((Object*)d);
+	SnapshotDataObject *d = item_data_map[object_list->get_selected()];
+	EditorNode::get_singleton()->push_item((Object *)d);
 
-    DarkPanelContainer* content_wrapper = memnew(DarkPanelContainer);
-    object_details->add_child(content_wrapper);
+	DarkPanelContainer *content_wrapper = memnew(DarkPanelContainer);
+	object_details->add_child(content_wrapper);
 
-    VBoxContainer* vert_content = memnew(VBoxContainer);
-    vert_content->set_v_size_flags(SizeFlags::SIZE_EXPAND_FILL);
-    vert_content->set_h_size_flags(SizeFlags::SIZE_EXPAND_FILL);
-    content_wrapper->add_child(vert_content);
-    vert_content->add_theme_constant_override("separation", 8);
+	VBoxContainer *vert_content = memnew(VBoxContainer);
+	vert_content->set_v_size_flags(SizeFlags::SIZE_EXPAND_FILL);
+	vert_content->set_h_size_flags(SizeFlags::SIZE_EXPAND_FILL);
+	content_wrapper->add_child(vert_content);
+	vert_content->add_theme_constant_override("separation", 8);
 
-    vert_content->add_child(memnew(SpanningHeader(d->get_name())));
-    
-    inbound_tree = _make_references_list(vert_content, "Inbound References", "Source", "Property");
-    inbound_tree->connect("item_selected", callable_mp(this, &SnapshotObjectView::_reference_selected).bind(inbound_tree));
-    TreeItem* ib_root = inbound_tree->create_item();
-    for (const KeyValue<String, ObjectID>& ob : d->inbound_references) {
-        TreeItem* i = inbound_tree->create_item(ib_root);
-        SnapshotDataObject* target = d->snapshot->Data[ob.value];
-        i->set_text(0, target->get_name());
-        i->set_text(1, ob.key);
-        reference_item_map[i] = data_item_map[target];
-    }
+	vert_content->add_child(memnew(SpanningHeader(d->get_name())));
 
-    outbound_tree = _make_references_list(vert_content, "Outbound References", "Property", "Target");
-    outbound_tree->connect("item_selected", callable_mp(this, &SnapshotObjectView::_reference_selected).bind(outbound_tree));
-    TreeItem* ob_root = outbound_tree->create_item();
-    for (const KeyValue<String, ObjectID>& ob : d->outbound_references) {
-        TreeItem* i = outbound_tree->create_item(ob_root);
-        SnapshotDataObject* target = d->snapshot->Data[ob.value];
-        i->set_text(0, ob.key);
-        i->set_text(1, target->get_name());
-        reference_item_map[i] = data_item_map[target];
-    }
+	inbound_tree = _make_references_list(vert_content, "Inbound References", "Source", "Property");
+	inbound_tree->connect("item_selected", callable_mp(this, &SnapshotObjectView::_reference_selected).bind(inbound_tree));
+	TreeItem *ib_root = inbound_tree->create_item();
+	for (const KeyValue<String, ObjectID> &ob : d->inbound_references) {
+		TreeItem *i = inbound_tree->create_item(ib_root);
+		SnapshotDataObject *target = d->snapshot->Data[ob.value];
+		i->set_text(0, target->get_name());
+		i->set_text(1, ob.key);
+		reference_item_map[i] = data_item_map[target];
+	}
+
+	outbound_tree = _make_references_list(vert_content, "Outbound References", "Property", "Target");
+	outbound_tree->connect("item_selected", callable_mp(this, &SnapshotObjectView::_reference_selected).bind(outbound_tree));
+	TreeItem *ob_root = outbound_tree->create_item();
+	for (const KeyValue<String, ObjectID> &ob : d->outbound_references) {
+		TreeItem *i = outbound_tree->create_item(ob_root);
+		SnapshotDataObject *target = d->snapshot->Data[ob.value];
+		i->set_text(0, ob.key);
+		i->set_text(1, target->get_name());
+		reference_item_map[i] = data_item_map[target];
+	}
 }
 
-void SnapshotObjectView::_reference_selected(Tree* source_tree) {
-    TreeItem* ref_item = source_tree->get_selected();
-    Tree* other_tree = source_tree == inbound_tree ? outbound_tree : inbound_tree;
-    other_tree->deselect_all();
-    TreeItem* other = reference_item_map[ref_item];
-    if (other) {
-        if (!other->is_visible()) {
-            // clear the filter if we can't see the node we just chose
-            filter_bar->clear_filter();
-        }
-        other->get_tree()->deselect_all();
-        other->get_tree()->set_selected(other);
-        other->get_tree()->ensure_cursor_is_visible();
-    }
+void SnapshotObjectView::_reference_selected(Tree *source_tree) {
+	TreeItem *ref_item = source_tree->get_selected();
+	Tree *other_tree = source_tree == inbound_tree ? outbound_tree : inbound_tree;
+	other_tree->deselect_all();
+	TreeItem *other = reference_item_map[ref_item];
+	if (other) {
+		if (!other->is_visible()) {
+			// clear the filter if we can't see the node we just chose
+			filter_bar->clear_filter();
+		}
+		other->get_tree()->deselect_all();
+		other->get_tree()->set_selected(other);
+		other->get_tree()->ensure_cursor_is_visible();
+	}
 }
 
+Tree *SnapshotObjectView::_make_references_list(Control *container, const String &name, const String &col_1, const String &col_2) {
+	VBoxContainer *vbox = memnew(VBoxContainer);
+	vbox->set_h_size_flags(SizeFlags::SIZE_EXPAND_FILL);
+	vbox->set_v_size_flags(SizeFlags::SIZE_EXPAND_FILL);
+	vbox->add_theme_constant_override("separation", 4);
+	container->add_child(vbox);
 
-Tree* SnapshotObjectView::_make_references_list(Control* container, const String& name, const String& col_1, const String& col_2) {
+	vbox->set_custom_minimum_size(Vector2(300, 0) * EDSCALE);
 
-    VBoxContainer* vbox = memnew(VBoxContainer);
-    vbox->set_h_size_flags(SizeFlags::SIZE_EXPAND_FILL);
-    vbox->set_v_size_flags(SizeFlags::SIZE_EXPAND_FILL);
-    vbox->add_theme_constant_override("separation", 4);
-    container->add_child(vbox);
+	RichTextLabel *lbl = memnew(RichTextLabel("[center]" + name + "[center]"));
+	lbl->set_fit_content(true);
+	lbl->set_use_bbcode(true);
+	vbox->add_child(lbl);
+	Tree *tree = memnew(Tree);
+	tree->set_hide_folding(true);
+	vbox->add_child(tree);
+	tree->set_select_mode(Tree::SelectMode::SELECT_ROW);
+	tree->set_hide_root(true);
+	tree->set_columns(2);
+	tree->set_column_titles_visible(true);
+	tree->set_column_title(0, col_1);
+	tree->set_column_expand(0, true);
+	tree->set_column_clip_content(0, false);
+	tree->set_column_title(1, col_2);
+	tree->set_column_expand(1, true);
+	tree->set_column_clip_content(1, false);
+	tree->set_h_size_flags(SizeFlags::SIZE_EXPAND_FILL);
+	tree->set_v_size_flags(SizeFlags::SIZE_EXPAND_FILL);
 
-    vbox->set_custom_minimum_size(Vector2(300, 0) * EDSCALE);
-
-    RichTextLabel* lbl = memnew(RichTextLabel( "[center]" + name + "[center]" ));
-    lbl->set_fit_content(true);
-    lbl->set_use_bbcode(true);
-    vbox->add_child(lbl);
-    Tree* tree = memnew(Tree);
-    tree->set_hide_folding(true);
-    vbox->add_child(tree);
-    tree->set_select_mode(Tree::SelectMode::SELECT_ROW);
-    tree->set_hide_root(true);
-    tree->set_columns(2);
-    tree->set_column_titles_visible(true);
-    tree->set_column_title(0, col_1);
-    tree->set_column_expand(0, true);
-    tree->set_column_clip_content(0, false);
-    tree->set_column_title(1, col_2);
-    tree->set_column_expand(1, true);
-    tree->set_column_clip_content(1, false);
-    tree->set_h_size_flags(SizeFlags::SIZE_EXPAND_FILL);
-    tree->set_v_size_flags(SizeFlags::SIZE_EXPAND_FILL);
-
-    return tree;
-
+	return tree;
 }

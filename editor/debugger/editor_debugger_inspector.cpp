@@ -35,8 +35,7 @@
 #include "editor/editor_node.h"
 #include "scene/debugger/scene_debugger.h"
 
-
-EditorDebuggerRemoteObject::EditorDebuggerRemoteObject(SceneDebuggerObject& obj) {
+EditorDebuggerRemoteObject::EditorDebuggerRemoteObject(SceneDebuggerObject &obj) {
 	remote_object_id = obj.id;
 	type_name = obj.class_name;
 	int new_props_added = update_props(obj, nullptr, nullptr);
@@ -47,12 +46,10 @@ bool EditorDebuggerRemoteObject::_is_read_only() {
 	return readonly;
 }
 
-void EditorDebuggerRemoteObject::set_readonly(bool p_readonly)
-{
+void EditorDebuggerRemoteObject::set_readonly(bool p_readonly) {
 	readonly = p_readonly;
 }
-bool EditorDebuggerRemoteObject::get_readonly()
-{
+bool EditorDebuggerRemoteObject::get_readonly() {
 	return readonly;
 }
 
@@ -95,8 +92,7 @@ String EditorDebuggerRemoteObject::get_title() {
 	}
 }
 
-
-int EditorDebuggerRemoteObject::update_props(SceneDebuggerObject& obj, HashSet<String>* changed, HashSet<Ref<Resource>>* remote_dependencies) {
+int EditorDebuggerRemoteObject::update_props(SceneDebuggerObject &obj, HashSet<String> *changed, HashSet<Ref<Resource>> *remote_dependencies) {
 	int new_props_added = 0;
 	for (SceneDebuggerObject::SceneDebuggerProperty &property : obj.properties) {
 		PropertyInfo &pinfo = property.first;
@@ -149,7 +145,6 @@ int EditorDebuggerRemoteObject::update_props(SceneDebuggerObject& obj, HashSet<S
 	}
 	return new_props_added;
 }
-
 
 Variant EditorDebuggerRemoteObject::get_variant(const StringName &p_name) {
 	Variant var;
@@ -227,7 +222,7 @@ ObjectID EditorDebuggerInspector::add_object(const Array &p_arr) {
 	debug_obj->prop_list.clear();
 	HashSet<String> changed;
 	int new_props_added = debug_obj->update_props(obj, &changed, &remote_dependencies);
-	
+
 	if (old_prop_size == debug_obj->prop_list.size() && new_props_added == 0) {
 		//only some may have changed, if so, then update those, if exist
 		for (const String &E : changed) {

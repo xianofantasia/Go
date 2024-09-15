@@ -1,5 +1,3 @@
-
-
 /**************************************************************************/
 /*  summary_view.h                                                        */
 /**************************************************************************/
@@ -30,48 +28,42 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef SNAPSHOT_SUMMARY_VIEW_H
-#define SNAPSHOT_SUMMARY_VIEW_H
+#ifndef SUMMARY_VIEW_H
+#define SUMMARY_VIEW_H
 
-#include "scene/gui/tree.h"
+#include "../snapshot_data.h"
 #include "scene/gui/center_container.h"
 #include "scene/gui/margin_container.h"
-#include "../snapshot_data.h"
+#include "scene/gui/tree.h"
 #include "snapshot_view.h"
-
 
 class SummaryBlurb : public MarginContainer {
 	GDCLASS(SummaryBlurb, MarginContainer);
 
 public:
-	RichTextLabel* label;
-	SummaryBlurb(const String& blurb_name, const String& blurb_description, bool open_list = true);
+	RichTextLabel *label;
+	SummaryBlurb(const String &blurb_name, const String &blurb_description, bool open_list = true);
 
 	void start_list();
-	void add_line(const String& line);
+	void add_line(const String &line);
 	void end_list();
 };
-
 
 class SnapshotSummaryView : public SnapshotView {
 	GDCLASS(SnapshotSummaryView, SnapshotView);
 
 protected:
-    VBoxContainer* blurb_list;
-	CenterContainer* explainer_text;
-	
-	SummaryBlurb* object_blurb;
-	SummaryBlurb* node_blurb;
-	SummaryBlurb* refcounted_blurb;
+	VBoxContainer *blurb_list;
+	CenterContainer *explainer_text;
+
+	SummaryBlurb *object_blurb;
+	SummaryBlurb *node_blurb;
+	SummaryBlurb *refcounted_blurb;
 
 public:
 	SnapshotSummaryView();
-	virtual void show_snapshot(GameStateSnapshot* data, GameStateSnapshot* p_diff_data) override;
+	virtual void show_snapshot(GameStateSnapshot *data, GameStateSnapshot *p_diff_data) override;
 	virtual void clear_snapshot() override;
-
 };
 
-
-
-#endif // SNAPSHOT_SUMMARY_VIEW_H
-
+#endif // SUMMARY_VIEW_H

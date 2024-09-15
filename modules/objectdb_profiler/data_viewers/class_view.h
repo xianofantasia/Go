@@ -1,4 +1,3 @@
-
 /**************************************************************************/
 /*  class_view.h                                                          */
 /**************************************************************************/
@@ -29,36 +28,37 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef SNAPSHOT_CLASS_VIEW_H
-#define SNAPSHOT_CLASS_VIEW_H
+#ifndef CLASS_VIEW_H
+#define CLASS_VIEW_H
 
-#include "scene/gui/tree.h"
 #include "../snapshot_data.h"
-#include "snapshot_view.h"
 #include "scene/gui/menu_button.h"
+#include "scene/gui/tree.h"
+#include "snapshot_view.h"
 
 struct ClassData {
 	ClassData() {}
-	ClassData(String name, String parent): class_name(name), parent_class_name(parent) {}
+	ClassData(String name, String parent) :
+			class_name(name), parent_class_name(parent) {}
 	String class_name;
 	String parent_class_name;
 	HashSet<String> child_classes;
-	List<SnapshotDataObject*> instances;
-	TreeItem* tree_node;
-	HashMap<GameStateSnapshot*, int> recursive_instance_count_cache;
-	int instance_count(GameStateSnapshot* snapshot = nullptr) {
+	List<SnapshotDataObject *> instances;
+	TreeItem *tree_node;
+	HashMap<GameStateSnapshot *, int> recursive_instance_count_cache;
+	int instance_count(GameStateSnapshot *snapshot = nullptr) {
 		int count = 0;
-		for (const SnapshotDataObject* instance : instances) {
+		for (const SnapshotDataObject *instance : instances) {
 			if (!snapshot || instance->snapshot == snapshot) {
 				count += 1;
 			}
 		}
 		return count;
 	}
-	int get_recursive_instance_count(HashMap<String, ClassData>& all_classes, GameStateSnapshot* snapshot = nullptr) {
+	int get_recursive_instance_count(HashMap<String, ClassData> &all_classes, GameStateSnapshot *snapshot = nullptr) {
 		if (!recursive_instance_count_cache.has(snapshot)) {
 			recursive_instance_count_cache[snapshot] = instance_count(snapshot);
-			for (const String& child : child_classes) {
+			for (const String &child : child_classes) {
 				recursive_instance_count_cache[snapshot] += all_classes[child].get_recursive_instance_count(all_classes, snapshot);
 			}
 		}
@@ -66,28 +66,26 @@ struct ClassData {
 	}
 };
 
-// Boostrapped by the plugin
+// Bootstrapped by the plugin
 class SnapshotClassView : public SnapshotView {
 	GDCLASS(SnapshotClassView, SnapshotView);
 
 protected:
-	Tree* class_tree;
-	Tree* object_list;
-	Tree* diff_object_list;
+	Tree *class_tree;
+	Tree *object_list;
+	Tree *diff_object_list;
 
-	void _object_selected(Tree* tree);
+	void _object_selected(Tree *tree);
 	void _class_selected();
-	void _add_objects_to_class_map(HashMap<String, ClassData>& class_map, GameStateSnapshot* objects);
+	void _add_objects_to_class_map(HashMap<String, ClassData> &class_map, GameStateSnapshot *objects);
 	void _notification(int p_what);
 
-	Tree* _make_object_list_tree(const String& column_name);
-	void _populate_object_list(GameStateSnapshot* snapshot, Tree* list, const String& name_base);
+	Tree *_make_object_list_tree(const String &column_name);
+	void _populate_object_list(GameStateSnapshot *snapshot, Tree *list, const String &name_base);
 
 public:
 	SnapshotClassView();
-	virtual void show_snapshot(GameStateSnapshot* data, GameStateSnapshot* p_diff_data) override;
+	virtual void show_snapshot(GameStateSnapshot *data, GameStateSnapshot *p_diff_data) override;
 };
 
-
-
-#endif // SNAPSHOT_CLASS_VIEW_H
+#endif // CLASS_VIEW_H

@@ -35,7 +35,7 @@
 
 class SnapshotCollector {
 public:
-	static void snapshot_objects(Array* p_arr);
+	static void snapshot_objects(Array *p_arr);
 	static Error parse_message(void *p_user, const String &p_msg, const Array &p_args, bool &r_captured);
 	static void initialize();
 	static void deinitialize();

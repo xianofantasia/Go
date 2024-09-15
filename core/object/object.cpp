@@ -224,7 +224,6 @@ void Object::_get_valid_parents_static(List<String> *p_parents) {
 }
 
 void Object::set(const StringName &p_name, const Variant &p_value, bool *r_valid) {
-	
 #ifdef DEBUG_ENABLED
 	ObjectDB::block_on_waiting_to_debug();
 	ObjectDB::writes_blocked.try_wait();
@@ -310,10 +309,10 @@ void Object::set(const StringName &p_name, const Variant &p_value, bool *r_valid
 		*r_valid = false;
 	}
 
-	DONE:
-	#ifdef DEBUG_ENABLED
-		ObjectDB::writes_blocked.post();
-	#endif
+DONE:
+#ifdef DEBUG_ENABLED
+	ObjectDB::writes_blocked.post();
+#endif
 	return;
 }
 
@@ -2150,8 +2149,8 @@ void postinitialize_handler(Object *p_object) {
 	p_object->_postinitialize();
 }
 
-void ObjectDB::debug_objects(DebugFunc p_func, void* user_data) {
-	#ifdef DEBUG_ENABLED
+void ObjectDB::debug_objects(DebugFunc p_func, void *user_data) {
+#ifdef DEBUG_ENABLED
 	ObjectDB::waiting_to_debug = true;
 	writes_blocked.wait();
 	for (uint32_t i = 0, count = slot_count; i < slot_max && count != 0; i++) {
@@ -2161,7 +2160,7 @@ void ObjectDB::debug_objects(DebugFunc p_func, void* user_data) {
 	}
 	ObjectDB::waiting_to_debug = false;
 	writes_blocked.post();
-	#endif
+#endif
 }
 
 #ifdef TOOLS_ENABLED
@@ -2210,12 +2209,12 @@ void Object::get_argument_options(const StringName &p_function, int p_idx, List<
 }
 #endif
 
-
 #ifdef DEBUG_ENABLED
 Semaphore ObjectDB::writes_blocked;
 bool ObjectDB::waiting_to_debug = 0;
 void ObjectDB::block_on_waiting_to_debug() {
-	while (ObjectDB::waiting_to_debug) { }
+	while (ObjectDB::waiting_to_debug) {
+	}
 }
 #endif
 SpinLock ObjectDB::spin_lock;
@@ -2230,10 +2229,10 @@ int ObjectDB::get_object_count() {
 
 ObjectID ObjectDB::add_instance(Object *p_object) {
 	spin_lock.lock();
-	#ifdef DEBUG_ENABLED
+#ifdef DEBUG_ENABLED
 	ObjectDB::block_on_waiting_to_debug();
 	writes_blocked.try_wait();
-	#endif
+#endif
 	if (unlikely(slot_count == slot_max)) {
 		CRASH_COND(slot_count == (1 << OBJECTDB_SLOT_MAX_COUNT_BITS));
 
@@ -2251,9 +2250,9 @@ ObjectID ObjectDB::add_instance(Object *p_object) {
 	uint32_t slot = object_slots[slot_count].next_free;
 	if (object_slots[slot].object != nullptr) {
 		spin_lock.unlock();
-		#ifdef DEBUG_ENABLED
+#ifdef DEBUG_ENABLED
 		writes_blocked.post();
-		#endif
+#endif
 		ERR_FAIL_COND_V(object_slots[slot].object != nullptr, ObjectID());
 	}
 	object_slots[slot].object = p_object;
@@ -2275,9 +2274,9 @@ ObjectID ObjectDB::add_instance(Object *p_object) {
 	slot_count++;
 
 	spin_lock.unlock();
-	#ifdef DEBUG_ENABLED
+#ifdef DEBUG_ENABLED
 	writes_blocked.post();
-	#endif
+#endif
 
 	return ObjectID(id);
 }
@@ -2287,27 +2286,27 @@ void ObjectDB::remove_instance(Object *p_object) {
 	uint32_t slot = t & OBJECTDB_SLOT_MAX_COUNT_MASK; //slot is always valid on valid object
 
 	spin_lock.lock();
-	#ifdef DEBUG_ENABLED
+#ifdef DEBUG_ENABLED
 	ObjectDB::block_on_waiting_to_debug();
 	writes_blocked.try_wait();
-	#endif
+#endif
 
 #ifdef DEBUG_ENABLED
 
 	if (object_slots[slot].object != p_object) {
 		spin_lock.unlock();
-		#ifdef DEBUG_ENABLED
+#ifdef DEBUG_ENABLED
 		writes_blocked.post();
-		#endif
+#endif
 		ERR_FAIL_COND(object_slots[slot].object != p_object);
 	}
 	{
 		uint64_t validator = (t >> OBJECTDB_SLOT_MAX_COUNT_BITS) & OBJECTDB_VALIDATOR_MASK;
 		if (object_slots[slot].validator != validator) {
 			spin_lock.unlock();
-			#ifdef DEBUG_ENABLED
+#ifdef DEBUG_ENABLED
 			writes_blocked.post();
-			#endif
+#endif
 			ERR_FAIL_COND(object_slots[slot].validator != validator);
 		}
 	}
@@ -2323,9 +2322,9 @@ void ObjectDB::remove_instance(Object *p_object) {
 	object_slots[slot].object = nullptr;
 
 	spin_lock.unlock();
-	#ifdef DEBUG_ENABLED
+#ifdef DEBUG_ENABLED
 	writes_blocked.post();
-	#endif
+#endif
 }
 
 void ObjectDB::setup() {
@@ -2334,10 +2333,10 @@ void ObjectDB::setup() {
 
 void ObjectDB::cleanup() {
 	spin_lock.lock();
-	#ifdef DEBUG_ENABLED
+#ifdef DEBUG_ENABLED
 	ObjectDB::block_on_waiting_to_debug();
 	writes_blocked.try_wait();
-	#endif
+#endif
 
 	if (slot_count > 0) {
 		WARN_PRINT("ObjectDB instances leaked at exit (run with --verbose for details).");
@@ -2377,7 +2376,7 @@ void ObjectDB::cleanup() {
 	}
 
 	spin_lock.unlock();
-	#ifdef DEBUG_ENABLED
+#ifdef DEBUG_ENABLED
 	writes_blocked.post();
-	#endif
+#endif
 }
