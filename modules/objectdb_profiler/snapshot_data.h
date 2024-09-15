@@ -84,6 +84,9 @@ class GameStateSnapshot : public Object {
 
 public:
 	GameStateSnapshot(const String& snapshot_name, const Array& snapshot_data) : name(snapshot_name) {
+		// snapshot_context = snapshot_data.get(0);
+
+		// for (int i = 1; i < snapshot_data.size(); i+= 4) {
 		for (int i = 0; i < snapshot_data.size(); i+= 4) {
 			Array sliced = snapshot_data.slice(i);
 			SceneDebuggerObject obj;
@@ -108,19 +111,12 @@ public:
 
 	String name;
 	HashMap<ObjectID, SnapshotDataObject*> Data;
+	Dictionary snapshot_context;
 
 	SnapshotDataObject* get_object(ObjectID id) { return Data[id]; }
 	void recompute_references();
 
 
-	bool do_nulls_exist() {
-		for (const KeyValue<ObjectID, SnapshotDataObject*>& obj : Data) {
-			if (obj.value == nullptr) {
-				return true;
-			}
-		}
-		return false;
-	}
 };
 
 class GameStateSnapshotRef : public RefCounted {

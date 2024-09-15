@@ -145,7 +145,6 @@ void GameStateSnapshot::get_rc_cycles(
 	HashSet<SnapshotDataObject*> traversed_objs, 
 	List<String>& ret_val,
 	String current_path) {
-		do_nulls_exist();
 
 		// we're at the end of this branch and it was a cycle
 		if (obj == source_obj && current_path != "") {
@@ -155,34 +154,27 @@ void GameStateSnapshot::get_rc_cycles(
 
 		// go through each of our children and try traversing them
 		for (const KeyValue<String, ObjectID>& next_child: obj->outbound_references) {
-			do_nulls_exist();
-			String child_path = "["+next_child.key+"]->" + obj->snapshot->Data[next_child.value]->get_name();
-			do_nulls_exist();
+			SnapshotDataObject* next_obj = obj->snapshot->Data[next_child.value];
+			String next_name = next_obj == source_obj ? "self" : next_obj->get_name();
+			String current_name = obj == source_obj ? "self" : obj->get_name();
+			String child_path = current_name + "[\""+next_child.key+"\"] -> " + next_name;
 			if (current_path != "") {
-				child_path = current_path + child_path;
+				child_path = current_path + "\n" + child_path;
 			}
-			do_nulls_exist();
 
 			SnapshotDataObject* next = Data[next_child.value];
 			if (next != nullptr && next->is_class(RefCounted::get_class_static()) && !next->is_class(WeakRef::get_class_static()) && !traversed_objs.has(next) ) {
-				do_nulls_exist();
 				HashSet<SnapshotDataObject*> traversed_copy = traversed_objs;
 				if (obj != source_obj) {
 					traversed_copy.insert(obj);
-					do_nulls_exist();
 				}
-				do_nulls_exist();
 				get_rc_cycles(next, source_obj, traversed_copy, ret_val, child_path);
-				do_nulls_exist();
 			}
-			do_nulls_exist();
 		}
-		do_nulls_exist();
 }
 
 
 void GameStateSnapshot::recompute_references() {
-	do_nulls_exist();
 	for (const KeyValue<ObjectID, SnapshotDataObject*>& obj : Data) {
 		Dictionary values;
 		for (const KeyValue<StringName, Variant>& kv: obj.value->prop_values) {
@@ -204,26 +196,20 @@ void GameStateSnapshot::recompute_references() {
 	}
 
 
-	do_nulls_exist();
 	int i = 0;
 	for (const KeyValue<ObjectID, SnapshotDataObject*>& obj : Data) {
-		do_nulls_exist();
 		i++;
 		if (!obj.value->is_class(RefCounted::get_class_static()) || obj.value->is_class(WeakRef::get_class_static())) continue;
 		HashSet<SnapshotDataObject*> traversed_objs;
 		List<String> cycles;
 
-		do_nulls_exist();
 		get_rc_cycles(obj.value, obj.value, traversed_objs, cycles, "");
-		do_nulls_exist();
 		Array cycles_array;
 		for (const String& cycle : cycles) {
 			cycles_array.push_back(cycle);
 		}
 		obj.value->extra_debug_data["ref_cycles"] = cycles_array;
-		do_nulls_exist();
 	}
-	do_nulls_exist();
 
 	// for RefCounted objects only, go through and count how many cycles they are part of
 }

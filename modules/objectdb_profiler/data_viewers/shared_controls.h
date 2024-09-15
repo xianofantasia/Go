@@ -63,6 +63,21 @@ public:
     }
 };
 
+class DarkPanelContainer : public PanelContainer {
+    GDCLASS(DarkPanelContainer, PanelContainer);
+
+public:
+    DarkPanelContainer() {
+        set_h_size_flags(SizeFlags::SIZE_EXPAND_FILL);
+        set_v_size_flags(SizeFlags::SIZE_EXPAND_FILL);
+        StyleBoxFlat* content_wrapper_sbf = memnew(StyleBoxFlat);
+        content_wrapper_sbf->set_bg_color(EditorNode::get_singleton()->get_editor_theme()->get_color("dark_color_2", "Editor"));
+        add_theme_style_override("panel", content_wrapper_sbf);
+    }
+};
+
+
+
 class TreeSortAndFilterBar : public HBoxContainer {
     GDCLASS(TreeSortAndFilterBar, HBoxContainer);
 

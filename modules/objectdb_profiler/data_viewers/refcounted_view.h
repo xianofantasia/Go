@@ -35,6 +35,7 @@
 
 #include "scene/gui/tree.h"
 #include "../snapshot_data.h"
+#include "shared_controls.h"
 #include "snapshot_view.h"
 
 
@@ -42,10 +43,17 @@ class SnapshotRefCountedView : public SnapshotView {
 	GDCLASS(SnapshotRefCountedView, SnapshotView);
 
 protected:
-	Tree* object_tree;
-	VBoxContainer* object_details;
+	Tree* refs_list;
+	VBoxContainer* ref_details;
+	TreeSortAndFilterBar* filter_bar;
+	
+	HashMap<TreeItem*, SnapshotDataObject*> item_data_map;
+	HashMap<SnapshotDataObject*, TreeItem*> data_item_map;
+	HashMap<TreeItem*, TreeItem*> reference_item_map;
 
-	void _object_selected();
+	void _refcounted_selected();
+	void _insert_data(GameStateSnapshot* snapshot, const String& name);
+	void _ref_selected(Tree* source_tree);
 
 public:
 	SnapshotRefCountedView();

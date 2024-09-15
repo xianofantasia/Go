@@ -38,20 +38,9 @@
 #include "snapshot_view.h"
 #include "shared_controls.h"
 
-enum ReferenceType {
-	INBOUND,
-	OUTBOUND
-};
-
 class SnapshotObjectView : public SnapshotView {
 	GDCLASS(SnapshotObjectView, SnapshotView);
 
-	HashMap<TreeItem*, SnapshotDataObject*> item_data_map;
-	HashMap<SnapshotDataObject*, TreeItem*> data_item_map;
-	HashMap<TreeItem*, TreeItem*> reference_item_map;
-
-	Tree* _make_references_list(Control* container, const String& name, const String& col_1, const String& col_2);
-	void _reference_selected(int rt);
 
 protected:
 	Tree* object_list;
@@ -60,8 +49,14 @@ protected:
 	VBoxContainer* object_details;
 	TreeSortAndFilterBar* filter_bar;
 
+	HashMap<TreeItem*, SnapshotDataObject*> item_data_map;
+	HashMap<SnapshotDataObject*, TreeItem*> data_item_map;
+	HashMap<TreeItem*, TreeItem*> reference_item_map;
+
 	void _object_selected();
 	void _insert_data(GameStateSnapshot* snapshot, const String& name);
+	Tree* _make_references_list(Control* container, const String& name, const String& col_1, const String& col_2);
+	void _reference_selected(Tree* source_tree);
 
 public:
 	SnapshotObjectView();

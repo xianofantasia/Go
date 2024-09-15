@@ -117,7 +117,6 @@ void SnapshotObjectView::show_snapshot(GameStateSnapshot* p_data, GameStateSnaps
     object_list->connect("item_selected", callable_mp(this, &SnapshotObjectView::_object_selected));
     object_list->set_h_size_flags(SizeFlags::SIZE_EXPAND_FILL);
     object_list->set_v_size_flags(SizeFlags::SIZE_EXPAND_FILL);
-    object_list->set_custom_minimum_size(Size2(200, 0) * EDSCALE);
 
     // list of objects within the selected class
     object_details = memnew(VBoxContainer);
@@ -167,12 +166,7 @@ void SnapshotObjectView::_object_selected() {
     SnapshotDataObject* d = item_data_map[object_list->get_selected()];
 	EditorNode::get_singleton()->push_item((Object*)d);
 
-    PanelContainer* content_wrapper = memnew(PanelContainer);
-    content_wrapper->set_h_size_flags(SizeFlags::SIZE_EXPAND_FILL);
-    content_wrapper->set_v_size_flags(SizeFlags::SIZE_EXPAND_FILL);
-    StyleBoxFlat* content_wrapper_sbf = memnew(StyleBoxFlat);
-    content_wrapper_sbf->set_bg_color(EditorNode::get_singleton()->get_editor_theme()->get_color("dark_color_2", "Editor"));
-    content_wrapper->add_theme_style_override("panel", content_wrapper_sbf);
+    DarkPanelContainer* content_wrapper = memnew(DarkPanelContainer);
     object_details->add_child(content_wrapper);
 
     VBoxContainer* vert_content = memnew(VBoxContainer);
@@ -184,7 +178,7 @@ void SnapshotObjectView::_object_selected() {
     vert_content->add_child(memnew(SpanningHeader(d->get_name())));
     
     inbound_tree = _make_references_list(vert_content, "Inbound References", "Source", "Property");
-    inbound_tree->connect("item_selected", callable_mp(this, &SnapshotObjectView::_reference_selected).bind((int)ReferenceType::INBOUND));
+    inbound_tree->connect("item_selected", callable_mp(this, &SnapshotObjectView::_reference_selected).bind(inbound_tree));
     TreeItem* ib_root = inbound_tree->create_item();
     for (const KeyValue<String, ObjectID>& ob : d->inbound_references) {
         TreeItem* i = inbound_tree->create_item(ib_root);
@@ -195,7 +189,7 @@ void SnapshotObjectView::_object_selected() {
     }
 
     outbound_tree = _make_references_list(vert_content, "Outbound References", "Property", "Target");
-    outbound_tree->connect("item_selected", callable_mp(this, &SnapshotObjectView::_reference_selected).bind((int)ReferenceType::OUTBOUND));
+    outbound_tree->connect("item_selected", callable_mp(this, &SnapshotObjectView::_reference_selected).bind(outbound_tree));
     TreeItem* ob_root = outbound_tree->create_item();
     for (const KeyValue<String, ObjectID>& ob : d->outbound_references) {
         TreeItem* i = outbound_tree->create_item(ob_root);
@@ -206,25 +200,19 @@ void SnapshotObjectView::_object_selected() {
     }
 }
 
-void SnapshotObjectView::_reference_selected(int p_rt) {
-    ReferenceType rt = (ReferenceType)p_rt;
-    TreeItem* ref_item;
-    if (rt == INBOUND) {
-        ref_item = inbound_tree->get_selected();
-        outbound_tree->deselect_all();
-    } else {
-        ref_item = outbound_tree->get_selected();
-        inbound_tree->deselect_all();
-    }
+void SnapshotObjectView::_reference_selected(Tree* source_tree) {
+    TreeItem* ref_item = source_tree->get_selected();
+    Tree* other_tree = source_tree == inbound_tree ? outbound_tree : inbound_tree;
+    other_tree->deselect_all();
     TreeItem* other = reference_item_map[ref_item];
     if (other) {
         if (!other->is_visible()) {
             // clear the filter if we can't see the node we just chose
             filter_bar->clear_filter();
         }
+        other->get_tree()->deselect_all();
         other->get_tree()->set_selected(other);
         other->get_tree()->ensure_cursor_is_visible();
-        _object_selected();
     }
 }
 

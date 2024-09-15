@@ -64,109 +64,127 @@ SnapshotRefCountedView::SnapshotRefCountedView() {
 void SnapshotRefCountedView::show_snapshot(GameStateSnapshot* p_data, GameStateSnapshot* p_diff_data) {
     SnapshotView::show_snapshot(p_data, p_diff_data);
 
+    item_data_map.clear();
+    data_item_map.clear();
+
     set_v_size_flags(SizeFlags::SIZE_EXPAND_FILL);
     set_h_size_flags(SizeFlags::SIZE_EXPAND_FILL);
 
-    HSplitContainer* objects_view = memnew(HSplitContainer);
-    add_child(objects_view);
-    objects_view->set_anchors_preset(LayoutPreset::PRESET_FULL_RECT);
+    HSplitContainer* refs_view = memnew(HSplitContainer);
+    add_child(refs_view);
+    refs_view->set_anchors_preset(LayoutPreset::PRESET_FULL_RECT);
+    
+    VBoxContainer* refs_column = memnew(VBoxContainer);
+    refs_column->set_anchors_preset(LayoutPreset::PRESET_FULL_RECT);
+    refs_view->add_child(refs_column);
 
     // Tree of objects
-    object_tree = memnew(Tree);
-    object_tree->set_select_mode(Tree::SelectMode::SELECT_ROW);
-    object_tree->set_custom_minimum_size(Size2(500, 0) * EDSCALE);
-    object_tree->set_hide_folding(false);
-    objects_view->add_child(object_tree);
-    object_tree->set_hide_root(true);
-    object_tree->set_columns(4);
-    object_tree->set_column_titles_visible(true);
-    object_tree->set_column_title(0, "RefCounted Objects");
-    object_tree->set_column_expand(0, true);
-    object_tree->set_column_clip_content(0, false);
-    object_tree->set_column_custom_minimum_width(0, 150 * EDSCALE);
+    refs_list = memnew(Tree);
 
-    object_tree->set_column_title(1, "Total Refs");
-    object_tree->set_column_expand(1, false);
-    object_tree->set_column_clip_content(1, false);
-	object_tree->set_column_custom_minimum_width(1, 100 * EDSCALE);
-
-	object_tree->set_column_title(2, "User Refs");
-	object_tree->set_column_expand(2, false);
-	object_tree->set_column_clip_content(2, false);
-	object_tree->set_column_custom_minimum_width(2, 100 * EDSCALE);
-    
-	object_tree->set_column_title(3, "User Cycles");
-	object_tree->set_column_expand(3, false);
-	object_tree->set_column_clip_content(3, false);
-	object_tree->set_column_custom_minimum_width(3, 100 * EDSCALE);
-
-    object_tree->connect("item_selected", callable_mp(this, &SnapshotRefCountedView::_object_selected));
-    object_tree->set_h_size_flags(SizeFlags::SIZE_EXPAND_FILL);
-    object_tree->set_v_size_flags(SizeFlags::SIZE_EXPAND_FILL);
-
-    // list of objects within the selected class
-    object_details = memnew(VBoxContainer);
-    object_details->set_custom_minimum_size(Size2(500, 0) * EDSCALE);
-    objects_view->add_child(object_details);
-    // object_details->set_h_size_flags(SizeFlags::SIZE_EXPAND_FILL);
-    object_details->set_v_size_flags(SizeFlags::SIZE_EXPAND_FILL);
+    filter_bar = memnew(TreeSortAndFilterBar(refs_list, "Filter RefCounteds"));
+    refs_column->add_child(filter_bar);
+    int offset = diff_data ? 1 : 0;
+    if (diff_data) {
+        filter_bar->add_sort_option("Snapshot", TreeSortAndFilterBar::SortType::ALPHA_SORT, 0);
+    }
+    filter_bar->add_sort_option("Class", TreeSortAndFilterBar::SortType::ALPHA_SORT, offset + 0);
+    filter_bar->add_sort_option("Name", TreeSortAndFilterBar::SortType::ALPHA_SORT, offset + 1);
+    TreeSortAndFilterBar::SortOptionIndexes default_sort = filter_bar->add_sort_option(
+        "Total Refs", 
+        TreeSortAndFilterBar::SortType::NUMERIC_SORT, 
+        offset + 2
+    );
+    filter_bar->add_sort_option("User Refs", TreeSortAndFilterBar::SortType::NUMERIC_SORT, offset + 3);
+    filter_bar->add_sort_option("User Cycles", TreeSortAndFilterBar::SortType::NUMERIC_SORT, offset + 4);
 
 
-	TreeItem* root = object_tree->create_item();
-    HashMap<String, TreeItem*> class_groups;
+    refs_list->set_select_mode(Tree::SelectMode::SELECT_ROW);
+    refs_list->set_custom_minimum_size(Size2(200, 0) * EDSCALE);
+    refs_list->set_hide_folding(false);
+    refs_column->add_child(refs_list);
+    refs_list->set_hide_root(true);
+    refs_list->set_columns(diff_data ? 6 : 5);
+    refs_list->set_column_titles_visible(true);
+    if (diff_data) {
+        refs_list->set_column_title(0, "Snapshot");
+        refs_list->set_column_expand(0, false);
+    }
+    refs_list->set_column_title(offset + 0, "Class");
+    refs_list->set_column_expand(offset + 0, true);
+    refs_list->set_column_title(offset + 1, "Name");
+    refs_list->set_column_expand(offset + 1, true);
+    refs_list->set_column_expand_ratio(offset + 1, 2);
+	refs_list->set_column_title(offset + 2, "Total Refs");
+	refs_list->set_column_expand(offset + 2, false);
+	refs_list->set_column_title(offset + 3, "User Refs");
+	refs_list->set_column_expand(offset + 3, false);
+	refs_list->set_column_title(offset + 4, "User Cycles");
+	refs_list->set_column_expand(offset + 4, false);
+    refs_list->connect("item_selected", callable_mp(this, &SnapshotRefCountedView::_refcounted_selected));
+    refs_list->set_h_size_flags(SizeFlags::SIZE_EXPAND_FILL);
+    refs_list->set_v_size_flags(SizeFlags::SIZE_EXPAND_FILL);
 
-    for (const KeyValue<ObjectID, SnapshotDataObject*>& pair : snapshot_data->Data) {
+    // View of the selected refcounted
+    ref_details = memnew(VBoxContainer);
+    ref_details->set_custom_minimum_size(Size2(200, 0) * EDSCALE);
+    refs_view->add_child(ref_details);
+    ref_details->set_h_size_flags(SizeFlags::SIZE_EXPAND_FILL);
+    ref_details->set_v_size_flags(SizeFlags::SIZE_EXPAND_FILL);
+
+
+	refs_list->create_item();
+    _insert_data(snapshot_data, "A");
+    if (diff_data) {
+        _insert_data(diff_data, "B");
+    }
+
+    refs_view->set_split_offset(INFINITY);
+    filter_bar->select_sort(default_sort.descending); 
+	filter_bar->apply();
+    refs_list->set_selected(refs_list->get_root()->get_first_child());
+}
+
+void SnapshotRefCountedView::_insert_data(GameStateSnapshot* snapshot, const String& name) {
+    for (const KeyValue<ObjectID, SnapshotDataObject*>& pair : snapshot->Data) {
         if (!pair.value->is_refcounted()) continue;
-
-
-        TreeItem* item;
-        if (!class_groups.has(pair.value->type_name)) {
-            class_groups[pair.value->type_name] = object_tree->create_item(root);
-            class_groups[pair.value->type_name]->set_text(0, pair.value->type_name);
-            class_groups[pair.value->type_name]->set_collapsed(true);
-        }
-        item = object_tree->create_item(class_groups[pair.value->type_name]);
-
-    	item->set_text(0,  pair.value->type_name + "#" + uitos(pair.value->remote_object_id));
+        
+        TreeItem* item = refs_list->create_item(refs_list->get_root());
+        item_data_map[item] = pair.value;
+        data_item_map[pair.value] = item;
         int ref_count = pair.value->extra_debug_data.has("ref_count") ? (uint64_t)pair.value->extra_debug_data["ref_count"] : 0;
-
-    	item->set_text(1,  String::num_uint64(ref_count));
-    	item->set_text(2,  String::num_uint64(pair.value->inbound_references.size()));
 		Array ref_cycles = (Array)pair.value->extra_debug_data["ref_cycles"];
-    	item->set_text(3,  String::num_uint64(ref_cycles.size())); // compute cycles and attach it to refcounted object
-		
+
+        int offset = 0;
+        if (diff_data) {
+            item->set_text(0, name);
+            offset = 1;
+        }
+
+    	item->set_text(offset + 0,  pair.value->type_name);
+    	item->set_text(offset + 1,  pair.value->get_name());
+    	item->set_text(offset + 2,  String::num_uint64(ref_count));
+    	item->set_text(offset + 3,  String::num_uint64(pair.value->inbound_references.size()));
+    	item->set_text(offset + 4,  String::num_uint64(ref_cycles.size())); // compute cycles and attach it to refcounted object
+        
 		if (ref_count == ref_cycles.size()) {
 			// often, references are held by the engine so we can't know if we're stuck in a cycle or not
 			// But if the full cycle is visible in the ObjectDB, tell the user
-			item->set_custom_bg_color(1, Color(0.6, 0.37, 0.37));
-			item->set_custom_bg_color(2, Color(0.6, 0.37, 0.37));
-			item->set_custom_bg_color(3, Color(0.6, 0.37, 0.37));
-		} else if (pair.value->inbound_references.size() == ref_cycles.size()) {
-			item->set_custom_bg_color(2, Color(0.6, 0.37, 0.37));
-			item->set_custom_bg_color(3, Color(0.6, 0.37, 0.37));
+			item->set_custom_bg_color(offset + 2, Color(1, 0, 0, 0.1));
+			item->set_custom_bg_color(offset + 4, Color(1, 0, 0, 0.1));
 		}
-
-    	item->set_metadata(0, pair.value->remote_object_id);
     }
 }
 
-void SnapshotRefCountedView::_object_selected() {
-    for (int i = 0; i < object_details->get_child_count(); i++) {
-        object_details->get_child(i)->queue_free();
+void SnapshotRefCountedView::_refcounted_selected() {
+    for (int i = 0; i < ref_details->get_child_count(); i++) {
+        ref_details->get_child(i)->queue_free();
     }
-	ObjectID object_id = object_tree->get_selected()->get_metadata(0);
-    if (!snapshot_data->Data.has(object_id)) return; // user clicked on a non-leaf node probably
-    SnapshotDataObject* d = snapshot_data->Data[object_id];
-    
+
+    SnapshotDataObject* d = item_data_map[refs_list->get_selected()];
 	EditorNode::get_singleton()->push_item((Object*)d);
     
-    PanelContainer* content_wrapper = memnew(PanelContainer);
-    content_wrapper->set_h_size_flags(SizeFlags::SIZE_EXPAND_FILL);
-    content_wrapper->set_v_size_flags(SizeFlags::SIZE_EXPAND_FILL);
-    StyleBoxFlat* content_wrapper_sbf = memnew(StyleBoxFlat);
-    content_wrapper_sbf->set_bg_color(EditorNode::get_singleton()->get_editor_theme()->get_color("dark_color_2", "Editor"));
-    content_wrapper->add_theme_style_override("panel", content_wrapper_sbf);
-    object_details->add_child(content_wrapper);
+    DarkPanelContainer* content_wrapper = memnew(DarkPanelContainer);
+    ref_details->add_child(content_wrapper);
 
     VBoxContainer* vert_content = memnew(VBoxContainer);
     vert_content->set_v_size_flags(SizeFlags::SIZE_EXPAND_FILL);
@@ -200,25 +218,28 @@ void SnapshotRefCountedView::_object_selected() {
         inbound_tree->set_column_clip_content(1, true);
         inbound_tree->set_h_size_flags(SizeFlags::SIZE_EXPAND_FILL);
         inbound_tree->set_v_size_flags(SizeFlags::SIZE_EXPAND_FILL);
+        inbound_tree->connect("item_selected", callable_mp(this, &SnapshotRefCountedView::_ref_selected).bind(inbound_tree));
 
         TreeItem* root = inbound_tree->create_item();
         for (const KeyValue<String, ObjectID>& ob : d->inbound_references) {
             TreeItem* i = inbound_tree->create_item(root);
-            i->set_text(0, snapshot_data->Data[ob.value]->get_name());
+            SnapshotDataObject* target = d->snapshot->Data[ob.value];
+            i->set_text(0, target->get_name());
             i->set_text(1, ob.key);
+            reference_item_map[i] = data_item_map[target];
         }
     }
 
 	Array ref_cycles = (Array)d->extra_debug_data["ref_cycles"];
     if (ref_cycles.size() > 0) {
+        vert_content->add_child(memnew(SpanningHeader("Cycles")));
         Tree* cycles_tree = memnew(Tree);
         cycles_tree->set_hide_folding(true);
         vert_content->add_child(cycles_tree);
         cycles_tree->set_select_mode(Tree::SelectMode::SELECT_ROW);
         cycles_tree->set_hide_root(true);
         cycles_tree->set_columns(1);
-        cycles_tree->set_column_titles_visible(true);
-        cycles_tree->set_column_title(0, "Cycles");
+        cycles_tree->set_column_titles_visible(false);
         cycles_tree->set_column_expand(0, true);
         cycles_tree->set_column_clip_content(0, false);
         cycles_tree->set_h_size_flags(SizeFlags::SIZE_EXPAND_FILL);
@@ -228,6 +249,21 @@ void SnapshotRefCountedView::_object_selected() {
         for (const String& cycle : ref_cycles) {
             TreeItem* i = cycles_tree->create_item(root);
             i->set_text(0, cycle);
+            i->set_text_overrun_behavior(0, TextServer::OverrunBehavior::OVERRUN_NO_TRIMMING);
+            // i->set_autowrap_mode(0,TextServer::AutowrapMode::AUTOWRAP_WORD);
         }
+    }
+}
+
+void SnapshotRefCountedView::_ref_selected(Tree* source_tree) {
+    TreeItem* target = reference_item_map[source_tree->get_selected()];
+    if (target) {
+        if (!target->is_visible()) {
+            // clear the filter if we can't see the node we just chose
+            filter_bar->clear_filter();
+        }
+        target->get_tree()->deselect_all();
+        target->get_tree()->set_selected(target);
+        target->get_tree()->ensure_cursor_is_visible();
     }
 }
