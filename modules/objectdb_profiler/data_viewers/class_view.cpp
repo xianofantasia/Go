@@ -82,18 +82,18 @@ void SnapshotClassView::show_snapshot(GameStateSnapshot* p_data, GameStateSnapsh
 
     class_tree = memnew(Tree);
     
-    TreeSortAndFilterBar* classes_filter_bar = memnew(TreeSortAndFilterBar(class_tree, "Filter Classes"));
-    classes_filter_bar->add_sort_option("Name", TreeSortAndFilterBar::SortType::ALPHA_SORT, 0);
+    TreeSortAndFilterBar* filter_bar = memnew(TreeSortAndFilterBar(class_tree, "Filter Classes"));
+    filter_bar->add_sort_option("Name", TreeSortAndFilterBar::SortType::ALPHA_SORT, 0);
 
     TreeSortAndFilterBar::SortOptionIndexes default_sort;
     if (!diff_data) {
-        default_sort = classes_filter_bar->add_sort_option("Count", TreeSortAndFilterBar::SortType::NUMERIC_SORT, 1);
+        default_sort = filter_bar->add_sort_option("Count", TreeSortAndFilterBar::SortType::NUMERIC_SORT, 1);
     } else {
-        classes_filter_bar->add_sort_option("A Count", TreeSortAndFilterBar::SortType::NUMERIC_SORT, 1);
-        classes_filter_bar->add_sort_option("B Count", TreeSortAndFilterBar::SortType::NUMERIC_SORT, 2);
-        default_sort = classes_filter_bar->add_sort_option("Delta", TreeSortAndFilterBar::SortType::NUMERIC_SORT, 3);
+        filter_bar->add_sort_option("A Count", TreeSortAndFilterBar::SortType::NUMERIC_SORT, 1);
+        filter_bar->add_sort_option("B Count", TreeSortAndFilterBar::SortType::NUMERIC_SORT, 2);
+        default_sort = filter_bar->add_sort_option("Delta", TreeSortAndFilterBar::SortType::NUMERIC_SORT, 3);
     }
-    class_list_column->add_child(classes_filter_bar);
+    class_list_column->add_child(filter_bar);
     
 
     // Tree of classes 
@@ -150,10 +150,6 @@ void SnapshotClassView::show_snapshot(GameStateSnapshot* p_data, GameStateSnapsh
         ClassData& next = grouped_by_class[next_class_name];
         ClassData& nexts_parent = grouped_by_class[next.parent_class_name];
         next.tree_node = class_tree->create_item(nexts_parent.tree_node);
-
-        if (next.class_name != "") {
-            next.tree_node->set_icon(0, EditorNode::get_singleton()->get_class_icon(next.class_name, ""));
-        }
         next.tree_node->set_text(0, next_class_name + " (" + String::num_int64(next.instance_count(snapshot_data)) + ")");
         int a_count = next.get_recursive_instance_count(grouped_by_class, snapshot_data);
         next.tree_node->set_text(1,  String::num_int64(a_count));
@@ -172,8 +168,8 @@ void SnapshotClassView::show_snapshot(GameStateSnapshot* p_data, GameStateSnapsh
     callable_mp(this, &SnapshotClassView::_notification).call_deferred(NOTIFICATION_THEME_CHANGED);
 
     // default to sort by descending count. Putting the biggest groups at the top is generally pretty interesting
-    classes_filter_bar->select_sort(default_sort.descending); 
-    classes_filter_bar->apply();
+    filter_bar->select_sort(default_sort.descending); 
+    filter_bar->apply();
 }
 
 Tree* SnapshotClassView::_make_object_list_tree(const String& column_name) {
@@ -267,18 +263,8 @@ void SnapshotClassView::_notification(int p_what) {
 		case NOTIFICATION_LAYOUT_DIRECTION_CHANGED:
 		case NOTIFICATION_THEME_CHANGED:
 		case NOTIFICATION_TRANSLATION_CHANGED: {
-            // love writing a tree traversal just to update icons...
-            List<TreeItem*> items;
-            items.push_back(class_tree->get_root());
-            while (items.size() > 0) {
-                TreeItem* top = items.get(0);
-                items.pop_front();
-                TypedArray<TreeItem> ti = top->get_children();
-                for (int i = 0; i < ti.size(); i++) {
-                    Object* obj = ti.get(i);
-                    items.push_back((TreeItem*)obj);
-                }
-                top->set_icon(0, EditorNode::get_singleton()->get_class_icon(top->get_metadata(0), ""));
+            for (TreeItem* item : get_children_recursive(class_tree)) {
+                item->set_icon(0, EditorNode::get_singleton()->get_class_icon(item->get_metadata(0), ""));
             }
 
 		} break;

@@ -43,6 +43,7 @@
 #include "scene/gui/label.h"
 #include "scene/gui/menu_button.h"
 #include "editor/editor_string_names.h"
+#include "editor/themes/editor_scale.h"
 #include "snapshot_view.h"
 
 
@@ -141,7 +142,14 @@ private:
         String filter_str = filter_edit->get_text().strip_edges(true, true).to_lower();
 
         // we are visible
-        if (current_node->get_text(0).to_lower().contains(filter_str) || filter_str.is_empty()) {
+        bool matches_filter = false;
+        for (int i = 0; i < managed_tree->get_columns(); i++) {
+            if (current_node->get_text(i).to_lower().contains(filter_str)) {
+                matches_filter = true;
+                break;
+            }
+        }
+        if (matches_filter || filter_str.is_empty()) {
             current_node->set_visible(true);
         // we have a visible child
         } else if (any_child_visible) {
@@ -154,6 +162,9 @@ private:
     }
 
     void _apply_sort() {
+        if (!sort_button->is_visible()) {
+            return;
+        }
         for (int i = 0; i != sort_button->get_popup()->get_item_count(); i++) {
             // update the popup buttons to be checked/unchecked
             sort_button->get_popup()->set_item_checked(i, (i == (int)current_sort));
@@ -212,14 +223,12 @@ public:
         filter_edit = memnew(LineEdit);
         filter_edit->set_clear_button_enabled(true);
         filter_edit->set_h_size_flags(SizeFlags::SIZE_EXPAND_FILL);
-        // filter_edit->set_right_icon(get_editor_theme_icon(SNAME("Search")));
         filter_edit->set_placeholder("Filter Classes");
         add_child(filter_edit);
         filter_edit->connect(SceneStringName(text_changed), callable_mp(this, &TreeSortAndFilterBar::_filter_changed));
 
-
         sort_button = memnew(MenuButton);
-        // sort_button->set_icon(get_editor_theme_icon(SNAME("Sort")));
+        sort_button->set_visible(false);
         sort_button->set_flat(false);
         sort_button->set_theme_type_variation("FlatMenuButton");
         PopupMenu *p = sort_button->get_popup();
@@ -246,6 +255,7 @@ public:
 	}
 
     SortOptionIndexes add_sort_option(const String& new_option, SortType sort_type, int sort_column, bool is_default = false) {
+        sort_button->set_visible(true);
         bool is_first_item = sort_items.size() == 0;
         SortItem item_ascending(sort_items.size(), "Sort By " + new_option + " (Ascending)", sort_type, true, sort_column);
         sort_items[item_ascending.id] = item_ascending;
@@ -266,6 +276,7 @@ public:
     }
     
     void clear() {
+        sort_button->set_visible(false);
         sort_button->get_popup()->clear();
         filter_edit->clear();
     }

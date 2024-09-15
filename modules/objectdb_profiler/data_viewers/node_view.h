@@ -36,21 +36,49 @@
 #include "scene/gui/tree.h"
 #include "../snapshot_data.h"
 #include "snapshot_view.h"
+#include "shared_controls.h"
 
+struct NodeTreeElements {
+	Tree* tree;
+	TreeSortAndFilterBar* filter_bar;
+	VBoxContainer* root;
+};
 
 // Boostrapped by the plugin
 class SnapshotNodeView : public SnapshotView {
 	GDCLASS(SnapshotNodeView, SnapshotView);
 
 protected:
-	Tree* node_tree;
+	NodeTreeElements main_tree;
+	NodeTreeElements diff_tree;
+	Tree* active_tree = nullptr;
+	bool combined_diff_view = true;
+	
+	PopupMenu* choose_object_menu;
 
-	void _node_selected();
-	void _add_children_recursive(TreeItem* node);
+	HashMap<TreeItem*, List<SnapshotDataObject*>> tree_item_owners;
+
+	void _node_selected(Tree* tree_selected_from);
+	void _notification(int p_what);	
+	NodeTreeElements _make_node_tree(const String& tree_name, GameStateSnapshot* snapshot);
+	void _apply_filters();
+	void _refresh_icons();
+	void _toggle_diff_mode(bool state);
+
+	void _choose_object_pressed(int object_idx, bool p_confirm_override);
+	void _show_choose_object_menu();
+
+	void _add_snapshot_to_tree(Tree* tree, GameStateSnapshot* snapshot, const String& diff_group_name = "");
+	void _add_object_to_tree(TreeItem* parent_item, SnapshotDataObject* data, const String& diff_group_name = "");
+	TreeItem* _add_child_named(Tree* tree, TreeItem* item, SnapshotDataObject* item_owner, const String& diff_group_name = "");
+
+	void _add_tree_item_owner(TreeItem* item, SnapshotDataObject* owner);
 
 public:
 	SnapshotNodeView();
 	virtual void show_snapshot(GameStateSnapshot* data, GameStateSnapshot* p_diff_data) override;
+
+	virtual void clear_snapshot() override;
 };
 
 
