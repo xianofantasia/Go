@@ -252,8 +252,8 @@ void Resource::_dupe_sub_resources(Variant &r_variant, Node *p_for_scene, HashMa
 		} break;
 		case Variant::DICTIONARY: {
 			Dictionary d = r_variant;
-			List<Variant> keys;
-			d.get_key_list(&keys);
+			LocalVector<Variant> keys;
+			d.get_key_list(keys);
 			for (Variant &k : keys) {
 				if (k.get_type() == Variant::OBJECT) {
 					// Replace in dictionary key.
@@ -326,8 +326,8 @@ void Resource::_find_sub_resources(const Variant &p_variant, HashSet<Ref<Resourc
 		} break;
 		case Variant::DICTIONARY: {
 			Dictionary d = p_variant;
-			List<Variant> keys;
-			d.get_key_list(&keys);
+			LocalVector<Variant> keys;
+			d.get_key_list(keys);
 			for (const Variant &k : keys) {
 				_find_sub_resources(k, p_resources_found);
 				_find_sub_resources(d[k], p_resources_found);

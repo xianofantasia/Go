@@ -526,8 +526,8 @@ void EditorInterface::popup_create_dialog(const Callable &p_callback, const Stri
 	create_dialog->set_type_blocklist(blocklist);
 
 	HashMap<StringName, String> suffix_map;
-	List<Variant> keys;
-	p_custom_suffix.get_key_list(&keys);
+	LocalVector<Variant> keys;
+	p_custom_suffix.get_key_list(keys);
 	for (Variant &k : keys) {
 		const StringName key = k;
 		if (key.is_empty()) {
