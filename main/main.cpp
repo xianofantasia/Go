@@ -584,7 +584,7 @@ void Main::print_help(const char *p_binary) {
 	print_help_option("", "--disable-vsync can speed up movie writing but makes interaction more difficult.\n");
 	print_help_option("", "--quit-after can be used to specify the number of frames to write.\n");
 	print_help_option("--force-console", "Force creation of console window on Windows.\n");
-	print_help_option("", "Enables viewing of Godot logging when debugging a C# project with Visual Studio.\n");
+	print_help_option("", "Does not spawn a child process, unlike the console executable. Allows for viewing Godot logs when debugging a C# project with Visual Studio.\n");
 
 	print_help_title("Display options");
 	print_help_option("-f, --fullscreen", "Request fullscreen mode.\n");
