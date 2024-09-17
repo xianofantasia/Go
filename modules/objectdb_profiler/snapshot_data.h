@@ -76,6 +76,9 @@ public:
 	}
 };
 
+// Ideally, this would extend EditorDebuggerRemoteObject and be refcounted, but we can't have it both ways.
+// so, include a static constructor method that returns a wrapped copy of this class
+class GameStateSnapshotRef;
 class GameStateSnapshot : public Object {
 	GDCLASS(GameStateSnapshot, Object);
 
@@ -83,27 +86,7 @@ class GameStateSnapshot : public Object {
 	void get_rc_cycles(SnapshotDataObject *obj, SnapshotDataObject *source_obj, HashSet<SnapshotDataObject *> traversed_objs, List<String> &ret_val, String current_path = "");
 
 public:
-	GameStateSnapshot(const String &snapshot_name, const Array &snapshot_data) :
-			name(snapshot_name) {
-		// snapshot_context = snapshot_data.get(0);
-
-		// for (int i = 1; i < snapshot_data.size(); i+= 4) {
-		for (int i = 0; i < snapshot_data.size(); i += 4) {
-			Array sliced = snapshot_data.slice(i);
-			SceneDebuggerObject obj;
-			obj.deserialize(sliced);
-
-			ERR_FAIL_COND(sliced[3].get_type() != Variant::DICTIONARY);
-			if (obj.id.is_null())
-				continue;
-
-			Data[obj.id] = memnew(SnapshotDataObject(obj, this));
-			Data[obj.id]->extra_debug_data = (Dictionary)sliced[3];
-			Data[obj.id]->set_readonly(true);
-		}
-
-		recompute_references();
-	}
+	static Ref<GameStateSnapshotRef> create_ref(const String &snapshot_name, int p_snapshot_version, const String &snapshot_string);
 
 	~GameStateSnapshot() {
 		for (const KeyValue<ObjectID, SnapshotDataObject *> &item : Data) {
@@ -114,6 +97,7 @@ public:
 	String name;
 	HashMap<ObjectID, SnapshotDataObject *> Data;
 	Dictionary snapshot_context;
+	int snapshot_version;
 
 	SnapshotDataObject *get_object(ObjectID id) { return Data[id]; }
 	void recompute_references();

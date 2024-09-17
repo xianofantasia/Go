@@ -37,6 +37,11 @@
 #include "snapshot_view.h"
 
 struct NodeTreeElements {
+	NodeTreeElements() {
+		tree = nullptr;
+		filter_bar = nullptr;
+		root = nullptr;
+	}
 	Tree *tree;
 	TreeSortAndFilterBar *filter_bar;
 	VBoxContainer *root;

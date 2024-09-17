@@ -159,6 +159,8 @@ void SnapshotSummaryView::clear_snapshot() {
 	for (int i = 0; i < blurb_list->get_child_count(); i++) {
 		blurb_list->get_child(i)->queue_free();
 	}
+	snapshot_data = nullptr;
+	diff_data = nullptr;
 	object_blurb = nullptr;
 	node_blurb = nullptr;
 	refcounted_blurb = nullptr;

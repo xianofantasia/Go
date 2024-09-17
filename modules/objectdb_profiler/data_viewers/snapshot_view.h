@@ -47,7 +47,9 @@ protected:
 		// love writing a tree traversal just to update icons...
 		List<TreeItem *> found_items;
 		List<TreeItem *> items_to_check;
-		items_to_check.push_back(tree->get_root());
+		if (tree && tree->get_root()) {
+			items_to_check.push_back(tree->get_root());
+		}
 		while (items_to_check.size() > 0) {
 			TreeItem *to_check = items_to_check.get(0);
 			items_to_check.pop_front();
@@ -63,6 +65,7 @@ public:
 	String view_name;
 	virtual void show_snapshot(GameStateSnapshot *data, GameStateSnapshot *p_diff_data = nullptr);
 	virtual void clear_snapshot();
+	bool is_showing_snapshot(GameStateSnapshot *data, GameStateSnapshot *p_diff_data);
 };
 
 #endif // SNAPSHOT_VIEW_H

@@ -56,6 +56,10 @@
 
 SnapshotClassView::SnapshotClassView() {
 	set_name("Classes");
+
+	class_tree = nullptr;
+	object_list = nullptr;
+	diff_object_list = nullptr;
 }
 
 void SnapshotClassView::show_snapshot(GameStateSnapshot *p_data, GameStateSnapshot *p_diff_data) {

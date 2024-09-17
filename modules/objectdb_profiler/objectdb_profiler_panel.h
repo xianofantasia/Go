@@ -73,7 +73,7 @@ protected:
 
 	Ref<DirAccess> _get_and_create_snapshot_storage_dir();
 
-	void _add_snapshot_button(String snapshot_name);
+	TreeItem *_add_snapshot_button(const String &snapshot_file_name, const String &full_file_path);
 
 	LRUCache<String, Ref<GameStateSnapshotRef>> snapshot_cache;
 
@@ -81,6 +81,8 @@ protected:
 	void _rmb_menu_pressed(int p_tool, bool p_confirm_override);
 	void _apply_diff(int item_idx);
 	void _update_diff_items();
+	void _edit_snapshot_name();
+	void _view_tab_changed(int tab_idx);
 
 public:
 	ObjectDBProfilerPanel();
@@ -95,7 +97,6 @@ public:
 	Ref<GameStateSnapshotRef> get_snapshot(const String &snapshot_file_name);
 
 	void add_view(SnapshotView *to_add);
-	String snapshot_filename_to_name(const String &filename);
 
 	static ObjectDBProfilerPanel *get_singleton() { return singleton; }
 	const List<String> &get_snapshot_names() { return snapshot_names; }

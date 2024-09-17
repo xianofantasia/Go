@@ -35,6 +35,7 @@
 
 void SnapshotView::clear_snapshot() {
 	snapshot_data = nullptr;
+	diff_data = nullptr;
 	for (int i = 0; i < get_child_count(); i++) {
 		get_child(i)->queue_free();
 	}
@@ -44,4 +45,8 @@ void SnapshotView::show_snapshot(GameStateSnapshot *p_data, GameStateSnapshot *p
 	clear_snapshot();
 	snapshot_data = p_data;
 	diff_data = p_diff_data;
+}
+
+bool SnapshotView::is_showing_snapshot(GameStateSnapshot *data, GameStateSnapshot *p_diff_data) {
+	return data == snapshot_data && p_diff_data == diff_data;
 }

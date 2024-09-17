@@ -38,6 +38,7 @@
 #include "scene/gui/control.h"
 #include "scene/gui/tree.h"
 // #include "core/object/script_language.h"
+#include "core/core_bind.h"
 #include "core/object/ref_counted.h"
 #include "editor/debugger/script_editor_debugger.h"
 #include "editor/editor_node.h"
@@ -208,4 +209,47 @@ void GameStateSnapshot::recompute_references() {
 	}
 
 	// for RefCounted objects only, go through and count how many cycles they are part of
+}
+
+Ref<GameStateSnapshotRef> GameStateSnapshot::create_ref(const String &snapshot_name, int p_snapshot_version, const String &snapshot_string) {
+	GameStateSnapshot *sn = memnew(GameStateSnapshot);
+	sn->name = snapshot_name;
+	sn->snapshot_version = p_snapshot_version;
+
+	// Snapshots may have been created by an older version of the editor. Handle parsing old snapshot versions here based on the version number.
+	switch (sn->snapshot_version) {
+		case 1: {
+			Array snapshot_data = core_bind::Marshalls::get_singleton()->base64_to_variant(snapshot_string, true);
+			sn->snapshot_context = snapshot_data.get(0);
+
+			for (int i = 1; i < snapshot_data.size(); i += 4) {
+				Array sliced = snapshot_data.slice(i);
+				SceneDebuggerObject obj;
+				obj.deserialize(sliced);
+
+				if (sliced[3].get_type() != Variant::DICTIONARY) {
+					goto LOAD_FAILED;
+				}
+				if (obj.id.is_null())
+					continue;
+
+				sn->Data[obj.id] = memnew(SnapshotDataObject(obj, sn));
+				sn->Data[obj.id]->extra_debug_data = (Dictionary)sliced[3];
+				sn->Data[obj.id]->set_readonly(true);
+			}
+
+			sn->recompute_references();
+			// A ref to a refcounted object which is a wrapper of a non-refcounted object.
+			return Ref<GameStateSnapshotRef>(memnew(GameStateSnapshotRef(sn)));
+		} break;
+
+		default: {
+			ERR_PRINT("ObjectDB Snapshot version not recognized: " + itos(p_snapshot_version));
+		} break;
+	}
+
+LOAD_FAILED:
+	ERR_PRINT("ObjectDB Snapshot could not be parsed");
+	memfree(sn);
+	return nullptr;
 }
