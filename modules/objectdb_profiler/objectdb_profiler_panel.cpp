@@ -68,7 +68,8 @@ enum RC_MENU_OPERATIONS {
 ObjectDBProfilerPanel *ObjectDBProfilerPanel::singleton = nullptr;
 
 void ObjectDBProfilerPanel::receive_snapshot(const Array &p_data) {
-	String snapshot_file_name = Time::get_singleton()->get_datetime_string_from_unix_time(Time::get_singleton()->get_unix_time_from_system()).replace("T", "_").replace(":", "-");
+	double ts = Time::get_singleton()->get_unix_time_from_system();
+	String snapshot_file_name = Time::get_singleton()->get_datetime_string_from_unix_time(ts).replace("T", "_").replace(":", "-");
 	Ref<DirAccess> snapshot_dir = _get_and_create_snapshot_storage_dir();
 	if (!snapshot_dir.is_null()) {
 		Error err;
@@ -188,9 +189,9 @@ void ObjectDBProfilerPanel::show_snapshot(const String &snapshot_file_name, cons
 void ObjectDBProfilerPanel::_view_tab_changed(int tab_idx) {
 	// populating tabs only on tab changed because we're handling a lot of data, and the editor freezes for while if we don't
 	SnapshotView *view = cast_to<SnapshotView>(view_tabs->get_current_tab_control());
-	GameStateSnapshot *snapshot = current_snapshot->ptr();
+	GameStateSnapshot *snapshot = current_snapshot == nullptr ? nullptr : current_snapshot->ptr();
 	GameStateSnapshot *diff = diff_snapshot == nullptr ? nullptr : diff_snapshot->ptr();
-	if (!view->is_showing_snapshot(snapshot, diff)) {
+	if (snapshot != nullptr && !view->is_showing_snapshot(snapshot, diff)) {
 		view->show_snapshot(snapshot, diff);
 	}
 }
@@ -259,9 +260,21 @@ void ObjectDBProfilerPanel::_edit_snapshot_name() {
 	const String &old_snapshot_name = file_name.split(".").get(0);
 	const String &new_full_file_path = full_file_path.path_join(new_snapshot_name) + ".odb_snapshot";
 
-	if (new_snapshot_name.contains(":") || new_snapshot_name.contains("\\") || new_snapshot_name.contains("/") || new_snapshot_name.begins_with(".") || new_snapshot_name.length() == 0) {
+	bool name_taken = false;
+	for (int i = 0; i < snapshot_list->get_root()->get_child_count(); i++) {
+		TreeItem *item = snapshot_list->get_root()->get_child(i);
+		if (item != snapshot_list->get_selected()) {
+			if (item->get_text(0) == new_snapshot_name) {
+				name_taken = true;
+				break;
+			}
+		}
+	}
+
+	if (name_taken || new_snapshot_name.contains(":") || new_snapshot_name.contains("\\") || new_snapshot_name.contains("/") || new_snapshot_name.begins_with(".") || new_snapshot_name.length() == 0) {
 		EditorNode::get_singleton()->show_warning(TTR("Invalid snapshot name"));
 		snapshot_list->get_selected()->set_text(0, old_snapshot_name);
+		return;
 	}
 
 	Error err = DirAccess::rename_absolute(full_file_with_path, new_full_file_path);
@@ -273,6 +286,7 @@ void ObjectDBProfilerPanel::_edit_snapshot_name() {
 	}
 
 	_update_diff_items();
+	_show_selected_snapshot();
 }
 
 ObjectDBProfilerPanel::ObjectDBProfilerPanel() {

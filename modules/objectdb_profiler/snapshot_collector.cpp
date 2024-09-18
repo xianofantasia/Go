@@ -76,11 +76,10 @@ void SnapshotCollector::snapshot_objects(Array *p_arr) {
 			(void *)&debugger_objects);
 
 	Dictionary snapshot_context;
-	Dictionary mem_data;
-	mem_data["available"] = Memory::get_mem_available();
-	mem_data["usage"] = Memory::get_mem_usage();
-	mem_data["max_usage"] = Memory::get_mem_max_usage();
-	snapshot_context["memory"] = mem_data;
+	snapshot_context["mem_available"] = Memory::get_mem_available();
+	snapshot_context["mem_usage"] = Memory::get_mem_usage();
+	snapshot_context["mem_max_usage"] = Memory::get_mem_max_usage();
+	snapshot_context["timestamp"] = Time::get_singleton()->get_unix_time_from_system();
 	p_arr->push_back(snapshot_context);
 	for (SnapshotDataTransportObject &debug_data : debugger_objects) {
 		debug_data.serialize(*p_arr);

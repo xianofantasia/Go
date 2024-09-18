@@ -122,36 +122,28 @@ void SnapshotSummaryView::show_snapshot(GameStateSnapshot *p_data, GameStateSnap
 	SnapshotView::show_snapshot(p_data, p_diff_data);
 	explainer_text->set_visible(false);
 
-	object_blurb = memnew(SummaryBlurb("Objects", "Objects with scripts not referenced by any user objects [i](a user created object has no connections to other objects)[/i]"));
-	node_blurb = memnew(SummaryBlurb("Nodes", "Multiple root nodes [i](possible call to 'remove_child' without 'queue_free')[/i]"));
-	refcounted_blurb = memnew(SummaryBlurb("RefCounted", "RefCounted only referenced in cycles [i](cycles often indicate a memory leaks)[/i]"));
+	String snapshot_a_name = diff_data == nullptr ? "Snapshot" : "Snapshot A";
+	String snapshot_b_name = "Snapshot B";
 
-	for (const KeyValue<ObjectID, SnapshotDataObject *> &pair : snapshot_data->Data) {
-		if (pair.value->inbound_references.size() == 0 && pair.value->outbound_references.size() == 0) {
-			if (pair.value->get_script() != nullptr) {
-				object_blurb->add_line("ObjectID: " + String::num_uint64(pair.value->remote_object_id));
-			}
-		}
-		if (pair.value->is_refcounted()) {
-			int ref_count = (uint64_t)pair.value->extra_debug_data["ref_count"];
-			Array ref_cycles = (Array)pair.value->extra_debug_data["ref_cycles"];
-
-			if (ref_count == ref_cycles.size()) {
-				refcounted_blurb->add_line("ObjectID: " + String::num_uint64(pair.key));
-			}
-		}
-		// if it's a node AND it doesn't have a parent node
-		if (pair.value->is_node() && !pair.value->extra_debug_data.has("node_parent")) {
-			node_blurb->add_line(pair.value->extra_debug_data["node_name"]);
-		}
+	_push_overview_blurb(snapshot_a_name + " Overview", snapshot_data);
+	if (diff_data) {
+		_push_overview_blurb(snapshot_b_name + " Overview", diff_data);
 	}
-	object_blurb->end_list();
-	node_blurb->end_list();
-	refcounted_blurb->end_list();
 
-	blurb_list->add_child(object_blurb);
-	blurb_list->add_child(node_blurb);
-	blurb_list->add_child(refcounted_blurb);
+	_push_node_blurb(snapshot_a_name + " Nodes", snapshot_data);
+	if (diff_data) {
+		_push_node_blurb(snapshot_b_name + " Nodes", diff_data);
+	}
+
+	_push_refcounted_blurb(snapshot_a_name + " RefCounteds", snapshot_data);
+	if (diff_data) {
+		_push_refcounted_blurb(snapshot_b_name + " RefCounteds", diff_data);
+	}
+
+	_push_object_blurb(snapshot_a_name + " Objects", snapshot_data);
+	if (diff_data) {
+		_push_object_blurb(snapshot_b_name + " Objects", diff_data);
+	}
 }
 
 void SnapshotSummaryView::clear_snapshot() {
@@ -161,45 +153,132 @@ void SnapshotSummaryView::clear_snapshot() {
 	}
 	snapshot_data = nullptr;
 	diff_data = nullptr;
-	object_blurb = nullptr;
-	node_blurb = nullptr;
-	refcounted_blurb = nullptr;
 	explainer_text->set_visible(true);
 }
 
-SummaryBlurb::SummaryBlurb(const String &blurb_name, const String &blurb_description, bool open_list) {
+SummaryBlurb::SummaryBlurb(const String &title, const String &rtl_content) {
 	add_theme_constant_override("margin_left", 2);
 	add_theme_constant_override("margin_right", 2);
 	add_theme_constant_override("margin_top", 2);
 	add_theme_constant_override("margin_bottom", 2);
 
 	label = memnew(RichTextLabel);
+	label->add_theme_constant_override("line_separation", 6);
 	label->set_fit_content(true);
 	label->set_use_bbcode(true);
 	label->push_underline();
-	label->add_text(blurb_name);
+	label->push_bold();
+	label->add_text(title);
+	label->pop();
 	label->pop();
 	label->add_newline();
-	label->append_text(blurb_description);
+	label->append_text(rtl_content);
 	add_child(label);
+}
 
-	set_visible(false);
+void SnapshotSummaryView::_push_overview_blurb(const String &title, GameStateSnapshot *snapshot) {
+	String c = "";
 
-	if (open_list) {
-		start_list();
+	c += "[ul]\n";
+
+	c += "[i]Name:[/i] " + snapshot->name + "\n";
+	if (snapshot->snapshot_context.has("timestamp")) {
+		c += "[i]Timestamp:[/i] " + Time::get_singleton()->get_datetime_string_from_unix_time((double)snapshot->snapshot_context["timestamp"]) + "\n";
 	}
+	double bytes_to_mb = 0.000001;
+
+	if (snapshot->snapshot_context.has("mem_usage")) {
+		c += "[i]Memory Used:[/i] " + String::num((double)((uint64_t)snapshot->snapshot_context["mem_usage"]) * bytes_to_mb, 3) + " MB\n";
+	}
+	if (snapshot->snapshot_context.has("mem_max_usage")) {
+		c += "[i]Max Memory Used:[/i] " + String::num((double)((uint64_t)snapshot->snapshot_context["mem_max_usage"]) * bytes_to_mb, 3) + " MB\n";
+	}
+	if (snapshot->snapshot_context.has("mem_available")) {
+		// I'm guessing pretty hard about what this is supposed to be. It's hard coded to be -1 cast to a uint64 in Memory.h,
+		// so it _could_ be checking if we're on a 64 bit system, I think...
+		c += "[i]Max uint64 value:[/i] " + String::num_uint64((uint64_t)snapshot->snapshot_context["mem_available"]) + "\n";
+	}
+	c += "[i]Total Objects:[/i] " + itos(snapshot->Data.size()) + "\n";
+
+	int node_count = 0;
+	for (const KeyValue<ObjectID, SnapshotDataObject *> &pair : snapshot->Data) {
+		if (pair.value->is_node())
+			node_count++;
+	}
+	c += "[i]Total Nodes:[/i] " + itos(node_count) + "\n";
+
+	c += "[/ul]\n";
+
+	blurb_list->add_child(memnew(SummaryBlurb(title, c)));
 }
 
-void SummaryBlurb::start_list() {
-	label->push_list(0, RichTextLabel::ListType::LIST_DOTS, false);
+void SnapshotSummaryView::_push_node_blurb(const String &title, GameStateSnapshot *snapshot) {
+	List<String> nodes;
+	for (const KeyValue<ObjectID, SnapshotDataObject *> &pair : snapshot->Data) {
+		// if it's a node AND it doesn't have a parent node
+		if (pair.value->is_node() && !pair.value->extra_debug_data.has("node_parent")) {
+			nodes.push_back(pair.value->extra_debug_data["node_name"]);
+		}
+	}
+
+	if (nodes.size() == 0)
+		return;
+
+	String c = "Multiple root nodes [i](possible call to 'remove_child' without 'queue_free')[/i]\n";
+	c += "[ul]\n";
+	for (const String &node : nodes) {
+		c += node + "\n";
+	}
+	c += "[/ul]\n";
+
+	blurb_list->add_child(memnew(SummaryBlurb(title, c)));
 }
 
-void SummaryBlurb::add_line(const String &line) {
-	label->add_text(line);
-	label->add_newline();
-	set_visible(true);
+void SnapshotSummaryView::_push_refcounted_blurb(const String &title, GameStateSnapshot *snapshot) {
+	List<String> rcs;
+	for (const KeyValue<ObjectID, SnapshotDataObject *> &pair : snapshot->Data) {
+		if (pair.value->is_refcounted()) {
+			int ref_count = (uint64_t)pair.value->extra_debug_data["ref_count"];
+			Array ref_cycles = (Array)pair.value->extra_debug_data["ref_cycles"];
+
+			if (ref_count == ref_cycles.size()) {
+				rcs.push_back(pair.value->get_name());
+			}
+		}
+	}
+
+	if (rcs.size() == 0)
+		return;
+
+	String c = "RefCounted objects only referenced in cycles [i](cycles often indicate a memory leaks)[/i]\n";
+	c += "[ul]\n";
+	for (const String &rc : rcs) {
+		c += rc + "\n";
+	}
+	c += "[/ul]\n";
+
+	blurb_list->add_child(memnew(SummaryBlurb(title, c)));
 }
 
-void SummaryBlurb::end_list() {
-	label->pop();
+void SnapshotSummaryView::_push_object_blurb(const String &title, GameStateSnapshot *snapshot) {
+	List<String> objects;
+	for (const KeyValue<ObjectID, SnapshotDataObject *> &pair : snapshot->Data) {
+		if (pair.value->inbound_references.size() == 0 && pair.value->outbound_references.size() == 0) {
+			if (pair.value->get_script() != nullptr) {
+				objects.push_back(pair.value->get_name());
+			}
+		}
+	}
+
+	if (objects.size() == 0)
+		return;
+
+	String c = "Scripted objects not referenced by any other objects [i](unreferenced objects may indicate a memory leak)[/i]\n";
+	c += "[ul]\n";
+	for (const String &object : objects) {
+		c += object + "\n";
+	}
+	c += "[/ul]\n";
+
+	blurb_list->add_child(memnew(SummaryBlurb(title, c)));
 }

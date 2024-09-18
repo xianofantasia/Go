@@ -42,11 +42,7 @@ class SummaryBlurb : public MarginContainer {
 
 public:
 	RichTextLabel *label;
-	SummaryBlurb(const String &blurb_name, const String &blurb_description, bool open_list = true);
-
-	void start_list();
-	void add_line(const String &line);
-	void end_list();
+	SummaryBlurb(const String &title, const String &rtl_content);
 };
 
 class SnapshotSummaryView : public SnapshotView {
@@ -56,9 +52,10 @@ protected:
 	VBoxContainer *blurb_list;
 	CenterContainer *explainer_text;
 
-	SummaryBlurb *object_blurb;
-	SummaryBlurb *node_blurb;
-	SummaryBlurb *refcounted_blurb;
+	void _push_overview_blurb(const String &title, GameStateSnapshot *snapshot);
+	void _push_node_blurb(const String &title, GameStateSnapshot *snapshot);
+	void _push_refcounted_blurb(const String &title, GameStateSnapshot *snapshot);
+	void _push_object_blurb(const String &title, GameStateSnapshot *snapshot);
 
 public:
 	SnapshotSummaryView();
