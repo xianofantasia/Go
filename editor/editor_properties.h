@@ -650,6 +650,7 @@ protected:
 	void _notification(int p_what);
 
 public:
+	void gui_input(const Ref<InputEvent> &p_ev) override;
 	virtual void update_property() override;
 	void setup(const Vector<StringName> &p_valid_types, bool p_use_path_from_scene_root = true, bool p_editing_node = false);
 	EditorPropertyNodePath();
