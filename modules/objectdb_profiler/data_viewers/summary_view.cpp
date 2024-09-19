@@ -217,7 +217,7 @@ void SnapshotSummaryView::_push_node_blurb(const String &p_title, GameStateSnaps
 		}
 	}
 
-	if (nodes.size() == 0) {
+	if (nodes.size() <= 1) {
 		return;
 	}
 

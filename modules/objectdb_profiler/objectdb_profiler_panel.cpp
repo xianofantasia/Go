@@ -60,6 +60,8 @@
 #include "snapshot_data.h"
 
 void ObjectDBProfilerPanel::_request_object_snapshot() {
+	take_snapshot->set_disabled(true);
+	take_snapshot->set_text("Taking Snapshot");
 	Array args;
 	args.push_back(next_request_id++);
 	EditorDebuggerNode::get_singleton()->get_current_debugger()->send_message("snapshot:request_prepare_snapshot", args);
@@ -93,6 +95,8 @@ bool ObjectDBProfilerPanel::handle_debug_message(const String &p_message, const 
 		}
 
 		receive_snapshot(chunk.data);
+		take_snapshot->set_disabled(false);
+		take_snapshot->set_text("Take ObjectDB Snapshot");
 		snapshot_chunks.erase(request_id);
 		return true;
 	}
@@ -238,6 +242,7 @@ void ObjectDBProfilerPanel::clear_snapshot() {
 }
 
 void ObjectDBProfilerPanel::set_enabled(bool p_enabled) {
+	take_snapshot->set_text("Take ObjectDB Snapshot");
 	take_snapshot->set_disabled(!p_enabled);
 }
 
