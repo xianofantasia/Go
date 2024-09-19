@@ -52,11 +52,9 @@ enum RC_MENU_OPERATIONS {
 	DELETE,
 };
 
-struct SnapshotChunk {
-	int request_id;
-	int total;
-	int received = 0;
-	Array data;
+struct PartialSnapshot {
+	int total_length;
+	String data;
 };
 
 // UI loaded by the debugger
@@ -72,7 +70,7 @@ protected:
 	PopupMenu *rmb_menu;
 	OptionButton *diff_button;
 	HashMap<int, String> diff_options;
-	HashMap<int, SnapshotChunk> snapshot_chunks;
+	HashMap<int, PartialSnapshot> partial_snapshots;
 
 	List<SnapshotView *> views;
 	Ref<GameStateSnapshotRef> current_snapshot;
@@ -89,11 +87,12 @@ protected:
 	void _update_diff_items();
 	void _edit_snapshot_name();
 	void _view_tab_changed(int p_tab_idx);
+	String _to_mb(int x);
 
 public:
 	ObjectDBProfilerPanel();
 
-	void receive_snapshot(const Array &p_data);
+	void receive_snapshot(const String &p_data);
 	void show_snapshot(const String &p_snapshot_file_name, const String &p_snapshot_diff_file_name);
 	void clear_snapshot();
 	Ref<GameStateSnapshotRef> get_snapshot(const String &p_snapshot_file_name);

@@ -31,10 +31,11 @@
 #include "snapshot_collector.h"
 #include "snapshot_data.h"
 
+#include "core/core_bind.h"
 #include "core/debugger/engine_debugger.h"
 #include "core/object/object.h"
 
-PreparedChunks SnapshotCollector::prepared;
+HashMap<int, String> SnapshotCollector::pending_snapshots;
 
 void SnapshotCollector::initialize() {
 	EngineDebugger::register_message_capture("snapshot", EngineDebugger::Capture(nullptr, SnapshotCollector::parse_message));
@@ -95,47 +96,37 @@ void SnapshotCollector::snapshot_objects(Array *p_arr) {
 }
 
 Error SnapshotCollector::parse_message(void *p_user, const String &p_msg, const Array &p_args, bool &r_captured) {
-	SceneTree *scene_tree = SceneTree::get_singleton();
-	if (!scene_tree) {
-		return ERR_UNCONFIGURED;
-	}
-	LiveEditor *live_editor = LiveEditor::get_singleton();
-	if (!live_editor) {
-		return ERR_UNCONFIGURED;
-	}
-
 	r_captured = true;
 	if (p_msg == "request_prepare_snapshot") {
+		int request_id = (int)p_args.get(0);
 		Array objects;
 		SnapshotCollector::snapshot_objects(&objects);
-		int chunk_size = 100;
-		int chunk_count = ceil((double)objects.size() / (double)chunk_size);
-		int sequence_num = 0;
-		// These can get bigger than the transport layer can handle, so break it into chunks and reconstruct on the other side
-		prepared.chunks[(int)p_args.get(0)] = HashMap<int, Array>();
-		for (int i = 0; i < objects.size(); i += chunk_size) {
-			int max = MIN(objects.size(), i + chunk_size);
-			prepared.chunks[(int)p_args.get(0)][sequence_num++] = objects.slice(i, max);
-		}
+		// Debugger networking has a limit on both how many objects can be queued to send and how
+		// many bytes can be queued to send. Serializing to a string means we never hit the object
+		// limit, and only have to deal with the byte limit.
+		pending_snapshots[request_id] = core_bind::Marshalls::get_singleton()->variant_to_base64(objects);
+
+		// tell the editor how long the snapshot is
 		Array resp;
-		resp.push_back(p_args.get(0));
-		resp.push_back(chunk_count);
+		resp.push_back(request_id);
+		resp.push_back(pending_snapshots[request_id].length());
 		EngineDebugger::get_singleton()->send_message("snapshot:snapshot_prepared", resp);
 
 	} else if (p_msg == "request_snapshot_chunk") {
 		int request_id = (int)p_args.get(0);
-		int chunk_id = (int)p_args.get(1);
+		int offset = (int)p_args.get(1);
+		int length = (int)p_args.get(2);
+		const String &snapshot_str = pending_snapshots[request_id];
 
 		Array resp;
 		resp.push_back(request_id);
-		resp.push_back(prepared.chunks[request_id][chunk_id]);
+		resp.push_back(snapshot_str.substr(offset, length));
 		EngineDebugger::get_singleton()->send_message("snapshot:snapshot_chunk", resp);
 
-		prepared.chunks[request_id].erase(chunk_id);
-		if (prepared.chunks[request_id].size() == 0) {
-			prepared.chunks.erase(request_id);
+		// If we sent the last part of the string, delete it locally
+		if (offset + length >= snapshot_str.length()) {
+			pending_snapshots.erase(request_id);
 		}
-
 	} else {
 		r_captured = false;
 	}

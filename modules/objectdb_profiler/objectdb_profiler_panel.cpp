@@ -59,9 +59,13 @@
 #include "scene/gui/tree.h"
 #include "snapshot_data.h"
 
+// ObjectDB snapshots are very large. In remote_debugger_peer.cpp, the max in_buf and out_buf size is 8mb.
+// Snapshots are typically larger than that, so we send them 6mb at a time. Leaving 2mb for other data.
+const int SNAPSHOT_CHUNK_SIZE = 6 << 20;
+
 void ObjectDBProfilerPanel::_request_object_snapshot() {
 	take_snapshot->set_disabled(true);
-	take_snapshot->set_text("Taking Snapshot");
+	take_snapshot->set_text("Generating Snapshot");
 	Array args;
 	args.push_back(next_request_id++);
 	EditorDebuggerNode::get_singleton()->get_current_debugger()->send_message("snapshot:request_prepare_snapshot", args);
@@ -70,40 +74,41 @@ void ObjectDBProfilerPanel::_request_object_snapshot() {
 bool ObjectDBProfilerPanel::handle_debug_message(const String &p_message, const Array &p_data, int p_index) {
 	if (p_message == "snapshot:snapshot_prepared") {
 		int request_id = p_data.get(0);
-		int total = p_data.get(1);
-		snapshot_chunks[request_id] = SnapshotChunk();
-		snapshot_chunks[request_id].request_id = request_id;
-		snapshot_chunks[request_id].total = total;
+		int total_length = p_data.get(1);
+		partial_snapshots[request_id] = PartialSnapshot();
+		partial_snapshots[request_id].total_length = total_length;
 		Array args;
 		args.push_back(request_id);
 		args.push_back(0);
+		args.push_back(SNAPSHOT_CHUNK_SIZE);
+		take_snapshot->set_text("Receiving Snapshot (0/" + _to_mb(total_length) + " mb)");
 		EditorDebuggerNode::get_singleton()->get_current_debugger()->send_message("snapshot:request_snapshot_chunk", args);
 		return true;
 	}
 	if (p_message == "snapshot:snapshot_chunk") {
 		int request_id = p_data.get(0);
-		Array new_chunk = p_data.get(1);
-		SnapshotChunk &chunk = snapshot_chunks[request_id];
-		chunk.data.append_array(new_chunk);
-		chunk.received++;
-		if (chunk.received != chunk.total) {
+		PartialSnapshot &chunk = partial_snapshots[request_id];
+		chunk.data += (String)p_data.get(1);
+		take_snapshot->set_text("Receiving Snapshot (" + _to_mb(chunk.data.length()) + "/" + _to_mb(chunk.total_length) + " mb)");
+		if (chunk.data.length() != chunk.total_length) {
 			Array args;
 			args.push_back(request_id);
-			args.push_back(chunk.received);
+			args.push_back(chunk.data.length());
+			args.push_back(SNAPSHOT_CHUNK_SIZE);
 			EditorDebuggerNode::get_singleton()->get_current_debugger()->send_message("snapshot:request_snapshot_chunk", args);
 			return true;
 		}
 
-		receive_snapshot(chunk.data);
-		take_snapshot->set_disabled(false);
-		take_snapshot->set_text("Take ObjectDB Snapshot");
-		snapshot_chunks.erase(request_id);
+		take_snapshot->set_text("Visualizing Snapshot");
+		// Wait a frame just so the button has a chance to update it's text so the user knows what's going on
+		get_tree()->connect("process_frame", callable_mp(this, &ObjectDBProfilerPanel::receive_snapshot).bind(chunk.data), CONNECT_ONE_SHOT);
+		partial_snapshots.erase(request_id);
 		return true;
 	}
 	return false;
 }
 
-void ObjectDBProfilerPanel::receive_snapshot(const Array &p_data) {
+void ObjectDBProfilerPanel::receive_snapshot(const String &data_str) {
 	double ts = Time::get_singleton()->get_unix_time_from_system();
 	String snapshot_file_name = Time::get_singleton()->get_datetime_string_from_unix_time(ts).replace("T", "_").replace(":", "-");
 	Ref<DirAccess> snapshot_dir = _get_and_create_snapshot_storage_dir();
@@ -117,7 +122,6 @@ void ObjectDBProfilerPanel::receive_snapshot(const Array &p_data) {
 			// IMPORTANT: This is a version number for the .odb_snapshot file format. If you change the format of the .odb_snapshot file, increment this number.
 			// Currently, the file is a version number on line 1 and serialized snapshot data on line 2.
 			file->store_line("1");
-			String data_str = core_bind::Marshalls::get_singleton()->variant_to_base64(p_data, true);
 			file->store_string(data_str);
 			file->close(); // RAII could do this typically, but we want to read the file in _show_selected_snapshot, so we have to finalize the write before that
 
@@ -130,6 +134,8 @@ void ObjectDBProfilerPanel::receive_snapshot(const Array &p_data) {
 			ERR_PRINT("Could not persist ObjectDB Snapshot: " + String(error_names[err]));
 		}
 	}
+	take_snapshot->set_disabled(false);
+	take_snapshot->set_text("Take ObjectDB Snapshot");
 }
 
 Ref<DirAccess> ObjectDBProfilerPanel::_get_and_create_snapshot_storage_dir() {
@@ -432,4 +438,8 @@ void ObjectDBProfilerPanel::_update_diff_items() {
 
 void ObjectDBProfilerPanel::_apply_diff(int p_item_idx) {
 	_show_selected_snapshot();
+}
+
+String ObjectDBProfilerPanel::_to_mb(int x) {
+	return String::num((double)x / (double)(1 << 20), 2);
 }

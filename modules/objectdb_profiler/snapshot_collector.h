@@ -35,13 +35,9 @@
 #include "core/templates/hash_map.h"
 #include "core/variant/array.h"
 
-struct PreparedChunks {
-	HashMap<int, HashMap<int, Array>> chunks;
-};
-
 class SnapshotCollector {
 public:
-	static PreparedChunks prepared;
+	static HashMap<int, String> pending_snapshots;
 	static void snapshot_objects(Array *p_arr);
 	static Error parse_message(void *p_user, const String &p_msg, const Array &p_args, bool &r_captured);
 	static void initialize();

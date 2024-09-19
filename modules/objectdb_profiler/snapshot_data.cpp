@@ -229,7 +229,7 @@ Ref<GameStateSnapshotRef> GameStateSnapshot::create_ref(const String &p_snapshot
 	// Snapshots may have been created by an older version of the editor. Handle parsing old snapshot versions here based on the version number.
 	switch (sn->snapshot_version) {
 		case 1: {
-			Array snapshot_data = core_bind::Marshalls::get_singleton()->base64_to_variant(p_snapshot_string, true);
+			Array snapshot_data = core_bind::Marshalls::get_singleton()->base64_to_variant(p_snapshot_string);
 			sn->snapshot_context = snapshot_data.get(0);
 
 			for (int i = 1; i < snapshot_data.size(); i += 4) {
