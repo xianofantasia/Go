@@ -53,12 +53,7 @@ bool ObjectDBProfilerDebuggerPlugin::has_capture(const String &p_capture) const 
 
 bool ObjectDBProfilerDebuggerPlugin::capture(const String &p_message, const Array &p_data, int p_index) {
 	ERR_FAIL_COND_V(debugger_panel == nullptr, false);
-
-	if (p_message == "snapshot:object_snapshot") {
-		debugger_panel->receive_snapshot(p_data);
-		return true;
-	}
-	return false;
+	return debugger_panel->handle_debug_message(p_message, p_data, p_index);
 }
 
 void ObjectDBProfilerDebuggerPlugin::setup_session(int p_session_id) {
@@ -67,12 +62,7 @@ void ObjectDBProfilerDebuggerPlugin::setup_session(int p_session_id) {
 	debugger_panel = memnew(ObjectDBProfilerPanel);
 	session->connect(SNAME("started"), callable_mp(debugger_panel, &ObjectDBProfilerPanel::set_enabled).bind(true));
 	session->connect(SNAME("stopped"), callable_mp(debugger_panel, &ObjectDBProfilerPanel::set_enabled).bind(false));
-	debugger_panel->connect(SNAME("request_snapshot"), callable_mp(this, &ObjectDBProfilerDebuggerPlugin::_request_object_snapshot));
 	session->add_session_tab(debugger_panel);
-}
-
-void ObjectDBProfilerDebuggerPlugin::_request_object_snapshot() {
-	EditorDebuggerNode::get_singleton()->get_current_debugger()->send_message("snapshot:request_object_snapshot", Array());
 }
 
 ObjectDBProfilerPlugin::ObjectDBProfilerPlugin() {

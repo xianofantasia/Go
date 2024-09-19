@@ -59,6 +59,46 @@
 #include "scene/gui/tree.h"
 #include "snapshot_data.h"
 
+void ObjectDBProfilerPanel::_request_object_snapshot() {
+	Array args;
+	args.push_back(next_request_id++);
+	EditorDebuggerNode::get_singleton()->get_current_debugger()->send_message("snapshot:request_prepare_snapshot", args);
+}
+
+bool ObjectDBProfilerPanel::handle_debug_message(const String &p_message, const Array &p_data, int p_index) {
+	if (p_message == "snapshot:snapshot_prepared") {
+		int request_id = p_data.get(0);
+		int total = p_data.get(1);
+		snapshot_chunks[request_id] = SnapshotChunk();
+		snapshot_chunks[request_id].request_id = request_id;
+		snapshot_chunks[request_id].total = total;
+		Array args;
+		args.push_back(request_id);
+		args.push_back(0);
+		EditorDebuggerNode::get_singleton()->get_current_debugger()->send_message("snapshot:request_snapshot_chunk", args);
+		return true;
+	}
+	if (p_message == "snapshot:snapshot_chunk") {
+		int request_id = p_data.get(0);
+		Array new_chunk = p_data.get(1);
+		SnapshotChunk &chunk = snapshot_chunks[request_id];
+		chunk.data.append_array(new_chunk);
+		chunk.received++;
+		if (chunk.received != chunk.total) {
+			Array args;
+			args.push_back(request_id);
+			args.push_back(chunk.received);
+			EditorDebuggerNode::get_singleton()->get_current_debugger()->send_message("snapshot:request_snapshot_chunk", args);
+			return true;
+		}
+
+		receive_snapshot(chunk.data);
+		snapshot_chunks.erase(request_id);
+		return true;
+	}
+	return false;
+}
+
 void ObjectDBProfilerPanel::receive_snapshot(const Array &p_data) {
 	double ts = Time::get_singleton()->get_unix_time_from_system();
 	String snapshot_file_name = Time::get_singleton()->get_datetime_string_from_unix_time(ts).replace("T", "_").replace(":", "-");
@@ -97,11 +137,12 @@ Ref<DirAccess> ObjectDBProfilerPanel::_get_and_create_snapshot_storage_dir() {
 	}
 	Error err = da->change_dir("objectdb_snapshots");
 	if (err != OK) {
-		err = da->make_dir("objectdb_snapshots");
-	}
-	if (err != OK) {
-		ERR_PRINT("Could not create ObjectDB Snapshots directory: " + da->get_current_dir());
-		return nullptr;
+		Error err_mk = da->make_dir("objectdb_snapshots");
+		Error err_ch = da->change_dir("objectdb_snapshots");
+		if (err_mk != OK || err_ch != OK) {
+			ERR_PRINT("Could not create ObjectDB Snapshots directory: " + da->get_current_dir());
+			return nullptr;
+		}
 	}
 	return da;
 }
@@ -187,14 +228,6 @@ void ObjectDBProfilerPanel::_view_tab_changed(int p_tab_idx) {
 	if (snapshot != nullptr && !view->is_showing_snapshot(snapshot, diff)) {
 		view->show_snapshot(snapshot, diff);
 	}
-}
-
-void ObjectDBProfilerPanel::_bind_methods() {
-	ADD_SIGNAL(MethodInfo("request_snapshot"));
-}
-
-void ObjectDBProfilerPanel::_request_object_snapshot() {
-	emit_signal("request_snapshot");
 }
 
 void ObjectDBProfilerPanel::clear_snapshot() {

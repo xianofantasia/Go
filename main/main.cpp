@@ -3278,7 +3278,7 @@ Error Main::setup2(bool p_show_boot_logo) {
 
 #ifdef TOOLS_ENABLED
 
-	if (editor) {
+	if (editor || project_manager) {
 		ClassDB::set_current_api(ClassDB::API_EDITOR);
 		register_editor_types();
 

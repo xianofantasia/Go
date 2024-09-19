@@ -53,7 +53,7 @@ class ObjectDBProfilerDebuggerPlugin : public EditorDebuggerPlugin {
 protected:
 	class ObjectDBProfilerPanel *debugger_panel;
 
-	void _request_object_snapshot();
+	void _request_object_snapshot(int p_request_id);
 
 public:
 	ObjectDBProfilerDebuggerPlugin() {}

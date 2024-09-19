@@ -34,6 +34,8 @@
 #include "core/debugger/engine_debugger.h"
 #include "core/object/object.h"
 
+PreparedChunks SnapshotCollector::prepared;
+
 void SnapshotCollector::initialize() {
 	EngineDebugger::register_message_capture("snapshot", EngineDebugger::Capture(nullptr, SnapshotCollector::parse_message));
 }
@@ -103,10 +105,36 @@ Error SnapshotCollector::parse_message(void *p_user, const String &p_msg, const 
 	}
 
 	r_captured = true;
-	if (p_msg == "request_object_snapshot") {
+	if (p_msg == "request_prepare_snapshot") {
 		Array objects;
 		SnapshotCollector::snapshot_objects(&objects);
-		EngineDebugger::get_singleton()->send_message("snapshot:object_snapshot", objects);
+		int chunk_size = 100;
+		int chunk_count = ceil((double)objects.size() / (double)chunk_size);
+		int sequence_num = 0;
+		// These can get bigger than the transport layer can handle, so break it into chunks and reconstruct on the other side
+		prepared.chunks[(int)p_args.get(0)] = HashMap<int, Array>();
+		for (int i = 0; i < objects.size(); i += chunk_size) {
+			int max = MIN(objects.size(), i + chunk_size);
+			prepared.chunks[(int)p_args.get(0)][sequence_num++] = objects.slice(i, max);
+		}
+		Array resp;
+		resp.push_back(p_args.get(0));
+		resp.push_back(chunk_count);
+		EngineDebugger::get_singleton()->send_message("snapshot:snapshot_prepared", resp);
+
+	} else if (p_msg == "request_snapshot_chunk") {
+		int request_id = (int)p_args.get(0);
+		int chunk_id = (int)p_args.get(1);
+
+		Array resp;
+		resp.push_back(request_id);
+		resp.push_back(prepared.chunks[request_id][chunk_id]);
+		EngineDebugger::get_singleton()->send_message("snapshot:snapshot_chunk", resp);
+
+		prepared.chunks[request_id].erase(chunk_id);
+		if (prepared.chunks[request_id].size() == 0) {
+			prepared.chunks.erase(request_id);
+		}
 
 	} else {
 		r_captured = false;

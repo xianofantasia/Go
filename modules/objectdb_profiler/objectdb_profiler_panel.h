@@ -52,17 +52,27 @@ enum RC_MENU_OPERATIONS {
 	DELETE,
 };
 
+struct SnapshotChunk {
+	int request_id;
+	int total;
+	int received = 0;
+	Array data;
+};
+
 // UI loaded by the debugger
 class ObjectDBProfilerPanel : public Control {
 	GDCLASS(ObjectDBProfilerPanel, Control);
 
 protected:
+	int next_request_id = 0;
+
 	Tree *snapshot_list;
 	Button *take_snapshot;
 	TabContainer *view_tabs;
 	PopupMenu *rmb_menu;
 	OptionButton *diff_button;
 	HashMap<int, String> diff_options;
+	HashMap<int, SnapshotChunk> snapshot_chunks;
 
 	List<SnapshotView *> views;
 	Ref<GameStateSnapshotRef> current_snapshot;
@@ -82,7 +92,6 @@ protected:
 
 public:
 	ObjectDBProfilerPanel();
-	static void _bind_methods();
 
 	void receive_snapshot(const Array &p_data);
 	void show_snapshot(const String &p_snapshot_file_name, const String &p_snapshot_diff_file_name);
@@ -90,6 +99,8 @@ public:
 	Ref<GameStateSnapshotRef> get_snapshot(const String &p_snapshot_file_name);
 	void set_enabled(bool enabled);
 	void add_view(SnapshotView *p_to_add);
+
+	bool handle_debug_message(const String &p_message, const Array &p_data, int p_index);
 };
 
 #endif // OBJECTDB_PROFILER_PANEL_H
