@@ -46,60 +46,50 @@
 
 const int SNAPSHOT_CACHE_MAX_SIZE = 10;
 
+enum RC_MENU_OPERATIONS {
+	RENAME,
+	SHOW_IN_FOLDER,
+	DELETE,
+};
+
 // UI loaded by the debugger
 class ObjectDBProfilerPanel : public Control {
 	GDCLASS(ObjectDBProfilerPanel, Control);
 
-	static ObjectDBProfilerPanel *singleton;
-
 protected:
 	Tree *snapshot_list;
 	Button *take_snapshot;
-
 	TabContainer *view_tabs;
-	List<SnapshotView *> views;
-
 	PopupMenu *rmb_menu;
 	OptionButton *diff_button;
+	HashMap<int, String> diff_options;
 
-	List<String> snapshot_names;
+	List<SnapshotView *> views;
 	Ref<GameStateSnapshotRef> current_snapshot;
 	Ref<GameStateSnapshotRef> diff_snapshot;
-
-	HashMap<int, String> diff_options;
+	LRUCache<String, Ref<GameStateSnapshotRef>> snapshot_cache;
 
 	void _request_object_snapshot();
 	void _show_selected_snapshot();
-
 	Ref<DirAccess> _get_and_create_snapshot_storage_dir();
-
-	TreeItem *_add_snapshot_button(const String &snapshot_file_name, const String &full_file_path);
-
-	LRUCache<String, Ref<GameStateSnapshotRef>> snapshot_cache;
-
+	TreeItem *_add_snapshot_button(const String &p_snapshot_file_name, const String &p_full_file_path);
 	void _snapshot_rmb(const Vector2 &p_pos, MouseButton p_button);
 	void _rmb_menu_pressed(int p_tool, bool p_confirm_override);
-	void _apply_diff(int item_idx);
+	void _apply_diff(int p_item_idx);
 	void _update_diff_items();
 	void _edit_snapshot_name();
-	void _view_tab_changed(int tab_idx);
+	void _view_tab_changed(int p_tab_idx);
 
 public:
 	ObjectDBProfilerPanel();
-	~ObjectDBProfilerPanel();
 	static void _bind_methods();
 
 	void receive_snapshot(const Array &p_data);
-	void show_snapshot(const String &snapshot_file_name, const String &snapshot_diff_file_name);
+	void show_snapshot(const String &p_snapshot_file_name, const String &p_snapshot_diff_file_name);
 	void clear_snapshot();
+	Ref<GameStateSnapshotRef> get_snapshot(const String &p_snapshot_file_name);
 	void set_enabled(bool enabled);
-
-	Ref<GameStateSnapshotRef> get_snapshot(const String &snapshot_file_name);
-
-	void add_view(SnapshotView *to_add);
-
-	static ObjectDBProfilerPanel *get_singleton() { return singleton; }
-	const List<String> &get_snapshot_names() { return snapshot_names; }
+	void add_view(SnapshotView *p_to_add);
 };
 
 #endif // OBJECTDB_PROFILER_PANEL_H

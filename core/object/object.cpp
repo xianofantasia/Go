@@ -239,7 +239,7 @@ void Object::set(const StringName &p_name, const Variant &p_value, bool *r_valid
 			if (r_valid) {
 				*r_valid = true;
 			}
-			goto DONE;
+			goto done;
 		}
 	}
 
@@ -248,14 +248,14 @@ void Object::set(const StringName &p_name, const Variant &p_value, bool *r_valid
 			if (r_valid) {
 				*r_valid = true;
 			}
-			goto DONE;
+			goto done;
 		}
 	}
 
 	// Try built-in setter.
 	{
 		if (ClassDB::set_property(this, p_name, p_value, r_valid)) {
-			goto DONE;
+			goto done;
 		}
 	}
 
@@ -264,7 +264,7 @@ void Object::set(const StringName &p_name, const Variant &p_value, bool *r_valid
 		if (r_valid) {
 			*r_valid = true;
 		}
-		goto DONE;
+		goto done;
 
 	} else {
 		Variant **V = metadata_properties.getptr(p_name);
@@ -273,14 +273,14 @@ void Object::set(const StringName &p_name, const Variant &p_value, bool *r_valid
 			if (r_valid) {
 				*r_valid = true;
 			}
-			goto DONE;
+			goto done;
 		} else if (p_name.operator String().begins_with("metadata/")) {
 			// Must exist, otherwise duplicate() will not work.
 			set_meta(p_name.operator String().replace_first("metadata/", ""), p_value);
 			if (r_valid) {
 				*r_valid = true;
 			}
-			goto DONE;
+			goto done;
 		}
 	}
 
@@ -292,7 +292,7 @@ void Object::set(const StringName &p_name, const Variant &p_value, bool *r_valid
 			if (r_valid) {
 				*r_valid = true;
 			}
-			goto DONE;
+			goto done;
 		}
 	}
 #endif
@@ -302,14 +302,14 @@ void Object::set(const StringName &p_name, const Variant &p_value, bool *r_valid
 		if (r_valid) {
 			*r_valid = true;
 		}
-		goto DONE;
+		goto done;
 	}
 
 	if (r_valid) {
 		*r_valid = false;
 	}
 
-DONE:
+done:
 #ifdef DEBUG_ENABLED
 	ObjectDB::writes_blocked.post();
 #endif

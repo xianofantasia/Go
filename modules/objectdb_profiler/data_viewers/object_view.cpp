@@ -116,7 +116,6 @@ void SnapshotObjectView::show_snapshot(GameStateSnapshot *p_data, GameStateSnaps
 	object_list->set_h_size_flags(SizeFlags::SIZE_EXPAND_FILL);
 	object_list->set_v_size_flags(SizeFlags::SIZE_EXPAND_FILL);
 
-	// list of objects within the selected class
 	object_details = memnew(VBoxContainer);
 	object_details->set_custom_minimum_size(Size2(200, 0) * EDSCALE);
 	objects_view->add_child(object_details);
@@ -135,18 +134,18 @@ void SnapshotObjectView::show_snapshot(GameStateSnapshot *p_data, GameStateSnaps
 	object_list->set_selected(object_list->get_root()->get_first_child());
 }
 
-void SnapshotObjectView::_insert_data(GameStateSnapshot *snapshot, const String &name) {
-	for (const KeyValue<ObjectID, SnapshotDataObject *> &pair : snapshot->Data) {
+void SnapshotObjectView::_insert_data(GameStateSnapshot *p_snapshot, const String &p_name) {
+	for (const KeyValue<ObjectID, SnapshotDataObject *> &pair : p_snapshot->objects) {
 		TreeItem *item = object_list->create_item(object_list->get_root());
-		int idx = 0;
+		int offset = 0;
 		if (diff_data) {
-			item->set_text(idx, name);
-			idx++;
+			item->set_text(0, p_name);
+			offset = 1;
 		}
-		item->set_text(idx++, pair.value->type_name);
-		item->set_text(idx++, pair.value->get_name());
-		item->set_text(idx++, String::num_uint64(pair.value->inbound_references.size()));
-		item->set_text(idx++, String::num_uint64(pair.value->outbound_references.size()));
+		item->set_text(offset + 0, pair.value->type_name);
+		item->set_text(offset + 1, pair.value->get_name());
+		item->set_text(offset + 2, String::num_uint64(pair.value->inbound_references.size()));
+		item->set_text(offset + 3, String::num_uint64(pair.value->outbound_references.size()));
 		item_data_map[item] = pair.value;
 		data_item_map[pair.value] = item;
 	}
@@ -178,7 +177,7 @@ void SnapshotObjectView::_object_selected() {
 	TreeItem *ib_root = inbound_tree->create_item();
 	for (const KeyValue<String, ObjectID> &ob : d->inbound_references) {
 		TreeItem *i = inbound_tree->create_item(ib_root);
-		SnapshotDataObject *target = d->snapshot->Data[ob.value];
+		SnapshotDataObject *target = d->snapshot->objects[ob.value];
 		i->set_text(0, target->get_name());
 		i->set_text(1, ob.key);
 		reference_item_map[i] = data_item_map[target];
@@ -189,16 +188,16 @@ void SnapshotObjectView::_object_selected() {
 	TreeItem *ob_root = outbound_tree->create_item();
 	for (const KeyValue<String, ObjectID> &ob : d->outbound_references) {
 		TreeItem *i = outbound_tree->create_item(ob_root);
-		SnapshotDataObject *target = d->snapshot->Data[ob.value];
+		SnapshotDataObject *target = d->snapshot->objects[ob.value];
 		i->set_text(0, ob.key);
 		i->set_text(1, target->get_name());
 		reference_item_map[i] = data_item_map[target];
 	}
 }
 
-void SnapshotObjectView::_reference_selected(Tree *source_tree) {
-	TreeItem *ref_item = source_tree->get_selected();
-	Tree *other_tree = source_tree == inbound_tree ? outbound_tree : inbound_tree;
+void SnapshotObjectView::_reference_selected(Tree *p_source_tree) {
+	TreeItem *ref_item = p_source_tree->get_selected();
+	Tree *other_tree = p_source_tree == inbound_tree ? outbound_tree : inbound_tree;
 	other_tree->deselect_all();
 	TreeItem *other = reference_item_map[ref_item];
 	if (other) {
@@ -212,16 +211,16 @@ void SnapshotObjectView::_reference_selected(Tree *source_tree) {
 	}
 }
 
-Tree *SnapshotObjectView::_make_references_list(Control *container, const String &name, const String &col_1, const String &col_2) {
+Tree *SnapshotObjectView::_make_references_list(Control *p_container, const String &p_name, const String &p_col_1, const String &p_col_2) {
 	VBoxContainer *vbox = memnew(VBoxContainer);
 	vbox->set_h_size_flags(SizeFlags::SIZE_EXPAND_FILL);
 	vbox->set_v_size_flags(SizeFlags::SIZE_EXPAND_FILL);
 	vbox->add_theme_constant_override("separation", 4);
-	container->add_child(vbox);
+	p_container->add_child(vbox);
 
 	vbox->set_custom_minimum_size(Vector2(300, 0) * EDSCALE);
 
-	RichTextLabel *lbl = memnew(RichTextLabel("[center]" + name + "[center]"));
+	RichTextLabel *lbl = memnew(RichTextLabel("[center]" + p_name + "[center]"));
 	lbl->set_fit_content(true);
 	lbl->set_use_bbcode(true);
 	vbox->add_child(lbl);
@@ -232,10 +231,10 @@ Tree *SnapshotObjectView::_make_references_list(Control *container, const String
 	tree->set_hide_root(true);
 	tree->set_columns(2);
 	tree->set_column_titles_visible(true);
-	tree->set_column_title(0, col_1);
+	tree->set_column_title(0, p_col_1);
 	tree->set_column_expand(0, true);
 	tree->set_column_clip_content(0, false);
-	tree->set_column_title(1, col_2);
+	tree->set_column_title(1, p_col_2);
 	tree->set_column_expand(1, true);
 	tree->set_column_clip_content(1, false);
 	tree->set_h_size_flags(SizeFlags::SIZE_EXPAND_FILL);

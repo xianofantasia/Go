@@ -99,7 +99,7 @@ void SnapshotNodeView::show_snapshot(GameStateSnapshot *p_data, GameStateSnapsho
 	choose_object_menu->connect(SceneStringName(id_pressed), callable_mp(this, &SnapshotNodeView::_choose_object_pressed).bind(false));
 }
 
-NodeTreeElements SnapshotNodeView::_make_node_tree(const String &tree_name, GameStateSnapshot *snapshot) {
+NodeTreeElements SnapshotNodeView::_make_node_tree(const String &p_tree_name, GameStateSnapshot *p_snapshot) {
 	NodeTreeElements elements;
 	elements.root = memnew(VBoxContainer);
 	elements.root->set_anchors_preset(LayoutPreset::PRESET_FULL_RECT);
@@ -114,7 +114,7 @@ NodeTreeElements SnapshotNodeView::_make_node_tree(const String &tree_name, Game
 	elements.tree->set_allow_reselect(true);
 	elements.tree->set_columns(1);
 	elements.tree->set_column_titles_visible(true);
-	elements.tree->set_column_title(0, tree_name);
+	elements.tree->set_column_title(0, p_tree_name);
 	elements.tree->set_column_expand(0, true);
 	elements.tree->set_column_clip_content(0, false);
 	elements.tree->set_column_custom_minimum_width(0, 150 * EDSCALE);
@@ -128,31 +128,35 @@ NodeTreeElements SnapshotNodeView::_make_node_tree(const String &tree_name, Game
 	return elements;
 }
 
-void SnapshotNodeView::_node_selected(Tree *tree_selected_from) {
-	active_tree = tree_selected_from;
+void SnapshotNodeView::_node_selected(Tree *p_tree_selected_from) {
+	active_tree = p_tree_selected_from;
 	if (diff_tree.tree) {
 		// deselect nodes in non-active tree, if needed
-		if (active_tree == main_tree.tree)
+		if (active_tree == main_tree.tree) {
 			diff_tree.tree->deselect_all();
-		if (active_tree == diff_tree.tree)
+		}
+		if (active_tree == diff_tree.tree) {
 			main_tree.tree->deselect_all();
+		}
 	}
-	// for now, there is no way to choose which item you view if you're in combined snapshot view
 
-	List<SnapshotDataObject *> &objects = tree_item_owners[tree_selected_from->get_selected()];
-	if (objects.size() == 0)
+	List<SnapshotDataObject *> &objects = tree_item_owners[p_tree_selected_from->get_selected()];
+	if (objects.size() == 0) {
 		return;
+	}
 	if (objects.size() == 1) {
 		EditorNode::get_singleton()->push_item((Object *)(objects.get(0)));
 	}
 	if (objects.size() == 2) {
+		// This happens if we're in the combined diff view and the node exists in both trees
+		// The user has to specify which version of the node they want to see in the inspector
 		_show_choose_object_menu();
 	}
 }
 
-void SnapshotNodeView::_toggle_diff_mode(bool state) {
-	combined_diff_view = state;
-	show_snapshot(snapshot_data, diff_data); // redraw the whole thing when we toggle views
+void SnapshotNodeView::_toggle_diff_mode(bool p_state) {
+	combined_diff_view = p_state;
+	show_snapshot(snapshot_data, diff_data); // redraw everything when we toggle views
 }
 
 void SnapshotNodeView::_notification(int p_what) {
@@ -166,31 +170,31 @@ void SnapshotNodeView::_notification(int p_what) {
 	}
 }
 
-void SnapshotNodeView::_add_snapshot_to_tree(Tree *tree, GameStateSnapshot *snapshot, const String &diff_group_name) {
-	for (const KeyValue<ObjectID, SnapshotDataObject *> &kv : snapshot->Data) {
+void SnapshotNodeView::_add_snapshot_to_tree(Tree *p_tree, GameStateSnapshot *p_snapshot, const String &p_diff_group_name) {
+	for (const KeyValue<ObjectID, SnapshotDataObject *> &kv : p_snapshot->objects) {
 		if (kv.value->is_node() && !kv.value->extra_debug_data.has("node_parent")) {
-			TreeItem *root_item = _add_child_named(tree, tree->get_root(), kv.value, diff_group_name);
-			_add_object_to_tree(root_item, kv.value, diff_group_name);
+			TreeItem *root_item = _add_child_named(p_tree, p_tree->get_root(), kv.value, p_diff_group_name);
+			_add_object_to_tree(root_item, kv.value, p_diff_group_name);
 		}
 	}
 }
 
-void SnapshotNodeView::_add_object_to_tree(TreeItem *parent_item, SnapshotDataObject *data, const String &diff_group_name) {
-	for (const Variant &v : (Array)data->extra_debug_data["node_children"]) {
-		SnapshotDataObject *child_object = data->snapshot->Data[ObjectID((uint64_t)v)];
-		TreeItem *child_item = _add_child_named(parent_item->get_tree(), parent_item, child_object, diff_group_name);
-		_add_object_to_tree(child_item, child_object, diff_group_name);
+void SnapshotNodeView::_add_object_to_tree(TreeItem *p_parent_item, SnapshotDataObject *p_data, const String &p_diff_group_name) {
+	for (const Variant &v : (Array)p_data->extra_debug_data["node_children"]) {
+		SnapshotDataObject *child_object = p_data->snapshot->objects[ObjectID((uint64_t)v)];
+		TreeItem *child_item = _add_child_named(p_parent_item->get_tree(), p_parent_item, child_object, p_diff_group_name);
+		_add_object_to_tree(child_item, child_object, p_diff_group_name);
 	}
 }
 
-TreeItem *SnapshotNodeView::_add_child_named(Tree *tree, TreeItem *item, SnapshotDataObject *item_owner, const String &diff_group_name) {
-	bool has_group = !diff_group_name.is_empty();
-	const String &item_name = item_owner->extra_debug_data["node_name"];
+TreeItem *SnapshotNodeView::_add_child_named(Tree *p_tree, TreeItem *p_item, SnapshotDataObject *p_item_owner, const String &p_diff_group_name) {
+	bool has_group = !p_diff_group_name.is_empty();
+	const String &item_name = p_item_owner->extra_debug_data["node_name"];
 	// Find out if this node already exists
 	TreeItem *child_item = nullptr;
 	if (has_group) {
-		for (int idx = 0; idx < item->get_child_count(); idx++) {
-			TreeItem *child = item->get_child(idx);
+		for (int idx = 0; idx < p_item->get_child_count(); idx++) {
+			TreeItem *child = p_item->get_child(idx);
 			if (child->get_text(0) == item_name) {
 				child_item = child;
 				break;
@@ -199,43 +203,45 @@ TreeItem *SnapshotNodeView::_add_child_named(Tree *tree, TreeItem *item, Snapsho
 	}
 
 	if (child_item) {
-		// if it exists, clear out the diff flag because we now know it exists in both trees
-		child_item->clear_custom_bg_color(0); // if the item already exists, clear out the delta indicator because it's the same in both trees
+		// if it exists, clear the background color because we now know it exists in both trees
+		child_item->clear_custom_bg_color(0);
 	} else {
-		if (item_owner->extra_debug_data["node_is_scene_root"]) {
-			child_item = tree->get_root() ? tree->get_root() : tree->create_item();
+		// Add the new node and set it's background color to green or red depending on which snapshot it's a part of
+		if (p_item_owner->extra_debug_data["node_is_scene_root"]) {
+			child_item = p_tree->get_root() ? p_tree->get_root() : p_tree->create_item();
 		} else {
-			child_item = tree->create_item(item);
+			child_item = p_tree->create_item(p_item);
 		}
-		// item ? tree->create_item(item) : (tree->get_root() ? tree->get_root() : tree->create_item());
 		if (has_group) {
-			if (diff_group_name == "+") {
+			if (p_diff_group_name == "+") {
 				child_item->set_custom_bg_color(0, Color(0, 1, 0, 0.1));
 			}
-			if (diff_group_name == "-") {
+			if (p_diff_group_name == "-") {
 				child_item->set_custom_bg_color(0, Color(1, 0, 0, 0.1));
 			}
 		}
 	}
 
 	child_item->set_text(0, item_name);
-	_add_tree_item_owner(child_item, item_owner);
+	_add_tree_item_owner(child_item, p_item_owner);
 	return child_item;
 }
 
-void SnapshotNodeView::_add_tree_item_owner(TreeItem *item, SnapshotDataObject *owner) {
-	if (!tree_item_owners.has(item)) {
-		tree_item_owners.insert(item, List<SnapshotDataObject *>());
+// Each node in the tree may be part of one or two snapshots. This tracks that relationship
+// so we can display the correct data in the inspector if a node is clicked
+void SnapshotNodeView::_add_tree_item_owner(TreeItem *p_item, SnapshotDataObject *p_owner) {
+	if (!tree_item_owners.has(p_item)) {
+		tree_item_owners.insert(p_item, List<SnapshotDataObject *>());
 	}
-	tree_item_owners[item].push_back(owner);
+	tree_item_owners[p_item].push_back(p_owner);
 }
 
 void SnapshotNodeView::_refresh_icons() {
-	for (TreeItem *item : get_children_recursive(main_tree.tree)) {
+	for (TreeItem *item : _get_children_recursive(main_tree.tree)) {
 		item->set_icon(0, EditorNode::get_singleton()->get_class_icon(tree_item_owners[item].get(0)->type_name, ""));
 	}
 	if (diff_tree.tree) {
-		for (TreeItem *item : get_children_recursive(diff_tree.tree)) {
+		for (TreeItem *item : _get_children_recursive(diff_tree.tree)) {
 			item->set_icon(0, EditorNode::get_singleton()->get_class_icon(tree_item_owners[item].get(0)->type_name, ""));
 		}
 	}
@@ -254,9 +260,9 @@ void SnapshotNodeView::clear_snapshot() {
 	active_tree = nullptr;
 }
 
-void SnapshotNodeView::_choose_object_pressed(int object_idx, bool p_confirm_override) {
+void SnapshotNodeView::_choose_object_pressed(int p_object_idx, bool p_confirm_override) {
 	List<SnapshotDataObject *> &objects = tree_item_owners[active_tree->get_selected()];
-	EditorNode::get_singleton()->push_item((Object *)(objects.get(object_idx)));
+	EditorNode::get_singleton()->push_item((Object *)(objects.get(p_object_idx)));
 }
 
 void SnapshotNodeView::_show_choose_object_menu() {

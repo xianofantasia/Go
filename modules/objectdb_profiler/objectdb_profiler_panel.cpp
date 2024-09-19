@@ -59,14 +59,6 @@
 #include "scene/gui/tree.h"
 #include "snapshot_data.h"
 
-enum RC_MENU_OPERATIONS {
-	RENAME,
-	SHOW_IN_FOLDER,
-	DELETE,
-};
-
-ObjectDBProfilerPanel *ObjectDBProfilerPanel::singleton = nullptr;
-
 void ObjectDBProfilerPanel::receive_snapshot(const Array &p_data) {
 	double ts = Time::get_singleton()->get_unix_time_from_system();
 	String snapshot_file_name = Time::get_singleton()->get_datetime_string_from_unix_time(ts).replace("T", "_").replace(":", "-");
@@ -114,10 +106,10 @@ Ref<DirAccess> ObjectDBProfilerPanel::_get_and_create_snapshot_storage_dir() {
 	return da;
 }
 
-TreeItem *ObjectDBProfilerPanel::_add_snapshot_button(const String &snapshot_file_name, const String &full_file_path) {
+TreeItem *ObjectDBProfilerPanel::_add_snapshot_button(const String &p_snapshot_file_name, const String &p_full_file_path) {
 	TreeItem *item = snapshot_list->create_item(snapshot_list->get_root());
-	item->set_text(0, snapshot_file_name);
-	item->set_metadata(0, full_file_path);
+	item->set_text(0, p_snapshot_file_name);
+	item->set_metadata(0, p_full_file_path);
 	item->move_before(snapshot_list->get_root()->get_first_child());
 	_update_diff_items();
 	return item;
@@ -127,9 +119,9 @@ void ObjectDBProfilerPanel::_show_selected_snapshot() {
 	show_snapshot(snapshot_list->get_selected()->get_text(0), diff_options[diff_button->get_selected_id()]);
 }
 
-Ref<GameStateSnapshotRef> ObjectDBProfilerPanel::get_snapshot(const String &snapshot_file_name) {
-	if (snapshot_cache.has(snapshot_file_name)) {
-		return snapshot_cache.get(snapshot_file_name);
+Ref<GameStateSnapshotRef> ObjectDBProfilerPanel::get_snapshot(const String &p_snapshot_file_name) {
+	if (snapshot_cache.has(p_snapshot_file_name)) {
+		return snapshot_cache.get(p_snapshot_file_name);
 	} else {
 		Ref<DirAccess> snapshot_dir = _get_and_create_snapshot_storage_dir();
 		if (snapshot_dir.is_null()) {
@@ -137,7 +129,7 @@ Ref<GameStateSnapshotRef> ObjectDBProfilerPanel::get_snapshot(const String &snap
 			return nullptr;
 		}
 
-		String full_file_path = snapshot_dir->get_current_dir().path_join(snapshot_file_name) + ".odb_snapshot";
+		String full_file_path = snapshot_dir->get_current_dir().path_join(p_snapshot_file_name) + ".odb_snapshot";
 
 		Error err;
 		Ref<FileAccess> snapshot_file = FileAccess::open(full_file_path, FileAccess::READ, &err);
@@ -164,21 +156,21 @@ Ref<GameStateSnapshotRef> ObjectDBProfilerPanel::get_snapshot(const String &snap
 		}
 
 		int version = parts[0].to_int();
-		Ref<GameStateSnapshotRef> snapshot = GameStateSnapshot::create_ref(snapshot_file_name, version, parts[1]);
+		Ref<GameStateSnapshotRef> snapshot = GameStateSnapshot::create_ref(p_snapshot_file_name, version, parts[1]);
 		if (snapshot != nullptr) {
 			// don't cache a null snapshot
-			snapshot_cache.insert(snapshot_file_name, snapshot);
+			snapshot_cache.insert(p_snapshot_file_name, snapshot);
 		}
 		return snapshot;
 	}
 }
 
-void ObjectDBProfilerPanel::show_snapshot(const String &snapshot_file_name, const String &snapshot_diff_file_name) {
+void ObjectDBProfilerPanel::show_snapshot(const String &p_snapshot_file_name, const String &p_snapshot_diff_file_name) {
 	clear_snapshot();
 
-	current_snapshot = get_snapshot(snapshot_file_name);
-	if (snapshot_diff_file_name != "none") {
-		diff_snapshot = get_snapshot(snapshot_diff_file_name);
+	current_snapshot = get_snapshot(p_snapshot_file_name);
+	if (p_snapshot_diff_file_name != "none") {
+		diff_snapshot = get_snapshot(p_snapshot_diff_file_name);
 	} else {
 		diff_snapshot = nullptr;
 	}
@@ -186,8 +178,9 @@ void ObjectDBProfilerPanel::show_snapshot(const String &snapshot_file_name, cons
 	_view_tab_changed(view_tabs->get_current_tab());
 }
 
-void ObjectDBProfilerPanel::_view_tab_changed(int tab_idx) {
-	// populating tabs only on tab changed because we're handling a lot of data, and the editor freezes for while if we don't
+void ObjectDBProfilerPanel::_view_tab_changed(int p_tab_idx) {
+	// populating tabs only on tab changed because we're handling a lot of data,
+	// and the editor freezes for while if we try to populate every tab at once
 	SnapshotView *view = cast_to<SnapshotView>(view_tabs->get_current_tab_control());
 	GameStateSnapshot *snapshot = current_snapshot == nullptr ? nullptr : current_snapshot->ptr();
 	GameStateSnapshot *diff = diff_snapshot == nullptr ? nullptr : diff_snapshot->ptr();
@@ -211,13 +204,14 @@ void ObjectDBProfilerPanel::clear_snapshot() {
 	current_snapshot = nullptr;
 }
 
-void ObjectDBProfilerPanel::set_enabled(bool enabled) {
-	take_snapshot->set_disabled(!enabled);
+void ObjectDBProfilerPanel::set_enabled(bool p_enabled) {
+	take_snapshot->set_disabled(!p_enabled);
 }
 
 void ObjectDBProfilerPanel::_snapshot_rmb(const Vector2 &p_pos, MouseButton p_button) {
-	if (p_button != MouseButton::RIGHT)
+	if (p_button != MouseButton::RIGHT) {
 		return;
+	}
 	rmb_menu->clear(false);
 
 	rmb_menu->add_icon_item(get_editor_theme_icon(SNAME("Rename")), "Rename Snapshot", RC_MENU_OPERATIONS::RENAME);
@@ -290,17 +284,15 @@ void ObjectDBProfilerPanel::_edit_snapshot_name() {
 }
 
 ObjectDBProfilerPanel::ObjectDBProfilerPanel() {
-	singleton = this;
 	set_name("ObjectDB Profiler");
 
 	snapshot_cache = LRUCache<String, Ref<GameStateSnapshotRef>>(SNAPSHOT_CACHE_MAX_SIZE);
 
-	// ===== ROOT CONTAINER =====
 	HSplitContainer *root_container = memnew(HSplitContainer);
 	root_container->set_anchors_preset(Control::LayoutPreset::PRESET_FULL_RECT);
 	root_container->set_v_size_flags(Control::SizeFlags::SIZE_EXPAND_FILL);
 	root_container->set_h_size_flags(Control::SizeFlags::SIZE_EXPAND_FILL);
-	root_container->set_split_offset(300 * EDSCALE); // give the snapshot list some 'room to breath' by default
+	root_container->set_split_offset(300 * EDSCALE);
 	add_child(root_container);
 
 	VBoxContainer *snapshot_column = memnew(VBoxContainer);
@@ -369,7 +361,7 @@ ObjectDBProfilerPanel::ObjectDBProfilerPanel() {
 		for (const String &file_name : snapshot_dir->get_files()) {
 			Vector<String> name_parts = file_name.split(".");
 			if (name_parts.size() != 2 || name_parts[1] != "odb_snapshot") {
-				ERR_PRINT("ObjectDB Snapshot file did not have .tres extension. Skipping: " + file_name);
+				ERR_PRINT("ObjectDB Snapshot file did not have .odb_snapshot extension. Skipping: " + file_name);
 				continue;
 			}
 
@@ -383,13 +375,9 @@ ObjectDBProfilerPanel::ObjectDBProfilerPanel() {
 	}
 }
 
-void ObjectDBProfilerPanel::add_view(SnapshotView *to_add) {
-	views.push_back(to_add);
-	view_tabs->add_child(to_add);
-}
-
-ObjectDBProfilerPanel::~ObjectDBProfilerPanel() {
-	singleton = nullptr;
+void ObjectDBProfilerPanel::add_view(SnapshotView *p_to_add) {
+	views.push_back(p_to_add);
+	view_tabs->add_child(p_to_add);
 }
 
 void ObjectDBProfilerPanel::_update_diff_items() {
@@ -404,6 +392,6 @@ void ObjectDBProfilerPanel::_update_diff_items() {
 	}
 }
 
-void ObjectDBProfilerPanel::_apply_diff(int item_idx) {
+void ObjectDBProfilerPanel::_apply_diff(int p_item_idx) {
 	_show_selected_snapshot();
 }

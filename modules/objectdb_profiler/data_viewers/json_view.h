@@ -32,6 +32,7 @@
 #define JSON_VIEW_H
 
 #include "../snapshot_data.h"
+#include "scene/gui/rich_text_label.h"
 #include "scene/gui/tree.h"
 #include "snapshot_view.h"
 
@@ -44,12 +45,11 @@ protected:
 	RichTextLabel *json_content;
 	RichTextLabel *diff_json_content;
 
-	String _snapshot_to_json(GameStateSnapshot *snapshot);
+	String _snapshot_to_json(GameStateSnapshot *p_snapshot);
 
 public:
 	SnapshotJsonView();
-
-	virtual void show_snapshot(GameStateSnapshot *data, GameStateSnapshot *p_diff_data) override;
+	virtual void show_snapshot(GameStateSnapshot *p_data, GameStateSnapshot *p_diff_data) override;
 };
 
 #endif // JSON_VIEW_H

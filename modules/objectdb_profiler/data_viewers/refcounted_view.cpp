@@ -44,6 +44,7 @@
 #include "scene/gui/control.h"
 #include "scene/gui/label.h"
 #include "scene/gui/panel_container.h"
+#include "scene/gui/rich_text_label.h"
 #include "scene/gui/split_container.h"
 #include "scene/gui/tab_container.h"
 #include "scene/gui/tree.h"
@@ -73,7 +74,7 @@ void SnapshotRefCountedView::show_snapshot(GameStateSnapshot *p_data, GameStateS
 	refs_column->set_anchors_preset(LayoutPreset::PRESET_FULL_RECT);
 	refs_view->add_child(refs_column);
 
-	// Tree of objects
+	// Tree of Refs
 	refs_list = memnew(Tree);
 
 	filter_bar = memnew(TreeSortAndFilterBar(refs_list, "Filter RefCounteds"));
@@ -130,16 +131,18 @@ void SnapshotRefCountedView::show_snapshot(GameStateSnapshot *p_data, GameStateS
 		_insert_data(diff_data, "B");
 	}
 
+	// push the split as far right as possible
 	refs_view->set_split_offset(INFINITY);
 	filter_bar->select_sort(default_sort.descending);
 	filter_bar->apply();
 	refs_list->set_selected(refs_list->get_root()->get_first_child());
 }
 
-void SnapshotRefCountedView::_insert_data(GameStateSnapshot *snapshot, const String &name) {
-	for (const KeyValue<ObjectID, SnapshotDataObject *> &pair : snapshot->Data) {
-		if (!pair.value->is_refcounted())
+void SnapshotRefCountedView::_insert_data(GameStateSnapshot *p_snapshot, const String &p_name) {
+	for (const KeyValue<ObjectID, SnapshotDataObject *> &pair : p_snapshot->objects) {
+		if (!pair.value->is_refcounted()) {
 			continue;
+		}
 
 		TreeItem *item = refs_list->create_item(refs_list->get_root());
 		item_data_map[item] = pair.value;
@@ -149,7 +152,7 @@ void SnapshotRefCountedView::_insert_data(GameStateSnapshot *snapshot, const Str
 
 		int offset = 0;
 		if (diff_data) {
-			item->set_text(0, name);
+			item->set_text(0, p_name);
 			offset = 1;
 		}
 
@@ -161,7 +164,8 @@ void SnapshotRefCountedView::_insert_data(GameStateSnapshot *snapshot, const Str
 
 		if (ref_count == ref_cycles.size()) {
 			// often, references are held by the engine so we can't know if we're stuck in a cycle or not
-			// But if the full cycle is visible in the ObjectDB, tell the user
+			// But if the full cycle is visible in the ObjectDB,
+			// tell the user by highlighting the cells in red
 			item->set_custom_bg_color(offset + 2, Color(1, 0, 0, 0.1));
 			item->set_custom_bg_color(offset + 4, Color(1, 0, 0, 0.1));
 		}
@@ -216,7 +220,7 @@ void SnapshotRefCountedView::_refcounted_selected() {
 		TreeItem *root = inbound_tree->create_item();
 		for (const KeyValue<String, ObjectID> &ob : d->inbound_references) {
 			TreeItem *i = inbound_tree->create_item(root);
-			SnapshotDataObject *target = d->snapshot->Data[ob.value];
+			SnapshotDataObject *target = d->snapshot->objects[ob.value];
 			i->set_text(0, target->get_name());
 			i->set_text(1, ob.key);
 			reference_item_map[i] = data_item_map[target];
@@ -243,13 +247,12 @@ void SnapshotRefCountedView::_refcounted_selected() {
 			TreeItem *i = cycles_tree->create_item(root);
 			i->set_text(0, cycle);
 			i->set_text_overrun_behavior(0, TextServer::OverrunBehavior::OVERRUN_NO_TRIMMING);
-			// i->set_autowrap_mode(0,TextServer::AutowrapMode::AUTOWRAP_WORD);
 		}
 	}
 }
 
-void SnapshotRefCountedView::_ref_selected(Tree *source_tree) {
-	TreeItem *target = reference_item_map[source_tree->get_selected()];
+void SnapshotRefCountedView::_ref_selected(Tree *p_source_tree) {
+	TreeItem *target = reference_item_map[p_source_tree->get_selected()];
 	if (target) {
 		if (!target->is_visible()) {
 			// clear the filter if we can't see the node we just chose

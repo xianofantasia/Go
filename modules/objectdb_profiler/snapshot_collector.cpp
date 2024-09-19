@@ -47,6 +47,8 @@ void SnapshotCollector::snapshot_objects(Array *p_arr) {
 	p_arr->clear();
 	ObjectDB::debug_objects([](Object *p_obj, void *user_data) {
 		List<SnapshotDataTransportObject> *debugger_objects = (List<SnapshotDataTransportObject> *)user_data;
+		// This is the same way objects in the remote scene tree are seialized,
+		// but here we add a few extra properties via the extra_debug_data dictionary
 		SnapshotDataTransportObject debug_data(p_obj);
 
 		// If we're RefCounted, send over our RefCount too. Could add code here to add a few other interesting properties
@@ -75,6 +77,7 @@ void SnapshotCollector::snapshot_objects(Array *p_arr) {
 	},
 			(void *)&debugger_objects);
 
+	// Add a header to the snapshot with general data about the state of the game, not tied to any particular object
 	Dictionary snapshot_context;
 	snapshot_context["mem_available"] = Memory::get_mem_available();
 	snapshot_context["mem_usage"] = Memory::get_mem_usage();
@@ -86,7 +89,7 @@ void SnapshotCollector::snapshot_objects(Array *p_arr) {
 		p_arr->push_back(debug_data.extra_debug_data);
 	}
 
-	print_line("p_arr length: " + String::num_uint64(p_arr->size()));
+	print_line("snapshot length: " + String::num_uint64(p_arr->size()));
 }
 
 Error SnapshotCollector::parse_message(void *p_user, const String &p_msg, const Array &p_args, bool &r_captured) {

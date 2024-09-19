@@ -31,41 +31,36 @@
 #ifndef OBJECTDB_PROFILER_PLUGIN_H
 #define OBJECTDB_PROFILER_PLUGIN_H
 
-// #include "editor/debugger/editor_debugger_inspector.h"
-// #include "scene/debugger/scene_debugger.h"
 #include "editor/plugins/editor_debugger_plugin.h"
 #include "editor/plugins/editor_plugin.h"
 #include "snapshot_data.h"
 
-class ObjectDBProfilerPanel;
-
-// Bootstrapped by the plugin
-class ObjectDBProfilerDebuggerPlugin : public EditorDebuggerPlugin {
-	GDCLASS(ObjectDBProfilerDebuggerPlugin, EditorDebuggerPlugin);
-
-protected:
-	ObjectDBProfilerPanel *debugger_panel;
-
-	void request_object_snapshot();
-
-public:
-	virtual bool has_capture(const String &p_capture) const override;
-	virtual bool capture(const String &p_message, const Array &p_data, int p_index) override;
-	virtual void setup_session(int p_session_id) override;
-
-	ObjectDBProfilerDebuggerPlugin();
-};
-
-// Loaded first as a plugin. The plugin can then add the debugger when it starts up
+// First, ObjectDBProfilerPlugin is loaded. Then it loads ObjectDBProfilerDebuggerPlugin.
 class ObjectDBProfilerPlugin : public EditorPlugin {
 	GDCLASS(ObjectDBProfilerPlugin, EditorPlugin);
 
 protected:
-	Ref<ObjectDBProfilerDebuggerPlugin> debugger;
+	Ref<class ObjectDBProfilerDebuggerPlugin> debugger;
 	void _notification(int p_what);
 
 public:
 	ObjectDBProfilerPlugin();
+};
+
+class ObjectDBProfilerDebuggerPlugin : public EditorDebuggerPlugin {
+	GDCLASS(ObjectDBProfilerDebuggerPlugin, EditorDebuggerPlugin);
+
+protected:
+	class ObjectDBProfilerPanel *debugger_panel;
+
+	void _request_object_snapshot();
+
+public:
+	ObjectDBProfilerDebuggerPlugin() {}
+
+	virtual bool has_capture(const String &p_capture) const override;
+	virtual bool capture(const String &p_message, const Array &p_data, int p_index) override;
+	virtual void setup_session(int p_session_id) override;
 };
 
 #endif // OBJECTDB_PROFILER_PLUGIN_H

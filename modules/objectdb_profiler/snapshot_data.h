@@ -43,8 +43,9 @@
 struct SnapshotDataTransportObject : public SceneDebuggerObject {
 	SnapshotDataTransportObject() :
 			SceneDebuggerObject() {}
-	SnapshotDataTransportObject(Object *obj) :
-			SceneDebuggerObject(obj) {}
+	SnapshotDataTransportObject(Object *p_obj) :
+			SceneDebuggerObject(p_obj) {}
+
 	Dictionary extra_debug_data;
 };
 
@@ -53,56 +54,41 @@ class SnapshotDataObject : public EditorDebuggerRemoteObject {
 
 public:
 	class GameStateSnapshot *snapshot;
-	SnapshotDataObject(SceneDebuggerObject &obj, GameStateSnapshot *snapshot) :
-			EditorDebuggerRemoteObject(obj), snapshot(snapshot) {}
 	Dictionary extra_debug_data;
-
 	HashMap<String, ObjectID> outbound_references;
 	HashMap<String, ObjectID> inbound_references;
 
+	SnapshotDataObject(SceneDebuggerObject &p_obj, GameStateSnapshot *p_snapshot) :
+			EditorDebuggerRemoteObject(p_obj), snapshot(p_snapshot) {}
+
 	String get_name();
 	String get_node_path();
-
-	bool is_refcounted() {
-		return is_class(RefCounted::get_class_static());
-	}
-
-	bool is_node() {
-		return is_class(Node::get_class_static());
-	}
-
-	bool is_class(const String &base_class) {
-		return ClassDB::is_parent_class(type_name, base_class);
-	}
+	bool is_refcounted();
+	bool is_node();
+	bool is_class(const String &p_base_class);
 };
 
-// Ideally, this would extend EditorDebuggerRemoteObject and be refcounted, but we can't have it both ways.
-// so, include a static constructor method that returns a wrapped copy of this class
-class GameStateSnapshotRef;
 class GameStateSnapshot : public Object {
 	GDCLASS(GameStateSnapshot, Object);
 
-	void get_outbound_references(Variant &var, HashMap<String, ObjectID> &ret_val, String current_path = "");
-	void get_rc_cycles(SnapshotDataObject *obj, SnapshotDataObject *source_obj, HashSet<SnapshotDataObject *> traversed_objs, List<String> &ret_val, String current_path = "");
+	void _get_outbound_references(Variant &p_var, HashMap<String, ObjectID> &r_ret_val, String p_current_path = "");
+	void _get_rc_cycles(SnapshotDataObject *p_obj, SnapshotDataObject *p_source_obj, HashSet<SnapshotDataObject *> p_traversed_objs, List<String> &r_ret_val, String p_current_path = "");
 
 public:
-	static Ref<GameStateSnapshotRef> create_ref(const String &snapshot_name, int p_snapshot_version, const String &snapshot_string);
-
-	~GameStateSnapshot() {
-		for (const KeyValue<ObjectID, SnapshotDataObject *> &item : Data) {
-			memfree(item.value);
-		}
-	}
-
 	String name;
-	HashMap<ObjectID, SnapshotDataObject *> Data;
+	HashMap<ObjectID, SnapshotDataObject *> objects;
 	Dictionary snapshot_context;
 	int snapshot_version;
 
-	SnapshotDataObject *get_object(ObjectID id) { return Data[id]; }
+	// Ideally, this would extend EditorDebuggerRemoteObject and be refcounted, but we can't have it both ways.
+	// so, instead we have this static 'constructor' that returns a RefCounted wrapper around a GameStateSnapshot
+	static Ref<class GameStateSnapshotRef> create_ref(const String &p_snapshot_name, int p_snapshot_version, const String &p_snapshot_string);
+	~GameStateSnapshot();
+
 	void recompute_references();
 };
 
+// Thin RefCounted wrapper around a GameStateSnapshot
 class GameStateSnapshotRef : public RefCounted {
 	GDCLASS(GameStateSnapshotRef, RefCounted);
 
@@ -112,25 +98,11 @@ public:
 	GameStateSnapshotRef(GameStateSnapshot *p_gss) :
 			gamestate_snapshot(p_gss) {}
 
-	bool unreference() {
-		bool die = RefCounted::unreference();
-		if (die) {
-			memdelete(gamestate_snapshot);
-		}
-		return die;
-	}
+	bool unreference();
 
-	_FORCE_INLINE_ GameStateSnapshot *operator*() const {
-		return gamestate_snapshot;
-	}
-
-	_FORCE_INLINE_ GameStateSnapshot *operator->() const {
-		return gamestate_snapshot;
-	}
-
-	_FORCE_INLINE_ GameStateSnapshot *ptr() const {
-		return gamestate_snapshot;
-	}
+	_FORCE_INLINE_ GameStateSnapshot *operator*() const { return gamestate_snapshot; }
+	_FORCE_INLINE_ GameStateSnapshot *operator->() const { return gamestate_snapshot; }
+	_FORCE_INLINE_ GameStateSnapshot *ptr() const { return gamestate_snapshot; }
 };
 
 #endif // SNAPSHOT_DATA_H

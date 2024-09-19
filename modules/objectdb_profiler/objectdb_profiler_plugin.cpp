@@ -47,9 +47,6 @@
 #include "scene/gui/tree.h"
 #include "snapshot_data.h"
 
-ObjectDBProfilerDebuggerPlugin::ObjectDBProfilerDebuggerPlugin() {
-}
-
 bool ObjectDBProfilerDebuggerPlugin::has_capture(const String &p_capture) const {
 	return p_capture == "snapshot";
 }
@@ -70,11 +67,11 @@ void ObjectDBProfilerDebuggerPlugin::setup_session(int p_session_id) {
 	debugger_panel = memnew(ObjectDBProfilerPanel);
 	session->connect(SNAME("started"), callable_mp(debugger_panel, &ObjectDBProfilerPanel::set_enabled).bind(true));
 	session->connect(SNAME("stopped"), callable_mp(debugger_panel, &ObjectDBProfilerPanel::set_enabled).bind(false));
-	debugger_panel->connect(SNAME("request_snapshot"), callable_mp(this, &ObjectDBProfilerDebuggerPlugin::request_object_snapshot));
+	debugger_panel->connect(SNAME("request_snapshot"), callable_mp(this, &ObjectDBProfilerDebuggerPlugin::_request_object_snapshot));
 	session->add_session_tab(debugger_panel);
 }
 
-void ObjectDBProfilerDebuggerPlugin::request_object_snapshot() {
+void ObjectDBProfilerDebuggerPlugin::_request_object_snapshot() {
 	EditorDebuggerNode::get_singleton()->get_current_debugger()->send_message("snapshot:request_object_snapshot", Array());
 }
 

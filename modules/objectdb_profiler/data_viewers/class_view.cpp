@@ -54,6 +54,26 @@
 #include "scene/gui/tree.h"
 #include "shared_controls.h"
 
+int ClassData::instance_count(GameStateSnapshot *p_snapshot) {
+	int count = 0;
+	for (const SnapshotDataObject *instance : instances) {
+		if (!p_snapshot || instance->snapshot == p_snapshot) {
+			count += 1;
+		}
+	}
+	return count;
+}
+
+int ClassData::get_recursive_instance_count(HashMap<String, ClassData> &p_all_classes, GameStateSnapshot *p_snapshot) {
+	if (!recursive_instance_count_cache.has(p_snapshot)) {
+		recursive_instance_count_cache[p_snapshot] = instance_count(p_snapshot);
+		for (const String &child : child_classes) {
+			recursive_instance_count_cache[p_snapshot] += p_all_classes[child].get_recursive_instance_count(p_all_classes, p_snapshot);
+		}
+	}
+	return recursive_instance_count_cache[p_snapshot];
+}
+
 SnapshotClassView::SnapshotClassView() {
 	set_name("Classes");
 
@@ -95,7 +115,6 @@ void SnapshotClassView::show_snapshot(GameStateSnapshot *p_data, GameStateSnapsh
 	}
 	class_list_column->add_child(filter_bar);
 
-	// Tree of classes
 	class_tree->set_select_mode(Tree::SelectMode::SELECT_ROW);
 	class_tree->set_custom_minimum_size(Size2(200 * EDSCALE, 0));
 	class_tree->set_hide_folding(false);
@@ -172,14 +191,14 @@ void SnapshotClassView::show_snapshot(GameStateSnapshot *p_data, GameStateSnapsh
 	filter_bar->apply();
 }
 
-Tree *SnapshotClassView::_make_object_list_tree(const String &column_name) {
+Tree *SnapshotClassView::_make_object_list_tree(const String &p_column_name) {
 	Tree *list = memnew(Tree);
 	list->set_select_mode(Tree::SelectMode::SELECT_ROW);
 	list->set_hide_folding(true);
 	list->set_hide_root(true);
 	list->set_columns(1);
 	list->set_column_titles_visible(true);
-	list->set_column_title(0, column_name);
+	list->set_column_title(0, p_column_name);
 	list->set_column_expand(0, true);
 	list->connect("item_selected", callable_mp(this, &SnapshotClassView::_object_selected).bind(list));
 	list->set_h_size_flags(SizeFlags::SIZE_EXPAND_FILL);
@@ -187,26 +206,25 @@ Tree *SnapshotClassView::_make_object_list_tree(const String &column_name) {
 	return list;
 }
 
-void SnapshotClassView::_add_objects_to_class_map(HashMap<String, ClassData> &class_map, GameStateSnapshot *objects) {
-	for (const KeyValue<ObjectID, SnapshotDataObject *> &pair : objects->Data) {
+void SnapshotClassView::_add_objects_to_class_map(HashMap<String, ClassData> &p_class_map, GameStateSnapshot *p_objects) {
+	for (const KeyValue<ObjectID, SnapshotDataObject *> &pair : p_objects->objects) {
 		StringName class_name = StringName(pair.value->type_name);
 		StringName parent_class_name = class_name != "" ? ClassDB::get_parent_class(class_name) : "";
 
-		class_map[class_name].instances.push_back(pair.value);
+		p_class_map[class_name].instances.push_back(pair.value);
 
 		// go up the tree and insert all parents/grandparents
 		while (class_name != "") {
-			// String parent_full_name = parent_class_name != StringName() ? parent_class_name : "";
-			if (!class_map.has(class_name)) {
-				class_map[class_name] = ClassData(class_name, parent_class_name);
+			if (!p_class_map.has(class_name)) {
+				p_class_map[class_name] = ClassData(class_name, parent_class_name);
 			}
 
-			if (!class_map.has(parent_class_name)) {
+			if (!p_class_map.has(parent_class_name)) {
 				// leave our grandparent blank for now. Next iteration of the while loop will fill it in
-				class_map[parent_class_name] = ClassData(parent_class_name, "");
+				p_class_map[parent_class_name] = ClassData(parent_class_name, "");
 			}
-			class_map[class_name].parent_class_name = parent_class_name;
-			class_map[parent_class_name].child_classes.insert(class_name);
+			p_class_map[class_name].parent_class_name = parent_class_name;
+			p_class_map[parent_class_name].child_classes.insert(class_name);
 
 			class_name = parent_class_name;
 			parent_class_name = class_name != "" ? ClassDB::get_parent_class(class_name) : "";
@@ -214,20 +232,20 @@ void SnapshotClassView::_add_objects_to_class_map(HashMap<String, ClassData> &cl
 	}
 }
 
-void SnapshotClassView::_object_selected(Tree *tree) {
+void SnapshotClassView::_object_selected(Tree *p_tree) {
 	GameStateSnapshot *snapshot = snapshot_data;
 	if (diff_data) {
-		Tree *other = tree == diff_object_list ? object_list : diff_object_list;
+		Tree *other = p_tree == diff_object_list ? object_list : diff_object_list;
 		TreeItem *selected = other->get_selected();
 		if (selected) {
 			selected->deselect(0);
 		}
-		if (tree == diff_object_list) {
+		if (p_tree == diff_object_list) {
 			snapshot = diff_data;
 		}
 	}
-	ObjectID object_id = tree->get_selected()->get_metadata(0);
-	EditorNode::get_singleton()->push_item((Object *)(snapshot->Data[object_id]));
+	ObjectID object_id = p_tree->get_selected()->get_metadata(0);
+	EditorNode::get_singleton()->push_item((Object *)(snapshot->objects[object_id]));
 }
 
 void SnapshotClassView::_class_selected() {
@@ -239,21 +257,21 @@ void SnapshotClassView::_class_selected() {
 	}
 }
 
-void SnapshotClassView::_populate_object_list(GameStateSnapshot *snapshot, Tree *list, const String &name_base) {
-	list->clear();
+void SnapshotClassView::_populate_object_list(GameStateSnapshot *p_snapshot, Tree *p_list, const String &p_name_base) {
+	p_list->clear();
 	String class_name = class_tree->get_selected()->get_metadata(0);
-	TreeItem *root = list->create_item();
+	TreeItem *root = p_list->create_item();
 	int object_count = 0;
-	for (const KeyValue<ObjectID, SnapshotDataObject *> &pair : snapshot->Data) {
+	for (const KeyValue<ObjectID, SnapshotDataObject *> &pair : p_snapshot->objects) {
 		if (pair.value->type_name == class_name) {
-			TreeItem *item = list->create_item(root);
+			TreeItem *item = p_list->create_item(root);
 			item->set_text(0, pair.value->get_name());
 			item->set_metadata(0, pair.value->remote_object_id);
 			item->set_text_overrun_behavior(0, TextServer::OverrunBehavior::OVERRUN_NO_TRIMMING);
 			object_count++;
 		}
 	}
-	list->set_column_title(0, name_base + " (" + itos(object_count) + ")");
+	p_list->set_column_title(0, p_name_base + " (" + itos(object_count) + ")");
 }
 
 void SnapshotClassView::_notification(int p_what) {
@@ -262,7 +280,7 @@ void SnapshotClassView::_notification(int p_what) {
 		case NOTIFICATION_LAYOUT_DIRECTION_CHANGED:
 		case NOTIFICATION_THEME_CHANGED:
 		case NOTIFICATION_TRANSLATION_CHANGED: {
-			for (TreeItem *item : get_children_recursive(class_tree)) {
+			for (TreeItem *item : _get_children_recursive(class_tree)) {
 				item->set_icon(0, EditorNode::get_singleton()->get_class_icon(item->get_metadata(0), ""));
 			}
 

@@ -49,12 +49,12 @@ protected:
 	HashMap<TreeItem *, TreeItem *> reference_item_map;
 
 	void _refcounted_selected();
-	void _insert_data(GameStateSnapshot *snapshot, const String &name);
-	void _ref_selected(Tree *source_tree);
+	void _insert_data(GameStateSnapshot *p_snapshot, const String &p_name);
+	void _ref_selected(Tree *p_source_tree);
 
 public:
 	SnapshotRefCountedView();
-	virtual void show_snapshot(GameStateSnapshot *data, GameStateSnapshot *p_diff_data) override;
+	virtual void show_snapshot(GameStateSnapshot *p_data, GameStateSnapshot *p_diff_data) override;
 };
 
 #endif // REFCOUNTED_VIEW_H

@@ -28,8 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-/* register_types.cpp */
-
 #include "register_types.h"
 
 #include "core/object/class_db.h"
@@ -51,7 +49,7 @@ void initialize_objectdb_profiler_module(ModuleInitializationLevel p_level) {
 
 void uninitialize_objectdb_profiler_module(ModuleInitializationLevel p_level) {
 	if (p_level == MODULE_INITIALIZATION_LEVEL_EDITOR) {
-		// don't need to unregister the type, as there's no such thing
+		// don't need to unregister the type, as unregistering a type isn't a thing
 	}
 
 	if (p_level == MODULE_INITIALIZATION_LEVEL_SCENE) {

@@ -89,12 +89,12 @@ void SnapshotJsonView::show_snapshot(GameStateSnapshot *p_data, GameStateSnapsho
 	}
 }
 
-String SnapshotJsonView::_snapshot_to_json(GameStateSnapshot *snapshot) {
+String SnapshotJsonView::_snapshot_to_json(GameStateSnapshot *p_snapshot) {
 	String json_view;
 	Dictionary json_data;
-	json_data["name"] = snapshot->name;
+	json_data["name"] = p_snapshot->name;
 	Dictionary objects;
-	for (const KeyValue<ObjectID, SnapshotDataObject *> &obj : snapshot->Data) {
+	for (const KeyValue<ObjectID, SnapshotDataObject *> &obj : p_snapshot->objects) {
 		Dictionary obj_data;
 		obj_data["type_name"] = obj.value->type_name;
 

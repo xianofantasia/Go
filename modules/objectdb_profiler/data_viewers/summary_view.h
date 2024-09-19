@@ -34,6 +34,7 @@
 #include "../snapshot_data.h"
 #include "scene/gui/center_container.h"
 #include "scene/gui/margin_container.h"
+#include "scene/gui/rich_text_label.h"
 #include "scene/gui/tree.h"
 #include "snapshot_view.h"
 
@@ -42,7 +43,8 @@ class SummaryBlurb : public MarginContainer {
 
 public:
 	RichTextLabel *label;
-	SummaryBlurb(const String &title, const String &rtl_content);
+
+	SummaryBlurb(const String &p_title, const String &p_rtl_content);
 };
 
 class SnapshotSummaryView : public SnapshotView {
@@ -52,14 +54,15 @@ protected:
 	VBoxContainer *blurb_list;
 	CenterContainer *explainer_text;
 
-	void _push_overview_blurb(const String &title, GameStateSnapshot *snapshot);
-	void _push_node_blurb(const String &title, GameStateSnapshot *snapshot);
-	void _push_refcounted_blurb(const String &title, GameStateSnapshot *snapshot);
-	void _push_object_blurb(const String &title, GameStateSnapshot *snapshot);
+	void _push_overview_blurb(const String &p_title, GameStateSnapshot *p_snapshot);
+	void _push_node_blurb(const String &p_title, GameStateSnapshot *p_snapshot);
+	void _push_refcounted_blurb(const String &p_title, GameStateSnapshot *p_snapshot);
+	void _push_object_blurb(const String &p_title, GameStateSnapshot *p_snapshot);
 
 public:
 	SnapshotSummaryView();
-	virtual void show_snapshot(GameStateSnapshot *data, GameStateSnapshot *p_diff_data) override;
+
+	virtual void show_snapshot(GameStateSnapshot *p_data, GameStateSnapshot *p_diff_data) override;
 	virtual void clear_snapshot() override;
 };
 

@@ -51,13 +51,13 @@ protected:
 	HashMap<TreeItem *, TreeItem *> reference_item_map;
 
 	void _object_selected();
-	void _insert_data(GameStateSnapshot *snapshot, const String &name);
-	Tree *_make_references_list(Control *container, const String &name, const String &col_1, const String &col_2);
-	void _reference_selected(Tree *source_tree);
+	void _insert_data(GameStateSnapshot *p_snapshot, const String &p_name);
+	Tree *_make_references_list(Control *p_container, const String &p_name, const String &p_col_1, const String &p_col_2);
+	void _reference_selected(Tree *p_source_tree);
 
 public:
 	SnapshotObjectView();
-	virtual void show_snapshot(GameStateSnapshot *data, GameStateSnapshot *p_diff_data) override;
+	virtual void show_snapshot(GameStateSnapshot *p_data, GameStateSnapshot *p_diff_data) override;
 };
 
 #endif // OBJECT_VIEW_H
