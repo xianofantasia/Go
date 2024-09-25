@@ -1767,6 +1767,10 @@ void main() {
 				break;
 			}
 
+			if (!bool(omni_lights.data[light_index].mask & instances.data[draw_call.instance_index].layer_mask)) {
+				continue; //not masked
+			}
+
 			float shadow = light_process_omni_shadow(light_index, vertex, normal);
 
 			shadow = blur_shadow(shadow);
@@ -1810,6 +1814,10 @@ void main() {
 
 			if (light_index == 0xFF) {
 				break;
+			}
+
+			if (!bool(spot_lights.data[light_index].mask & instances.data[draw_call.instance_index].layer_mask)) {
+				continue; //not masked
 			}
 
 			float shadow = light_process_spot_shadow(light_index, vertex, normal);
