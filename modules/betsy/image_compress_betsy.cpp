@@ -368,7 +368,7 @@ Error BetsyCompressor::_compress(BetsyFormat p_format, Image *r_img) {
 
 	// Container for the compressed data.
 	Vector<uint8_t> dst_data;
-	dst_data.resize(Image::get_image_data_size(r_img->get_width(), r_img->get_height(), dest_format, r_img->has_mipmaps()));
+	dst_data.resize(Image::get_image_data_size(r_img->get_width(), r_img->get_height(), dest_format, r_img->get_mipmap_count()));
 	uint8_t *dst_data_ptr = dst_data.ptrw();
 
 	Vector<Vector<uint8_t>> src_images;
@@ -469,7 +469,7 @@ Error BetsyCompressor::_compress(BetsyFormat p_format, Image *r_img) {
 	src_images.clear();
 
 	// Set the compressed data to the image.
-	r_img->set_data(r_img->get_width(), r_img->get_height(), r_img->has_mipmaps(), dest_format, dst_data);
+	r_img->set_data(r_img->get_width(), r_img->get_height(), r_img->get_mipmap_count(), dest_format, dst_data);
 
 	print_verbose(vformat("Betsy: Encoding took %d ms.", OS::get_singleton()->get_ticks_msec() - start_time));
 
