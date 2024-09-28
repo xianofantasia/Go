@@ -31,13 +31,10 @@
 #ifndef SNAPSHOT_DATA_H
 #define SNAPSHOT_DATA_H
 
-#include "core/object/script_language.h"
 #include "editor/debugger/editor_debugger_inspector.h"
 #include "modules/gdscript/gdscript.h"
 #include "scene/debugger/scene_debugger.h"
 
-#include "core/io/missing_resource.h"
-#include "core/os/time.h"
 #include "scene/gui/tree.h"
 
 struct SnapshotDataTransportObject : public SceneDebuggerObject {
@@ -52,11 +49,16 @@ struct SnapshotDataTransportObject : public SceneDebuggerObject {
 class SnapshotDataObject : public EditorDebuggerRemoteObject {
 	GDCLASS(SnapshotDataObject, EditorDebuggerRemoteObject);
 
+	HashSet<ObjectID> _unique_references(const HashMap<String, ObjectID> &refs);
+
 public:
 	class GameStateSnapshot *snapshot;
 	Dictionary extra_debug_data;
 	HashMap<String, ObjectID> outbound_references;
 	HashMap<String, ObjectID> inbound_references;
+
+	HashSet<ObjectID> get_unique_outbound_refernces();
+	HashSet<ObjectID> get_unique_inbound_references();
 
 	SnapshotDataObject(SceneDebuggerObject &p_obj, GameStateSnapshot *p_snapshot) :
 			EditorDebuggerRemoteObject(p_obj), snapshot(p_snapshot) {}
@@ -78,11 +80,10 @@ public:
 	String name;
 	HashMap<ObjectID, SnapshotDataObject *> objects;
 	Dictionary snapshot_context;
-	int snapshot_version;
 
 	// Ideally, this would extend EditorDebuggerRemoteObject and be refcounted, but we can't have it both ways.
 	// so, instead we have this static 'constructor' that returns a RefCounted wrapper around a GameStateSnapshot
-	static Ref<class GameStateSnapshotRef> create_ref(const String &p_snapshot_name, int p_snapshot_version, const String &p_snapshot_string);
+	static Ref<class GameStateSnapshotRef> create_ref(const String &p_snapshot_name, const Vector<uint8_t> &p_snapshot_buffer);
 	~GameStateSnapshot();
 
 	void recompute_references();
@@ -104,5 +105,7 @@ public:
 	_FORCE_INLINE_ GameStateSnapshot *operator->() const { return gamestate_snapshot; }
 	_FORCE_INLINE_ GameStateSnapshot *ptr() const { return gamestate_snapshot; }
 };
+
+String get_godot_version_string();
 
 #endif // SNAPSHOT_DATA_H

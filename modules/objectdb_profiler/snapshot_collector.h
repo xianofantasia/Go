@@ -37,8 +37,8 @@
 
 class SnapshotCollector {
 public:
-	static HashMap<int, String> pending_snapshots;
-	static void snapshot_objects(Array *p_arr);
+	static HashMap<int, Vector<uint8_t>> pending_snapshots;
+	static void snapshot_objects(Array *p_arr, Dictionary snapshot_context = Dictionary());
 	static Error parse_message(void *p_user, const String &p_msg, const Array &p_args, bool &r_captured);
 	static void initialize();
 	static void deinitialize();

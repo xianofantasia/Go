@@ -34,8 +34,9 @@
 #include "core/core_bind.h"
 #include "core/debugger/engine_debugger.h"
 #include "core/object/object.h"
+#include "core/os/time.h"
 
-HashMap<int, String> SnapshotCollector::pending_snapshots;
+HashMap<int, Vector<uint8_t>> SnapshotCollector::pending_snapshots;
 
 void SnapshotCollector::initialize() {
 	EngineDebugger::register_message_capture("snapshot", EngineDebugger::Capture(nullptr, SnapshotCollector::parse_message));
@@ -44,8 +45,8 @@ void SnapshotCollector::initialize() {
 void SnapshotCollector::deinitialize() {
 }
 
-void SnapshotCollector::snapshot_objects(Array *p_arr) {
-	print_line("Starting to snapshot");
+void SnapshotCollector::snapshot_objects(Array *p_arr, Dictionary snapshot_context) {
+	print_verbose("Starting to snapshot");
 	List<SnapshotDataTransportObject> debugger_objects;
 	p_arr->clear();
 	ObjectDB::debug_objects([](Object *p_obj, void *user_data) {
@@ -81,50 +82,58 @@ void SnapshotCollector::snapshot_objects(Array *p_arr) {
 			(void *)&debugger_objects);
 
 	// Add a header to the snapshot with general data about the state of the game, not tied to any particular object
-	Dictionary snapshot_context;
 	snapshot_context["mem_available"] = Memory::get_mem_available();
 	snapshot_context["mem_usage"] = Memory::get_mem_usage();
 	snapshot_context["mem_max_usage"] = Memory::get_mem_max_usage();
 	snapshot_context["timestamp"] = Time::get_singleton()->get_unix_time_from_system();
+	snapshot_context["game_version"] = get_godot_version_string();
 	p_arr->push_back(snapshot_context);
 	for (SnapshotDataTransportObject &debug_data : debugger_objects) {
 		debug_data.serialize(*p_arr);
 		p_arr->push_back(debug_data.extra_debug_data);
 	}
 
-	print_line("snapshot length: " + String::num_uint64(p_arr->size()));
+	print_verbose("snapshot size: " + String::num_uint64(p_arr->size()));
 }
 
 Error SnapshotCollector::parse_message(void *p_user, const String &p_msg, const Array &p_args, bool &r_captured) {
 	r_captured = true;
 	if (p_msg == "request_prepare_snapshot") {
 		int request_id = (int)p_args.get(0);
+		Dictionary snapshot_context;
+		snapshot_context["editor_version"] = (String)p_args.get(1);
 		Array objects;
-		SnapshotCollector::snapshot_objects(&objects);
+		SnapshotCollector::snapshot_objects(&objects, snapshot_context);
 		// Debugger networking has a limit on both how many objects can be queued to send and how
 		// many bytes can be queued to send. Serializing to a string means we never hit the object
 		// limit, and only have to deal with the byte limit.
-		pending_snapshots[request_id] = core_bind::Marshalls::get_singleton()->variant_to_base64(objects);
+		// Compress the snapshot in the game client to make sending the snapshot from game to editor a little faster
+		core_bind::Marshalls *m = core_bind::Marshalls::get_singleton();
+		Vector<uint8_t> objs_buffer = m->base64_to_raw(m->variant_to_base64(objects));
+		Vector<uint8_t> objs_buffer_compressed;
+		objs_buffer_compressed.resize(objs_buffer.size());
+		int new_size = Compression::compress(objs_buffer_compressed.ptrw(), objs_buffer.ptrw(), objs_buffer.size(), Compression::MODE_DEFLATE);
+		objs_buffer_compressed.resize(new_size);
+		pending_snapshots[request_id] = objs_buffer_compressed;
 
 		// tell the editor how long the snapshot is
 		Array resp;
 		resp.push_back(request_id);
-		resp.push_back(pending_snapshots[request_id].length());
+		resp.push_back(pending_snapshots[request_id].size());
 		EngineDebugger::get_singleton()->send_message("snapshot:snapshot_prepared", resp);
 
 	} else if (p_msg == "request_snapshot_chunk") {
 		int request_id = (int)p_args.get(0);
-		int offset = (int)p_args.get(1);
-		int length = (int)p_args.get(2);
-		const String &snapshot_str = pending_snapshots[request_id];
+		int begin = (int)p_args.get(1);
+		int end = (int)p_args.get(2);
 
 		Array resp;
 		resp.push_back(request_id);
-		resp.push_back(snapshot_str.substr(offset, length));
+		resp.push_back(pending_snapshots[request_id].slice(begin, end));
 		EngineDebugger::get_singleton()->send_message("snapshot:snapshot_chunk", resp);
 
 		// If we sent the last part of the string, delete it locally
-		if (offset + length >= snapshot_str.length()) {
+		if (end >= pending_snapshots[request_id].size()) {
 			pending_snapshots.erase(request_id);
 		}
 	} else {

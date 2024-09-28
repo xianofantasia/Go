@@ -63,13 +63,15 @@ void SnapshotObjectView::show_snapshot(GameStateSnapshot *p_data, GameStateSnaps
 	set_v_size_flags(SizeFlags::SIZE_EXPAND_FILL);
 	set_h_size_flags(SizeFlags::SIZE_EXPAND_FILL);
 
-	HSplitContainer *objects_view = memnew(HSplitContainer);
+	objects_view = memnew(HSplitContainer);
 	add_child(objects_view);
 	objects_view->set_anchors_preset(LayoutPreset::PRESET_FULL_RECT);
 
 	VBoxContainer *object_column = memnew(VBoxContainer);
 	object_column->set_anchors_preset(LayoutPreset::PRESET_FULL_RECT);
 	objects_view->add_child(object_column);
+	object_column->set_h_size_flags(SizeFlags::SIZE_EXPAND_FILL);
+	object_column->set_v_size_flags(SizeFlags::SIZE_EXPAND_FILL);
 
 	object_list = memnew(Tree);
 
@@ -93,25 +95,30 @@ void SnapshotObjectView::show_snapshot(GameStateSnapshot *p_data, GameStateSnaps
 	object_list->set_hide_root(true);
 	object_list->set_columns(diff_data ? 5 : 4);
 	object_list->set_column_titles_visible(true);
-	int col_idx = 0;
+	int offset = 0;
 	if (diff_data) {
-		object_list->set_column_title(col_idx, "Snapshot");
-		object_list->set_column_expand(col_idx, false);
-		col_idx++;
+		object_list->set_column_title(0, "Snapshot");
+		object_list->set_column_expand(0, false);
+		object_list->set_column_title_tooltip_text(0, "A: " + snapshot_data->name + ", B: " + diff_data->name);
+		offset++;
 	}
-	object_list->set_column_title(col_idx, "Class");
-	object_list->set_column_expand(col_idx, true);
-	col_idx++;
-	object_list->set_column_title(col_idx, "Object");
-	object_list->set_column_expand(col_idx, true);
-	object_list->set_column_expand_ratio(col_idx, 2);
-	col_idx++;
-	object_list->set_column_title(col_idx, "In");
-	object_list->set_column_expand(col_idx, false);
-	col_idx++;
-	object_list->set_column_title(col_idx, "Out");
-	object_list->set_column_expand(col_idx, false);
-	col_idx++;
+	object_list->set_column_title(offset + 0, "Class");
+	object_list->set_column_expand(offset + 0, true);
+	object_list->set_column_title_tooltip_text(offset + 0, "Object's class");
+	object_list->set_column_title(offset + 1, "Object");
+	object_list->set_column_expand(offset + 1, true);
+	object_list->set_column_expand_ratio(offset + 1, 2);
+	object_list->set_column_title_tooltip_text(offset + 1, "Object's name");
+	object_list->set_column_title(offset + 2, "In");
+	object_list->set_column_expand(offset + 2, false);
+	object_list->set_column_clip_content(offset + 2, false);
+	object_list->set_column_title_tooltip_text(offset + 2, "Number of inbound references");
+	object_list->set_column_custom_minimum_width(offset + 2, 30 * EDSCALE);
+	object_list->set_column_title(offset + 3, "Out");
+	object_list->set_column_expand(offset + 3, false);
+	object_list->set_column_clip_content(offset + 3, false);
+	object_list->set_column_title_tooltip_text(offset + 3, "Number of outbound references");
+	object_list->set_column_custom_minimum_width(offset + 2, 30 * EDSCALE);
 	object_list->connect("item_selected", callable_mp(this, &SnapshotObjectView::_object_selected));
 	object_list->set_h_size_flags(SizeFlags::SIZE_EXPAND_FILL);
 	object_list->set_v_size_flags(SizeFlags::SIZE_EXPAND_FILL);
@@ -128,10 +135,13 @@ void SnapshotObjectView::show_snapshot(GameStateSnapshot *p_data, GameStateSnaps
 		_insert_data(diff_data, "B");
 	}
 
-	objects_view->set_split_offset(INFINITY);
 	filter_bar->select_sort(default_sort.descending);
 	filter_bar->apply();
 	object_list->set_selected(object_list->get_root()->get_first_child());
+	// expand the left panel as wide as we can. Passing INT_MAX or any very large int will have the opposite effect
+	// and shrink the left panel as small as it can go. So, pass an int we know is larger than the current panel, but not
+	// 'very' large (whatever that exact number is)
+	objects_view->set_split_offset(get_viewport_rect().size.x);
 }
 
 void SnapshotObjectView::_insert_data(GameStateSnapshot *p_snapshot, const String &p_name) {
@@ -140,6 +150,7 @@ void SnapshotObjectView::_insert_data(GameStateSnapshot *p_snapshot, const Strin
 		int offset = 0;
 		if (diff_data) {
 			item->set_text(0, p_name);
+			item->set_tooltip_text(0, p_snapshot->name);
 			offset = 1;
 		}
 		item->set_text(offset + 0, pair.value->type_name);
@@ -161,18 +172,27 @@ void SnapshotObjectView::_object_selected() {
 	SnapshotDataObject *d = item_data_map[object_list->get_selected()];
 	EditorNode::get_singleton()->push_item((Object *)d);
 
-	DarkPanelContainer *content_wrapper = memnew(DarkPanelContainer);
-	object_details->add_child(content_wrapper);
+	DarkPanelContainer *object_panel = memnew(DarkPanelContainer);
+	VBoxContainer *object_panel_content = memnew(VBoxContainer);
+	object_panel_content->set_v_size_flags(SizeFlags::SIZE_EXPAND_FILL);
+	object_panel_content->set_h_size_flags(SizeFlags::SIZE_EXPAND_FILL);
+	object_details->add_child(object_panel);
+	object_panel->add_child(object_panel_content);
+	object_panel_content->add_child(memnew(SpanningHeader(d->get_name())));
 
-	VBoxContainer *vert_content = memnew(VBoxContainer);
-	vert_content->set_v_size_flags(SizeFlags::SIZE_EXPAND_FILL);
-	vert_content->set_h_size_flags(SizeFlags::SIZE_EXPAND_FILL);
-	content_wrapper->add_child(vert_content);
-	vert_content->add_theme_constant_override("separation", 8);
+	ScrollContainer *properties_scroll = memnew(ScrollContainer);
+	properties_scroll->set_horizontal_scroll_mode(ScrollContainer::SCROLL_MODE_DISABLED);
+	properties_scroll->set_vertical_scroll_mode(ScrollContainer::SCROLL_MODE_AUTO);
+	properties_scroll->set_v_size_flags(SizeFlags::SIZE_EXPAND_FILL);
+	properties_scroll->set_h_size_flags(SizeFlags::SIZE_EXPAND_FILL);
+	object_panel_content->add_child(properties_scroll);
 
-	vert_content->add_child(memnew(SpanningHeader(d->get_name())));
+	VBoxContainer *properties_container = memnew(VBoxContainer);
+	properties_container->set_h_size_flags(SizeFlags::SIZE_EXPAND_FILL);
+	properties_scroll->add_child(properties_container);
+	properties_container->add_theme_constant_override("separation", 8);
 
-	inbound_tree = _make_references_list(vert_content, "Inbound References", "Source", "Property");
+	inbound_tree = _make_references_list(properties_container, "Inbound References", "Source", "Other object referencing this object", "Property", "Property of other object referencing this object");
 	inbound_tree->connect("item_selected", callable_mp(this, &SnapshotObjectView::_reference_selected).bind(inbound_tree));
 	TreeItem *ib_root = inbound_tree->create_item();
 	for (const KeyValue<String, ObjectID> &ob : d->inbound_references) {
@@ -183,7 +203,7 @@ void SnapshotObjectView::_object_selected() {
 		reference_item_map[i] = data_item_map[target];
 	}
 
-	outbound_tree = _make_references_list(vert_content, "Outbound References", "Property", "Target");
+	outbound_tree = _make_references_list(properties_container, "Outbound References", "Property", "Property of this object referencing other object", "Target", "Other object being referenced");
 	outbound_tree->connect("item_selected", callable_mp(this, &SnapshotObjectView::_reference_selected).bind(outbound_tree));
 	TreeItem *ob_root = outbound_tree->create_item();
 	for (const KeyValue<String, ObjectID> &ob : d->outbound_references) {
@@ -211,7 +231,7 @@ void SnapshotObjectView::_reference_selected(Tree *p_source_tree) {
 	}
 }
 
-Tree *SnapshotObjectView::_make_references_list(Control *p_container, const String &p_name, const String &p_col_1, const String &p_col_2) {
+Tree *SnapshotObjectView::_make_references_list(Control *p_container, const String &p_name, const String &p_col_1, const String &p_col_1_tooltip, const String &p_col_2, const String &p_col_2_tooltip) {
 	VBoxContainer *vbox = memnew(VBoxContainer);
 	vbox->set_h_size_flags(SizeFlags::SIZE_EXPAND_FILL);
 	vbox->set_v_size_flags(SizeFlags::SIZE_EXPAND_FILL);
@@ -233,12 +253,14 @@ Tree *SnapshotObjectView::_make_references_list(Control *p_container, const Stri
 	tree->set_column_titles_visible(true);
 	tree->set_column_title(0, p_col_1);
 	tree->set_column_expand(0, true);
+	tree->set_column_title_tooltip_text(0, p_col_1_tooltip);
 	tree->set_column_clip_content(0, false);
 	tree->set_column_title(1, p_col_2);
 	tree->set_column_expand(1, true);
 	tree->set_column_clip_content(1, false);
+	tree->set_column_title_tooltip_text(1, p_col_2_tooltip);
+	tree->set_v_scroll_enabled(false);
 	tree->set_h_size_flags(SizeFlags::SIZE_EXPAND_FILL);
-	tree->set_v_size_flags(SizeFlags::SIZE_EXPAND_FILL);
 
 	return tree;
 }

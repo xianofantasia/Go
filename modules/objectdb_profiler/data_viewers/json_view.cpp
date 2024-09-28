@@ -66,26 +66,41 @@ void SnapshotJsonView::show_snapshot(GameStateSnapshot *p_data, GameStateSnapsho
 	json_box->set_v_size_flags(SizeFlags::SIZE_EXPAND_FILL);
 	json_box->set_h_size_flags(SizeFlags::SIZE_EXPAND_FILL);
 	box->add_child(json_box);
-	json_box->add_child(memnew(SpanningHeader(diff_data ? "Snapshot A JSON" : "Snapshot JSON")));
-	json_content = memnew(RichTextLabel);
+	String hdr_a_text = diff_data ? "Snapshot A JSON" : "Snapshot JSON";
+	SpanningHeader *hdr_a = memnew(SpanningHeader(hdr_a_text));
+	if (diff_data) {
+		hdr_a->set_tooltip_text("Snapshot A: " + snapshot_data->name);
+	}
+	json_box->add_child(hdr_a);
+
+	Ref<EditorJsonVisualizerSyntaxHighlighter> syntax_highlighter;
+	syntax_highlighter.instantiate(List<String>());
+
+	json_content = memnew(EditorJsonVisualizer);
+	json_content->load_theme(syntax_highlighter);
+	json_content->set_name(hdr_a_text);
+	json_content->set_text(_snapshot_to_json(snapshot_data));
 	json_content->set_v_size_flags(SizeFlags::SIZE_EXPAND_FILL);
 	json_content->set_h_size_flags(SizeFlags::SIZE_EXPAND_FILL);
-	json_content->set_selection_enabled(true);
 	json_box->add_child(json_content);
-	json_content->add_text(_snapshot_to_json(snapshot_data));
 
 	if (diff_data) {
 		VBoxContainer *diff_json_box = memnew(VBoxContainer);
 		diff_json_box->set_v_size_flags(SizeFlags::SIZE_EXPAND_FILL);
 		diff_json_box->set_h_size_flags(SizeFlags::SIZE_EXPAND_FILL);
 		box->add_child(diff_json_box);
-		diff_json_box->add_child(memnew(SpanningHeader("Snapshot B JSON")));
-		diff_json_content = memnew(RichTextLabel);
+		String hrd_b_text = "Snapshot B JSON";
+		SpanningHeader *hdr_b = memnew(SpanningHeader(hrd_b_text));
+		hdr_b->set_tooltip_text("Snapshot B: " + diff_data->name);
+		diff_json_box->add_child(hdr_b);
+
+		diff_json_content = memnew(EditorJsonVisualizer);
+		diff_json_content->load_theme(syntax_highlighter);
+		diff_json_content->set_name(hrd_b_text);
+		diff_json_content->set_text(_snapshot_to_json(diff_data));
 		diff_json_content->set_v_size_flags(SizeFlags::SIZE_EXPAND_FILL);
 		diff_json_content->set_h_size_flags(SizeFlags::SIZE_EXPAND_FILL);
-		diff_json_content->set_selection_enabled(true);
 		diff_json_box->add_child(diff_json_content);
-		diff_json_content->add_text(_snapshot_to_json(diff_data));
 	}
 }
 

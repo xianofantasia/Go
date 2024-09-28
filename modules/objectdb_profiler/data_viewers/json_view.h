@@ -32,6 +32,7 @@
 #define JSON_VIEW_H
 
 #include "../snapshot_data.h"
+#include "editor/editor_json_visualizer.h"
 #include "scene/gui/rich_text_label.h"
 #include "scene/gui/tree.h"
 #include "snapshot_view.h"
@@ -42,9 +43,10 @@ class SnapshotJsonView : public SnapshotView {
 	GDCLASS(SnapshotJsonView, SnapshotView);
 
 protected:
-	RichTextLabel *json_content;
-	RichTextLabel *diff_json_content;
+	EditorJsonVisualizer *json_content;
+	EditorJsonVisualizer *diff_json_content;
 
+	void _load_theme_settings();
 	String _snapshot_to_json(GameStateSnapshot *p_snapshot);
 
 public:

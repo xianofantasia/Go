@@ -53,8 +53,8 @@ enum RC_MENU_OPERATIONS {
 };
 
 struct PartialSnapshot {
-	int total_length;
-	String data;
+	int total_size;
+	Vector<uint8_t> data;
 };
 
 // UI loaded by the debugger
@@ -85,6 +85,7 @@ protected:
 	void _rmb_menu_pressed(int p_tool, bool p_confirm_override);
 	void _apply_diff(int p_item_idx);
 	void _update_diff_items();
+	void _update_enabled_diff_items();
 	void _edit_snapshot_name();
 	void _view_tab_changed(int p_tab_idx);
 	String _to_mb(int x);
@@ -92,7 +93,7 @@ protected:
 public:
 	ObjectDBProfilerPanel();
 
-	void receive_snapshot(const String &p_data);
+	void receive_snapshot(int request_id);
 	void show_snapshot(const String &p_snapshot_file_name, const String &p_snapshot_diff_file_name);
 	void clear_snapshot();
 	Ref<GameStateSnapshotRef> get_snapshot(const String &p_snapshot_file_name);

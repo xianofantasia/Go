@@ -32,6 +32,7 @@
 #define REFCOUNTED_VIEW_H
 
 #include "../snapshot_data.h"
+#include "scene/gui/split_container.h"
 #include "scene/gui/tree.h"
 #include "shared_controls.h"
 #include "snapshot_view.h"
@@ -43,6 +44,7 @@ protected:
 	Tree *refs_list;
 	VBoxContainer *ref_details;
 	TreeSortAndFilterBar *filter_bar;
+	HSplitContainer *refs_view;
 
 	HashMap<TreeItem *, SnapshotDataObject *> item_data_map;
 	HashMap<SnapshotDataObject *, TreeItem *> data_item_map;
@@ -51,6 +53,7 @@ protected:
 	void _refcounted_selected();
 	void _insert_data(GameStateSnapshot *p_snapshot, const String &p_name);
 	void _ref_selected(Tree *p_source_tree);
+	void _set_split_to_center();
 
 public:
 	SnapshotRefCountedView();

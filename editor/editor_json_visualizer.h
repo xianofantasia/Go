@@ -1,5 +1,5 @@
 /**************************************************************************/
-/*  object_view.h                                                         */
+/*  editor_json_visualizer.h                                              */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                             GODOT ENGINE                               */
@@ -28,38 +28,24 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef OBJECT_VIEW_H
-#define OBJECT_VIEW_H
+#ifndef EDITOR_JSON_VISUALIZER_H
+#define EDITOR_JSON_VISUALIZER_H
 
-#include "../snapshot_data.h"
-#include "scene/gui/split_container.h"
-#include "scene/gui/tree.h"
-#include "shared_controls.h"
-#include "snapshot_view.h"
+#include "scene/gui/code_edit.h"
+#include "scene/resources/syntax_highlighter.h"
 
-class SnapshotObjectView : public SnapshotView {
-	GDCLASS(SnapshotObjectView, SnapshotView);
-
-protected:
-	Tree *object_list;
-	Tree *inbound_tree;
-	Tree *outbound_tree;
-	VBoxContainer *object_details;
-	TreeSortAndFilterBar *filter_bar;
-	HSplitContainer *objects_view;
-
-	HashMap<TreeItem *, SnapshotDataObject *> item_data_map;
-	HashMap<SnapshotDataObject *, TreeItem *> data_item_map;
-	HashMap<TreeItem *, TreeItem *> reference_item_map;
-
-	void _object_selected();
-	void _insert_data(GameStateSnapshot *p_snapshot, const String &p_name);
-	Tree *_make_references_list(Control *p_container, const String &p_name, const String &p_col_1, const String &p_col_1_tooltip, const String &p_col_2, const String &p_col_2_tooltip);
-	void _reference_selected(Tree *p_source_tree);
+class EditorJsonVisualizerSyntaxHighlighter : public CodeHighlighter {
+	GDCLASS(EditorJsonVisualizerSyntaxHighlighter, CodeHighlighter)
 
 public:
-	SnapshotObjectView();
-	virtual void show_snapshot(GameStateSnapshot *p_data, GameStateSnapshot *p_diff_data) override;
+	EditorJsonVisualizerSyntaxHighlighter(const List<String> &p_keywords);
 };
 
-#endif // OBJECT_VIEW_H
+class EditorJsonVisualizer : public CodeEdit {
+	GDCLASS(EditorJsonVisualizer, CodeEdit)
+
+public:
+	void load_theme(Ref<EditorJsonVisualizerSyntaxHighlighter> p_syntax_highlighter);
+};
+
+#endif // EDITOR_JSON_VISUALIZER_H

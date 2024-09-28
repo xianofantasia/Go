@@ -163,11 +163,11 @@ SummaryBlurb::SummaryBlurb(const String &p_title, const String &p_rtl_content) {
 	label->add_theme_constant_override("line_separation", 6);
 	label->set_fit_content(true);
 	label->set_use_bbcode(true);
-	label->push_underline();
+	label->add_newline();
 	label->push_bold();
 	label->add_text(p_title);
 	label->pop();
-	label->pop();
+	label->add_newline();
 	label->add_newline();
 	label->append_text(p_rtl_content);
 	add_child(label);
@@ -177,24 +177,30 @@ void SnapshotSummaryView::_push_overview_blurb(const String &p_title, GameStateS
 	String c = "";
 
 	c += "[ul]\n";
-	c += "[i]Name:[/i] " + p_snapshot->name + "\n";
+	c += " [i]Name:[/i] " + p_snapshot->name + "\n";
 	if (p_snapshot->snapshot_context.has("timestamp")) {
-		c += "[i]Timestamp:[/i] " + Time::get_singleton()->get_datetime_string_from_unix_time((double)p_snapshot->snapshot_context["timestamp"]) + "\n";
+		c += " [i]Timestamp:[/i] " + Time::get_singleton()->get_datetime_string_from_unix_time((double)p_snapshot->snapshot_context["timestamp"]) + "\n";
 	}
-	double bytes_to_mb = 0.000001;
+	if (p_snapshot->snapshot_context.has("game_version")) {
+		c += " [i]Game Version:[/i] " + (String)p_snapshot->snapshot_context["game_version"] + "\n";
+	}
+	if (p_snapshot->snapshot_context.has("editor_version")) {
+		c += " [i]Editor Version:[/i] " + (String)p_snapshot->snapshot_context["editor_version"] + "\n";
+	}
 
+	double bytes_to_mb = 0.000001;
 	if (p_snapshot->snapshot_context.has("mem_usage")) {
-		c += "[i]Memory Used:[/i] " + String::num((double)((uint64_t)p_snapshot->snapshot_context["mem_usage"]) * bytes_to_mb, 3) + " MB\n";
+		c += " [i]Memory Used:[/i] " + String::num((double)((uint64_t)p_snapshot->snapshot_context["mem_usage"]) * bytes_to_mb, 3) + " MB\n";
 	}
 	if (p_snapshot->snapshot_context.has("mem_max_usage")) {
-		c += "[i]Max Memory Used:[/i] " + String::num((double)((uint64_t)p_snapshot->snapshot_context["mem_max_usage"]) * bytes_to_mb, 3) + " MB\n";
+		c += " [i]Max Memory Used:[/i] " + String::num((double)((uint64_t)p_snapshot->snapshot_context["mem_max_usage"]) * bytes_to_mb, 3) + " MB\n";
 	}
 	if (p_snapshot->snapshot_context.has("mem_available")) {
 		// I'm guessing pretty hard about what this is supposed to be. It's hard coded to be -1 cast to a uint64_t in Memory.h,
 		// so it _could_ be checking if we're on a 64 bit system, I think...
-		c += "[i]Max uint64 value:[/i] " + String::num_uint64((uint64_t)p_snapshot->snapshot_context["mem_available"]) + "\n";
+		c += " [i]Max uint64 value:[/i] " + String::num_uint64((uint64_t)p_snapshot->snapshot_context["mem_available"]) + "\n";
 	}
-	c += "[i]Total Objects:[/i] " + itos(p_snapshot->objects.size()) + "\n";
+	c += " [i]Total Objects:[/i] " + itos(p_snapshot->objects.size()) + "\n";
 
 	int node_count = 0;
 	for (const KeyValue<ObjectID, SnapshotDataObject *> &pair : p_snapshot->objects) {
@@ -202,7 +208,7 @@ void SnapshotSummaryView::_push_overview_blurb(const String &p_title, GameStateS
 			node_count++;
 		}
 	}
-	c += "[i]Total Nodes:[/i] " + itos(node_count) + "\n";
+	c += " [i]Total Nodes:[/i] " + itos(node_count) + "\n";
 	c += "[/ul]\n";
 
 	blurb_list->add_child(memnew(SummaryBlurb(p_title, c)));
@@ -212,8 +218,9 @@ void SnapshotSummaryView::_push_node_blurb(const String &p_title, GameStateSnaps
 	List<String> nodes;
 	for (const KeyValue<ObjectID, SnapshotDataObject *> &pair : p_snapshot->objects) {
 		// if it's a node AND it doesn't have a parent node
-		if (pair.value->is_node() && !pair.value->extra_debug_data.has("node_parent")) {
-			nodes.push_back(pair.value->extra_debug_data["node_name"]);
+		if (pair.value->is_node() && !pair.value->extra_debug_data.has("node_parent") && pair.value->extra_debug_data.has("node_is_scene_root") && !pair.value->extra_debug_data["node_is_scene_root"]) {
+			const String &node_name = pair.value->extra_debug_data["node_name"];
+			nodes.push_back(node_name != "" ? node_name : pair.value->get_name());
 		}
 	}
 
@@ -224,7 +231,7 @@ void SnapshotSummaryView::_push_node_blurb(const String &p_title, GameStateSnaps
 	String c = "Multiple root nodes [i](possible call to 'remove_child' without 'queue_free')[/i]\n";
 	c += "[ul]\n";
 	for (const String &node : nodes) {
-		c += node + "\n";
+		c += " " + node + "\n";
 	}
 	c += "[/ul]\n";
 
@@ -251,7 +258,7 @@ void SnapshotSummaryView::_push_refcounted_blurb(const String &p_title, GameStat
 	String c = "RefCounted objects only referenced in cycles [i](cycles often indicate a memory leaks)[/i]\n";
 	c += "[ul]\n";
 	for (const String &rc : rcs) {
-		c += rc + "\n";
+		c += " " + rc + "\n";
 	}
 	c += "[/ul]\n";
 
@@ -279,7 +286,7 @@ void SnapshotSummaryView::_push_object_blurb(const String &p_title, GameStateSna
 	String c = "Scripted objects not referenced by any other objects [i](unreferenced objects may indicate a memory leak)[/i]\n";
 	c += "[ul]\n";
 	for (const String &object : objects) {
-		c += object + "\n";
+		c += " " + object + "\n";
 	}
 	c += "[/ul]\n";
 

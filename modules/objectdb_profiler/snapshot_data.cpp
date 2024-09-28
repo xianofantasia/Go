@@ -29,12 +29,14 @@
 /**************************************************************************/
 
 #include "objectdb_profiler_plugin.h"
+#include "zlib.h"
 
 #include "core/core_bind.h"
 #include "core/object/object.h"
 #include "core/object/ref_counted.h"
 #include "core/os/memory.h"
 #include "core/os/time.h"
+#include "core/version.h"
 #include "editor/debugger/editor_debugger_node.h"
 #include "editor/debugger/script_editor_debugger.h"
 #include "editor/editor_node.h"
@@ -109,6 +111,24 @@ bool SnapshotDataObject::is_node() {
 
 bool SnapshotDataObject::is_class(const String &p_base_class) {
 	return ClassDB::is_parent_class(type_name, p_base_class);
+}
+
+HashSet<ObjectID> SnapshotDataObject::_unique_references(const HashMap<String, ObjectID> &refs) {
+	HashSet<ObjectID> obj_set;
+
+	for (const KeyValue<String, ObjectID> &pair : refs) {
+		obj_set.insert(pair.value);
+	}
+
+	return obj_set;
+}
+
+HashSet<ObjectID> SnapshotDataObject::get_unique_outbound_refernces() {
+	return _unique_references(outbound_references);
+}
+
+HashSet<ObjectID> SnapshotDataObject::get_unique_inbound_references() {
+	return _unique_references(inbound_references);
 }
 
 void GameStateSnapshot::_get_outbound_references(Variant &p_var, HashMap<String, ObjectID> &r_ret_val, String p_current_path) {
@@ -221,48 +241,52 @@ void GameStateSnapshot::recompute_references() {
 	}
 }
 
-Ref<GameStateSnapshotRef> GameStateSnapshot::create_ref(const String &p_snapshot_name, int p_snapshot_version, const String &p_snapshot_string) {
-	GameStateSnapshot *sn = memnew(GameStateSnapshot);
-	sn->name = p_snapshot_name;
-	sn->snapshot_version = p_snapshot_version;
+Ref<GameStateSnapshotRef> GameStateSnapshot::create_ref(const String &p_snapshot_name, const Vector<uint8_t> &p_snapshot_buffer) {
+	// A ref to a refcounted object which is a wrapper of a non-refcounted object.
+	Ref<GameStateSnapshotRef> sn = Ref<GameStateSnapshotRef>(memnew(GameStateSnapshotRef(memnew(GameStateSnapshot))));
+	sn->ptr()->name = p_snapshot_name;
 
 	// Snapshots may have been created by an older version of the editor. Handle parsing old snapshot versions here based on the version number.
-	switch (sn->snapshot_version) {
-		case 1: {
-			Array snapshot_data = core_bind::Marshalls::get_singleton()->base64_to_variant(p_snapshot_string);
-			sn->snapshot_context = snapshot_data.get(0);
 
-			for (int i = 1; i < snapshot_data.size(); i += 4) {
-				Array sliced = snapshot_data.slice(i);
-				SceneDebuggerObject obj;
-				obj.deserialize(sliced);
+	Vector<uint8_t> snapshot_buffer_decompressed;
+	int success = Compression::decompress_dynamic(&snapshot_buffer_decompressed, -1, p_snapshot_buffer.ptr(), p_snapshot_buffer.size(), Compression::MODE_DEFLATE);
+	if (success != Z_OK) {
+		ERR_PRINT("ObjectDB Snapshot could not be parsed. Failed to decompress snapshot.");
+		return nullptr;
+	}
+	core_bind::Marshalls *m = core_bind::Marshalls::get_singleton();
+	Array snapshot_data = m->base64_to_variant(m->raw_to_base64(snapshot_buffer_decompressed));
+	if (snapshot_data.size() == 0) {
+		ERR_PRINT("ObjectDB Snapshot could not be parsed. Variant array is empty.");
+		return nullptr;
+	}
+	const Variant &first_item = snapshot_data.get(0);
+	if (first_item.get_type() != Variant::DICTIONARY) {
+		ERR_PRINT("ObjectDB Snapshot could not be parsed. First item is not a Dictionary.");
+		return nullptr;
+	}
+	sn->ptr()->snapshot_context = first_item;
 
-				if (sliced[3].get_type() != Variant::DICTIONARY) {
-					goto LOAD_FAILED;
-				}
-				if (obj.id.is_null()) {
-					continue;
-				}
+	for (int i = 1; i < snapshot_data.size(); i += 4) {
+		Array sliced = snapshot_data.slice(i);
+		SceneDebuggerObject obj;
+		obj.deserialize(sliced);
 
-				sn->objects[obj.id] = memnew(SnapshotDataObject(obj, sn));
-				sn->objects[obj.id]->extra_debug_data = (Dictionary)sliced[3];
-				sn->objects[obj.id]->set_readonly(true);
-			}
+		if (sliced[3].get_type() != Variant::DICTIONARY) {
+			ERR_PRINT("ObjectDB Snapshot could not be parsed. Extra debug data is not a Dictionary.");
+			return nullptr;
+		}
+		if (obj.id.is_null()) {
+			continue;
+		}
 
-			sn->recompute_references();
-			// A ref to a refcounted object which is a wrapper of a non-refcounted object.
-			return Ref<GameStateSnapshotRef>(memnew(GameStateSnapshotRef(sn)));
-		} break;
-
-		default: {
-			ERR_PRINT("ObjectDB Snapshot version not recognized: " + itos(p_snapshot_version));
-		} break;
+		sn->ptr()->objects[obj.id] = memnew(SnapshotDataObject(obj, sn.ptr()->ptr()));
+		sn->ptr()->objects[obj.id]->extra_debug_data = (Dictionary)sliced[3];
+		sn->ptr()->objects[obj.id]->set_readonly(true);
 	}
 
-LOAD_FAILED:
-	ERR_PRINT("ObjectDB Snapshot could not be parsed");
-	memfree(sn);
-	return nullptr;
+	sn->ptr()->recompute_references();
+	return sn;
 }
 
 GameStateSnapshot::~GameStateSnapshot() {
@@ -277,4 +301,12 @@ bool GameStateSnapshotRef::unreference() {
 		memdelete(gamestate_snapshot);
 	}
 	return die;
+}
+
+String get_godot_version_string() {
+	String hash = String(VERSION_HASH);
+	if (hash.length() != 0) {
+		hash = " " + vformat("[%s]", hash.left(9));
+	}
+	return "v" VERSION_FULL_BUILD + hash;
 }
