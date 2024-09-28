@@ -408,7 +408,8 @@ class AnimationTrackEditor : public VBoxContainer {
 	HSlider *zoom = nullptr;
 	EditorSpinSlider *step = nullptr;
 	TextureRect *zoom_icon = nullptr;
-	Button *snap = nullptr;
+	Button *snap_keys = nullptr;
+	Button *snap_timeline = nullptr;
 	Button *bezier_edit_icon = nullptr;
 	OptionButton *snap_mode = nullptr;
 	Button *auto_fit = nullptr;
@@ -497,6 +498,10 @@ class AnimationTrackEditor : public VBoxContainer {
 
 	PropertyInfo _find_hint_for_track(int p_idx, NodePath &r_base_path, Variant *r_current_val = nullptr);
 
+	void _scroll_changed(const Vector2 &p_val);
+	void _v_scroll_changed(float p_val);
+	void _h_scroll_changed(float p_val);
+
 	Ref<ViewPanner> panner;
 	void _pan_callback(Vector2 p_scroll_vec, Ref<InputEvent> p_event);
 	void _zoom_callback(float p_zoom_factor, Vector2 p_origin, Ref<InputEvent> p_event);
@@ -539,11 +544,15 @@ class AnimationTrackEditor : public VBoxContainer {
 	void _update_key_edit();
 	void _clear_key_edit();
 
+	Control *box_selection_container = nullptr;
+
 	Control *box_selection = nullptr;
 	void _box_selection_draw();
 	bool box_selecting = false;
 	Vector2 box_selecting_from;
+	Vector2 box_selecting_to;
 	Rect2 box_select_rect;
+	Vector2 prev_scroll_position;
 	void _scroll_input(const Ref<InputEvent> &p_event);
 
 	Vector<Ref<AnimationTrackEditPlugin>> track_edit_plugins;
@@ -649,7 +658,6 @@ class AnimationTrackEditor : public VBoxContainer {
 
 	void _pick_track_filter_text_changed(const String &p_newtext);
 	void _pick_track_select_recursive(TreeItem *p_item, const String &p_filter, Vector<Node *> &p_select_candidates);
-	void _pick_track_filter_input(const Ref<InputEvent> &p_ie);
 
 	double snap_unit;
 	void _update_snap_unit();
@@ -728,7 +736,9 @@ public:
 	bool is_selection_active() const;
 	bool is_key_clipboard_active() const;
 	bool is_moving_selection() const;
-	bool is_snap_enabled() const;
+	bool is_snap_timeline_enabled() const;
+	bool is_snap_keys_enabled() const;
+	bool is_bezier_editor_active() const;
 	bool can_add_reset_key() const;
 	float get_moving_selection_offset() const;
 	float snap_time(float p_value, bool p_relative = false);

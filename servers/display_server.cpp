@@ -41,6 +41,9 @@
 #if defined(D3D12_ENABLED)
 #include "drivers/d3d12/rendering_context_driver_d3d12.h"
 #endif
+#if defined(METAL_ENABLED)
+#include "drivers/metal/rendering_context_driver_metal.h"
+#endif
 
 DisplayServer *DisplayServer::singleton = nullptr;
 
@@ -1221,6 +1224,11 @@ void DisplayServer::_input_set_custom_mouse_cursor_func(const Ref<Resource> &p_i
 
 bool DisplayServer::can_create_rendering_device() {
 #if defined(RD_ENABLED)
+	RenderingDevice *device = RenderingDevice::get_singleton();
+	if (device) {
+		return true;
+	}
+
 	Error err;
 	RenderingContextDriver *rcd = nullptr;
 
@@ -1230,6 +1238,15 @@ bool DisplayServer::can_create_rendering_device() {
 #ifdef D3D12_ENABLED
 	if (rcd == nullptr) {
 		rcd = memnew(RenderingContextDriverD3D12);
+	}
+#endif
+#ifdef METAL_ENABLED
+	if (rcd == nullptr) {
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunguarded-availability"
+		// Eliminate "RenderingContextDriverMetal is only available on iOS 14.0 or newer".
+		rcd = memnew(RenderingContextDriverMetal);
+#pragma clang diagnostic pop
 	}
 #endif
 

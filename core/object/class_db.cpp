@@ -181,7 +181,7 @@ public:
 		return 0;
 	}
 
-	static GDExtensionObjectPtr placeholder_class_create_instance(void *p_class_userdata, bool p_notify_postinitialize) {
+	static GDExtensionObjectPtr placeholder_class_create_instance(void *p_class_userdata, GDExtensionBool p_notify_postinitialize) {
 		ClassDB::ClassInfo *ti = (ClassDB::ClassInfo *)p_class_userdata;
 
 		// Find the closest native parent, that isn't a runtime class.
@@ -192,7 +192,7 @@ public:
 		ERR_FAIL_NULL_V(native_parent->creation_func, nullptr);
 
 		// Construct a placeholder.
-		Object *obj = native_parent->creation_func(p_notify_postinitialize);
+		Object *obj = native_parent->creation_func(static_cast<bool>(p_notify_postinitialize));
 
 		// ClassDB::set_object_extension_instance() won't be called for placeholders.
 		// We need need to make sure that all the things it would have done (even if
@@ -227,16 +227,12 @@ public:
 #endif
 
 bool ClassDB::_is_parent_class(const StringName &p_class, const StringName &p_inherits) {
-	if (!classes.has(p_class)) {
-		return false;
-	}
-
-	StringName inherits = p_class;
-	while (inherits.operator String().length()) {
-		if (inherits == p_inherits) {
+	ClassInfo *c = classes.getptr(p_class);
+	while (c) {
+		if (c->name == p_inherits) {
 			return true;
 		}
-		inherits = _get_parent_class(inherits);
+		c = c->inherits_ptr;
 	}
 
 	return false;
@@ -2308,6 +2304,13 @@ void ClassDB::cleanup() {
 	resource_base_extensions.clear();
 	compat_classes.clear();
 	native_structs.clear();
+}
+
+// Array to use in optional parameters on methods and the DEFVAL_ARRAY macro.
+Array ClassDB::default_array_arg = Array::create_read_only();
+
+bool ClassDB::is_default_array_arg(const Array &p_array) {
+	return p_array.is_same_instance(default_array_arg);
 }
 
 //

@@ -497,6 +497,7 @@ Error RenderingDeviceDriverVulkan::_initialize_device_extensions() {
 	_register_requested_device_extension(VK_KHR_MAINTENANCE_2_EXTENSION_NAME, false);
 	_register_requested_device_extension(VK_EXT_PIPELINE_CREATION_CACHE_CONTROL_EXTENSION_NAME, false);
 	_register_requested_device_extension(VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME, false);
+	_register_requested_device_extension(VK_EXT_ASTC_DECODE_MODE_EXTENSION_NAME, false);
 
 	if (Engine::get_singleton()->is_generate_spirv_debug_info_enabled()) {
 		_register_requested_device_extension(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME, true);
@@ -1705,6 +1706,16 @@ RDD::TextureID RenderingDeviceDriverVulkan::texture_create(const TextureFormat &
 		image_view_create_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 	}
 
+	VkImageViewASTCDecodeModeEXT decode_mode;
+	if (enabled_device_extension_names.has(VK_EXT_ASTC_DECODE_MODE_EXTENSION_NAME)) {
+		if (image_view_create_info.format >= VK_FORMAT_ASTC_4x4_UNORM_BLOCK && image_view_create_info.format <= VK_FORMAT_ASTC_12x12_SRGB_BLOCK) {
+			decode_mode.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_ASTC_DECODE_MODE_EXT;
+			decode_mode.pNext = nullptr;
+			decode_mode.decodeMode = VK_FORMAT_R8G8B8A8_UNORM;
+			image_view_create_info.pNext = &decode_mode;
+		}
+	}
+
 	VkImageView vk_image_view = VK_NULL_HANDLE;
 	err = vkCreateImageView(vk_device, &image_view_create_info, VKC::get_allocation_callbacks(VK_OBJECT_TYPE_IMAGE_VIEW), &vk_image_view);
 	if (err) {
@@ -1761,16 +1772,17 @@ RDD::TextureID RenderingDeviceDriverVulkan::texture_create_from_extension(uint64
 	tex_info->vk_view = vk_image_view;
 	tex_info->rd_format = p_format;
 	tex_info->vk_view_create_info = image_view_create_info;
-
+#ifdef DEBUG_ENABLED
+	tex_info->created_from_extension = true;
+#endif
 	return TextureID(tex_info);
 }
 
 RDD::TextureID RenderingDeviceDriverVulkan::texture_create_shared(TextureID p_original_texture, const TextureView &p_view) {
 	const TextureInfo *owner_tex_info = (const TextureInfo *)p_original_texture.id;
 #ifdef DEBUG_ENABLED
-	ERR_FAIL_COND_V(!owner_tex_info->allocation.handle, TextureID());
+	ERR_FAIL_COND_V(!owner_tex_info->allocation.handle && !owner_tex_info->created_from_extension, TextureID());
 #endif
-
 	VkImageViewCreateInfo image_view_create_info = owner_tex_info->vk_view_create_info;
 	image_view_create_info.format = RD_TO_VK_FORMAT[p_view.format];
 	image_view_create_info.components.r = (VkComponentSwizzle)p_view.swizzle_r;
@@ -1826,7 +1838,7 @@ RDD::TextureID RenderingDeviceDriverVulkan::texture_create_shared(TextureID p_or
 RDD::TextureID RenderingDeviceDriverVulkan::texture_create_shared_from_slice(TextureID p_original_texture, const TextureView &p_view, TextureSliceType p_slice_type, uint32_t p_layer, uint32_t p_layers, uint32_t p_mipmap, uint32_t p_mipmaps) {
 	const TextureInfo *owner_tex_info = (const TextureInfo *)p_original_texture.id;
 #ifdef DEBUG_ENABLED
-	ERR_FAIL_COND_V(!owner_tex_info->allocation.handle, TextureID());
+	ERR_FAIL_COND_V(!owner_tex_info->allocation.handle && !owner_tex_info->created_from_extension, TextureID());
 #endif
 
 	VkImageViewCreateInfo image_view_create_info = owner_tex_info->vk_view_create_info;

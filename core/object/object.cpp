@@ -29,7 +29,6 @@
 /**************************************************************************/
 
 #include "object.h"
-#include "object.compat.inc"
 
 #include "core/extension/gdextension_manager.h"
 #include "core/io/resource.h"
@@ -45,14 +44,17 @@
 #ifdef DEBUG_ENABLED
 
 struct _ObjectDebugLock {
-	Object *obj;
+	ObjectID obj_id;
 
 	_ObjectDebugLock(Object *p_obj) {
-		obj = p_obj;
-		obj->_lock_index.ref();
+		obj_id = p_obj->get_instance_id();
+		p_obj->_lock_index.ref();
 	}
 	~_ObjectDebugLock() {
-		obj->_lock_index.unref();
+		Object *obj_ptr = ObjectDB::get_instance(obj_id);
+		if (likely(obj_ptr)) {
+			obj_ptr->_lock_index.unref();
+		}
 	}
 };
 
@@ -615,7 +617,7 @@ Variant Object::_call_bind(const Variant **p_args, int p_argcount, Callable::Cal
 		return Variant();
 	}
 
-	if (p_args[0]->get_type() != Variant::STRING_NAME && p_args[0]->get_type() != Variant::STRING) {
+	if (!p_args[0]->is_string()) {
 		r_error.error = Callable::CallError::CALL_ERROR_INVALID_ARGUMENT;
 		r_error.argument = 0;
 		r_error.expected = Variant::STRING_NAME;
@@ -634,7 +636,7 @@ Variant Object::_call_deferred_bind(const Variant **p_args, int p_argcount, Call
 		return Variant();
 	}
 
-	if (p_args[0]->get_type() != Variant::STRING_NAME && p_args[0]->get_type() != Variant::STRING) {
+	if (!p_args[0]->is_string()) {
 		r_error.error = Callable::CallError::CALL_ERROR_INVALID_ARGUMENT;
 		r_error.argument = 0;
 		r_error.expected = Variant::STRING_NAME;
@@ -730,7 +732,7 @@ Variant Object::getvar(const Variant &p_key, bool *r_valid) const {
 		*r_valid = false;
 	}
 
-	if (p_key.get_type() == Variant::STRING_NAME || p_key.get_type() == Variant::STRING) {
+	if (p_key.is_string()) {
 		return get(p_key, r_valid);
 	}
 	return Variant();
@@ -740,7 +742,7 @@ void Object::setvar(const Variant &p_key, const Variant &p_value, bool *r_valid)
 	if (r_valid) {
 		*r_valid = false;
 	}
-	if (p_key.get_type() == Variant::STRING_NAME || p_key.get_type() == Variant::STRING) {
+	if (p_key.is_string()) {
 		return set(p_key, p_value, r_valid);
 	}
 }
@@ -1114,7 +1116,7 @@ Error Object::_emit_signal(const Variant **p_args, int p_argcount, Callable::Cal
 		ERR_FAIL_V(Error::ERR_INVALID_PARAMETER);
 	}
 
-	if (unlikely(p_args[0]->get_type() != Variant::STRING_NAME && p_args[0]->get_type() != Variant::STRING)) {
+	if (unlikely(!p_args[0]->is_string())) {
 		r_error.error = Callable::CallError::CALL_ERROR_INVALID_ARGUMENT;
 		r_error.argument = 0;
 		r_error.expected = Variant::STRING_NAME;
@@ -1465,6 +1467,24 @@ bool Object::is_connected(const StringName &p_signal, const Callable &p_callable
 	return s->slot_map.has(*p_callable.get_base_comparator());
 }
 
+bool Object::has_connections(const StringName &p_signal) const {
+	const SignalData *s = signal_map.getptr(p_signal);
+	if (!s) {
+		bool signal_is_valid = ClassDB::has_signal(get_class_name(), p_signal);
+		if (signal_is_valid) {
+			return false;
+		}
+
+		if (!script.is_null() && Ref<Script>(script)->has_script_signal(p_signal)) {
+			return false;
+		}
+
+		ERR_FAIL_V_MSG(false, "Nonexistent signal: " + p_signal + ".");
+	}
+
+	return !s->slot_map.is_empty();
+}
+
 void Object::disconnect(const StringName &p_signal, const Callable &p_callable) {
 	_disconnect(p_signal, p_callable);
 }
@@ -1535,21 +1555,21 @@ void Object::initialize_class() {
 	initialized = true;
 }
 
+StringName Object::get_translation_domain() const {
+	return _translation_domain;
+}
+
+void Object::set_translation_domain(const StringName &p_domain) {
+	_translation_domain = p_domain;
+}
+
 String Object::tr(const StringName &p_message, const StringName &p_context) const {
 	if (!_can_translate || !TranslationServer::get_singleton()) {
 		return p_message;
 	}
 
-	if (Engine::get_singleton()->is_editor_hint() || Engine::get_singleton()->is_project_manager_hint()) {
-		String tr_msg = TranslationServer::get_singleton()->extractable_translate(p_message, p_context);
-		if (!tr_msg.is_empty() && tr_msg != p_message) {
-			return tr_msg;
-		}
-
-		return TranslationServer::get_singleton()->tool_translate(p_message, p_context);
-	}
-
-	return TranslationServer::get_singleton()->translate(p_message, p_context);
+	const Ref<TranslationDomain> domain = TranslationServer::get_singleton()->get_or_add_domain(get_translation_domain());
+	return domain->translate(p_message, p_context);
 }
 
 String Object::tr_n(const StringName &p_message, const StringName &p_message_plural, int p_n, const StringName &p_context) const {
@@ -1561,16 +1581,8 @@ String Object::tr_n(const StringName &p_message, const StringName &p_message_plu
 		return p_message_plural;
 	}
 
-	if (Engine::get_singleton()->is_editor_hint() || Engine::get_singleton()->is_project_manager_hint()) {
-		String tr_msg = TranslationServer::get_singleton()->extractable_translate_plural(p_message, p_message_plural, p_n, p_context);
-		if (!tr_msg.is_empty() && tr_msg != p_message && tr_msg != p_message_plural) {
-			return tr_msg;
-		}
-
-		return TranslationServer::get_singleton()->tool_translate_plural(p_message, p_message_plural, p_n, p_context);
-	}
-
-	return TranslationServer::get_singleton()->translate_plural(p_message, p_message_plural, p_n, p_context);
+	const Ref<TranslationDomain> domain = TranslationServer::get_singleton()->get_or_add_domain(get_translation_domain());
+	return domain->translate_plural(p_message, p_message_plural, p_n, p_context);
 }
 
 void Object::_clear_internal_resource_paths(const Variant &p_var) {
@@ -1713,6 +1725,7 @@ void Object::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("connect", "signal", "callable", "flags"), &Object::connect, DEFVAL(0));
 	ClassDB::bind_method(D_METHOD("disconnect", "signal", "callable"), &Object::disconnect);
 	ClassDB::bind_method(D_METHOD("is_connected", "signal", "callable"), &Object::is_connected);
+	ClassDB::bind_method(D_METHOD("has_connections", "signal"), &Object::has_connections);
 
 	ClassDB::bind_method(D_METHOD("set_block_signals", "enable"), &Object::set_block_signals);
 	ClassDB::bind_method(D_METHOD("is_blocking_signals"), &Object::is_blocking_signals);
@@ -1722,6 +1735,8 @@ void Object::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("can_translate_messages"), &Object::can_translate_messages);
 	ClassDB::bind_method(D_METHOD("tr", "message", "context"), &Object::tr, DEFVAL(StringName()));
 	ClassDB::bind_method(D_METHOD("tr_n", "message", "plural_message", "n", "context"), &Object::tr_n, DEFVAL(StringName()));
+	ClassDB::bind_method(D_METHOD("get_translation_domain"), &Object::get_translation_domain);
+	ClassDB::bind_method(D_METHOD("set_translation_domain", "domain"), &Object::set_translation_domain);
 
 	ClassDB::bind_method(D_METHOD("is_queued_for_deletion"), &Object::is_queued_for_deletion);
 	ClassDB::bind_method(D_METHOD("cancel_free"), &Object::cancel_free);
@@ -1734,33 +1749,65 @@ void Object::_bind_methods() {
 #define BIND_OBJ_CORE_METHOD(m_method) \
 	::ClassDB::add_virtual_method(get_class_static(), m_method, true, Vector<String>(), true);
 
-	MethodInfo notification_mi("_notification", PropertyInfo(Variant::INT, "what"));
-	notification_mi.arguments_metadata.push_back(GodotTypeInfo::Metadata::METADATA_INT_IS_INT32);
-	BIND_OBJ_CORE_METHOD(notification_mi);
-	BIND_OBJ_CORE_METHOD(MethodInfo(Variant::BOOL, "_set", PropertyInfo(Variant::STRING_NAME, "property"), PropertyInfo(Variant::NIL, "value")));
-#ifdef TOOLS_ENABLED
-	MethodInfo miget("_get", PropertyInfo(Variant::STRING_NAME, "property"));
-	miget.return_val.name = "Variant";
-	miget.return_val.usage |= PROPERTY_USAGE_NIL_IS_VARIANT;
-	BIND_OBJ_CORE_METHOD(miget);
+	BIND_OBJ_CORE_METHOD(MethodInfo("_init"));
 
-	MethodInfo plget("_get_property_list");
-	plget.return_val.type = Variant::ARRAY;
-	plget.return_val.hint = PROPERTY_HINT_ARRAY_TYPE;
-	plget.return_val.hint_string = "Dictionary";
-	BIND_OBJ_CORE_METHOD(plget);
+	BIND_OBJ_CORE_METHOD(MethodInfo(Variant::STRING, "_to_string"));
+
+	{
+		MethodInfo mi("_notification");
+		mi.arguments.push_back(PropertyInfo(Variant::INT, "what"));
+		mi.arguments_metadata.push_back(GodotTypeInfo::Metadata::METADATA_INT_IS_INT32);
+		BIND_OBJ_CORE_METHOD(mi);
+	}
+
+	{
+		MethodInfo mi("_set");
+		mi.arguments.push_back(PropertyInfo(Variant::STRING_NAME, "property"));
+		mi.arguments.push_back(PropertyInfo(Variant::NIL, "value", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_DEFAULT | PROPERTY_USAGE_NIL_IS_VARIANT));
+		mi.return_val.type = Variant::BOOL;
+		BIND_OBJ_CORE_METHOD(mi);
+	}
+
+#ifdef TOOLS_ENABLED
+	{
+		MethodInfo mi("_get");
+		mi.arguments.push_back(PropertyInfo(Variant::STRING_NAME, "property"));
+		mi.return_val.usage |= PROPERTY_USAGE_NIL_IS_VARIANT;
+		BIND_OBJ_CORE_METHOD(mi);
+	}
+
+	{
+		MethodInfo mi("_get_property_list");
+		mi.return_val.type = Variant::ARRAY;
+		mi.return_val.hint = PROPERTY_HINT_ARRAY_TYPE;
+		mi.return_val.hint_string = "Dictionary";
+		BIND_OBJ_CORE_METHOD(mi);
+	}
 
 	BIND_OBJ_CORE_METHOD(MethodInfo(Variant::NIL, "_validate_property", PropertyInfo(Variant::DICTIONARY, "property")));
 
 	BIND_OBJ_CORE_METHOD(MethodInfo(Variant::BOOL, "_property_can_revert", PropertyInfo(Variant::STRING_NAME, "property")));
-	MethodInfo mipgr("_property_get_revert", PropertyInfo(Variant::STRING_NAME, "property"));
-	mipgr.return_val.name = "Variant";
-	mipgr.return_val.usage |= PROPERTY_USAGE_NIL_IS_VARIANT;
-	BIND_OBJ_CORE_METHOD(mipgr);
 
+	{
+		MethodInfo mi("_property_get_revert");
+		mi.arguments.push_back(PropertyInfo(Variant::STRING_NAME, "property"));
+		mi.return_val.usage |= PROPERTY_USAGE_NIL_IS_VARIANT;
+		BIND_OBJ_CORE_METHOD(mi);
+	}
+
+	// These are actually `Variant` methods, but that doesn't matter since scripts can't inherit built-in types.
+
+	BIND_OBJ_CORE_METHOD(MethodInfo(Variant::BOOL, "_iter_init", PropertyInfo(Variant::ARRAY, "iter")));
+
+	BIND_OBJ_CORE_METHOD(MethodInfo(Variant::BOOL, "_iter_next", PropertyInfo(Variant::ARRAY, "iter")));
+
+	{
+		MethodInfo mi("_iter_get");
+		mi.arguments.push_back(PropertyInfo(Variant::NIL, "iter", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_DEFAULT | PROPERTY_USAGE_NIL_IS_VARIANT));
+		mi.return_val.usage |= PROPERTY_USAGE_NIL_IS_VARIANT;
+		BIND_OBJ_CORE_METHOD(mi);
+	}
 #endif
-	BIND_OBJ_CORE_METHOD(MethodInfo("_init"));
-	BIND_OBJ_CORE_METHOD(MethodInfo(Variant::STRING, "_to_string"));
 
 	BIND_CONSTANT(NOTIFICATION_POSTINITIALIZE);
 	BIND_CONSTANT(NOTIFICATION_PREDELETE);

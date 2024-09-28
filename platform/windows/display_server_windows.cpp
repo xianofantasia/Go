@@ -381,7 +381,7 @@ public:
 		ctls[cid] = p_name;
 	}
 
-	virtual ~FileDialogEventHandler(){};
+	virtual ~FileDialogEventHandler() {}
 };
 
 #if defined(__GNUC__) && !defined(__clang__)
@@ -522,7 +522,7 @@ void DisplayServerWindows::_thread_fd_monitor(void *p_ud) {
 			if (!item.has("name") || !item.has("values") || !item.has("default")) {
 				continue;
 			}
-			event_handler->add_option(pfdc, item["name"], item["values"], item["default_idx"]);
+			event_handler->add_option(pfdc, item["name"], item["values"], item["default"]);
 		}
 		event_handler->set_root(fd->root);
 
@@ -625,62 +625,41 @@ void DisplayServerWindows::_thread_fd_monitor(void *p_ud) {
 				}
 			}
 			if (fd->callback.is_valid()) {
-				if (fd->options_in_cb) {
-					Variant v_result = true;
-					Variant v_files = file_names;
-					Variant v_index = index;
-					Variant v_opt = options;
-					const Variant *cb_args[4] = { &v_result, &v_files, &v_index, &v_opt };
-
-					fd->callback.call_deferredp(cb_args, 4);
-				} else {
-					Variant v_result = true;
-					Variant v_files = file_names;
-					Variant v_index = index;
-					const Variant *cb_args[3] = { &v_result, &v_files, &v_index };
-
-					fd->callback.call_deferredp(cb_args, 3);
-				}
+				MutexLock lock(ds->file_dialog_mutex);
+				FileDialogCallback cb;
+				cb.callback = fd->callback;
+				cb.status = true;
+				cb.files = file_names;
+				cb.index = index;
+				cb.options = options;
+				cb.opt_in_cb = fd->options_in_cb;
+				ds->pending_cbs.push_back(cb);
 			}
 		} else {
 			if (fd->callback.is_valid()) {
-				if (fd->options_in_cb) {
-					Variant v_result = false;
-					Variant v_files = Vector<String>();
-					Variant v_index = 0;
-					Variant v_opt = Dictionary();
-					const Variant *cb_args[4] = { &v_result, &v_files, &v_index, &v_opt };
-
-					fd->callback.call_deferredp(cb_args, 4);
-				} else {
-					Variant v_result = false;
-					Variant v_files = Vector<String>();
-					Variant v_index = 0;
-					const Variant *cb_args[3] = { &v_result, &v_files, &v_index };
-
-					fd->callback.call_deferredp(cb_args, 3);
-				}
+				MutexLock lock(ds->file_dialog_mutex);
+				FileDialogCallback cb;
+				cb.callback = fd->callback;
+				cb.status = false;
+				cb.files = Vector<String>();
+				cb.index = index;
+				cb.options = options;
+				cb.opt_in_cb = fd->options_in_cb;
+				ds->pending_cbs.push_back(cb);
 			}
 		}
 		pfd->Release();
 	} else {
 		if (fd->callback.is_valid()) {
-			if (fd->options_in_cb) {
-				Variant v_result = false;
-				Variant v_files = Vector<String>();
-				Variant v_index = 0;
-				Variant v_opt = Dictionary();
-				const Variant *cb_args[4] = { &v_result, &v_files, &v_index, &v_opt };
-
-				fd->callback.call_deferredp(cb_args, 4);
-			} else {
-				Variant v_result = false;
-				Variant v_files = Vector<String>();
-				Variant v_index = 0;
-				const Variant *cb_args[3] = { &v_result, &v_files, &v_index };
-
-				fd->callback.call_deferredp(cb_args, 3);
-			}
+			MutexLock lock(ds->file_dialog_mutex);
+			FileDialogCallback cb;
+			cb.callback = fd->callback;
+			cb.status = false;
+			cb.files = Vector<String>();
+			cb.index = 0;
+			cb.options = Dictionary();
+			cb.opt_in_cb = fd->options_in_cb;
+			ds->pending_cbs.push_back(cb);
 		}
 	}
 	{
@@ -766,6 +745,34 @@ Error DisplayServerWindows::_file_dialog_with_options_show(const String &p_title
 	file_dialogs.push_back(fd);
 
 	return OK;
+}
+
+void DisplayServerWindows::process_file_dialog_callbacks() {
+	MutexLock lock(file_dialog_mutex);
+	while (!pending_cbs.is_empty()) {
+		FileDialogCallback cb = pending_cbs.front()->get();
+		pending_cbs.pop_front();
+
+		if (cb.opt_in_cb) {
+			Variant ret;
+			Callable::CallError ce;
+			const Variant *args[4] = { &cb.status, &cb.files, &cb.index, &cb.options };
+
+			cb.callback.callp(args, 4, ret, ce);
+			if (ce.error != Callable::CallError::CALL_OK) {
+				ERR_PRINT(vformat("Failed to execute file dialog callback: %s.", Variant::get_callable_error_text(cb.callback, args, 4, ce)));
+			}
+		} else {
+			Variant ret;
+			Callable::CallError ce;
+			const Variant *args[3] = { &cb.status, &cb.files, &cb.index };
+
+			cb.callback.callp(args, 3, ret, ce);
+			if (ce.error != Callable::CallError::CALL_OK) {
+				ERR_PRINT(vformat("Failed to execute file dialog callback: %s.", Variant::get_callable_error_text(cb.callback, args, 3, ce)));
+			}
+		}
+	}
 }
 
 void DisplayServerWindows::mouse_set_mode(MouseMode p_mode) {
@@ -3190,6 +3197,7 @@ void DisplayServerWindows::process_events() {
 		memdelete(E->get());
 		E->erase();
 	}
+	process_file_dialog_callbacks();
 }
 
 void DisplayServerWindows::force_process_and_drop_events() {
@@ -3954,9 +3962,9 @@ LRESULT DisplayServerWindows::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARA
 		}
 	}
 
-	// WARNING: we get called with events before the window is registered in our collection
+	// WARNING: We get called with events before the window is registered in our collection
 	// specifically, even the call to CreateWindowEx already calls here while still on the stack,
-	// so there is no way to store the window handle in our collection before we get here
+	// so there is no way to store the window handle in our collection before we get here.
 	if (!window_created) {
 		// don't let code below operate on incompletely initialized window objects or missing window_id
 		return _handle_early_window_message(hWnd, uMsg, wParam, lParam);
@@ -6150,6 +6158,7 @@ DisplayServerWindows::DisplayServerWindows(const String &p_rendering_driver, Win
 				if (rendering_context->initialize() == OK) {
 					WARN_PRINT("Your video card drivers seem not to support Direct3D 12, switching to Vulkan.");
 					rendering_driver = "vulkan";
+					OS::get_singleton()->set_current_rendering_driver_name(rendering_driver);
 					failed = false;
 				}
 			}
@@ -6163,10 +6172,22 @@ DisplayServerWindows::DisplayServerWindows(const String &p_rendering_driver, Win
 				if (rendering_context->initialize() == OK) {
 					WARN_PRINT("Your video card drivers seem not to support Vulkan, switching to Direct3D 12.");
 					rendering_driver = "d3d12";
+					OS::get_singleton()->set_current_rendering_driver_name(rendering_driver);
 					failed = false;
 				}
 			}
 #endif
+			bool fallback_to_opengl3 = GLOBAL_GET("rendering/rendering_device/fallback_to_opengl3");
+			if (failed && fallback_to_opengl3 && rendering_driver != "opengl3") {
+				memdelete(rendering_context);
+				rendering_context = nullptr;
+				tested_drivers.set_flag(DRIVER_ID_COMPAT_OPENGL3);
+				WARN_PRINT("Your video card drivers seem not to support Direct3D 12 or Vulkan, switching to OpenGL 3.");
+				rendering_driver = "opengl3";
+				OS::get_singleton()->set_current_rendering_method("gl_compatibility");
+				OS::get_singleton()->set_current_rendering_driver_name(rendering_driver);
+				failed = false;
+			}
 			if (failed) {
 				memdelete(rendering_context);
 				rendering_context = nullptr;
@@ -6241,6 +6262,7 @@ DisplayServerWindows::DisplayServerWindows(const String &p_rendering_driver, Win
 				}
 			}
 			rendering_driver = "opengl3_angle";
+			OS::get_singleton()->set_current_rendering_driver_name(rendering_driver);
 		}
 	}
 

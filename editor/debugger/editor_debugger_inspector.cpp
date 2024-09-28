@@ -99,28 +99,26 @@ int EditorDebuggerRemoteObject::update_props(SceneDebuggerObject &obj, HashSet<S
 		Variant &var = property.second;
 
 		if (pinfo.type == Variant::OBJECT) {
-			if (var.get_type() == Variant::STRING) {
+			if (var.is_string()) {
 				String path = var;
 				if (path.contains("::")) {
 					// built-in resource
 					String base_path = path.get_slice("::", 0);
 					Ref<Resource> dependency = ResourceLoader::load(base_path);
 					if (dependency.is_valid()) {
-						if (remote_dependencies) {
-							remote_dependencies->insert(dependency);
-						}
+						remote_dependencies.insert(dependency);
 					}
 				}
 				var = ResourceLoader::load(path);
 
 				if (pinfo.hint_string == "Script") {
-					if (get_script() != var) {
-						set_script(Ref<RefCounted>());
+					if (debug_obj->get_script() != var) {
+						debug_obj->set_script(Ref<RefCounted>());
 						Ref<Script> scr(var);
 						if (!scr.is_null()) {
-							ScriptInstance *scr_instance = scr->placeholder_instance_create(this);
+							ScriptInstance *scr_instance = scr->placeholder_instance_create(debug_obj);
 							if (scr_instance) {
-								set_script_and_instance(var, scr_instance);
+								debug_obj->set_script_and_instance(var, scr_instance);
 							}
 						}
 					}
@@ -129,17 +127,15 @@ int EditorDebuggerRemoteObject::update_props(SceneDebuggerObject &obj, HashSet<S
 		}
 
 		//always add the property, since props may have been added or removed
-		prop_list.push_back(pinfo);
+		debug_obj->prop_list.push_back(pinfo);
 
-		if (!prop_values.has(pinfo.name)) {
+		if (!debug_obj->prop_values.has(pinfo.name)) {
 			new_props_added++;
-			prop_values[pinfo.name] = var;
+			debug_obj->prop_values[pinfo.name] = var;
 		} else {
-			if (bool(Variant::evaluate(Variant::OP_NOT_EQUAL, prop_values[pinfo.name], var))) {
-				prop_values[pinfo.name] = var;
-				if (changed != nullptr) {
-					changed->insert(pinfo.name);
-				}
+			if (bool(Variant::evaluate(Variant::OP_NOT_EQUAL, debug_obj->prop_values[pinfo.name], var))) {
+				debug_obj->prop_values[pinfo.name] = var;
+				changed.insert(pinfo.name);
 			}
 		}
 	}

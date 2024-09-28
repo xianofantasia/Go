@@ -44,6 +44,7 @@
 #include "editor/editor_command_palette.h"
 #include "editor/editor_help_search.h"
 #include "editor/editor_interface.h"
+#include "editor/editor_main_screen.h"
 #include "editor/editor_node.h"
 #include "editor/editor_paths.h"
 #include "editor/editor_script.h"
@@ -57,6 +58,7 @@
 #include "editor/gui/editor_toaster.h"
 #include "editor/inspector_dock.h"
 #include "editor/node_dock.h"
+#include "editor/plugins/editor_context_menu_plugin.h"
 #include "editor/plugins/shader_editor_plugin.h"
 #include "editor/plugins/text_shader_editor.h"
 #include "editor/themes/editor_scale.h"
@@ -358,12 +360,14 @@ void ScriptEditorQuickOpen::_text_changed(const String &p_newtext) {
 	_update_search();
 }
 
-void ScriptEditorQuickOpen::_sbox_input(const Ref<InputEvent> &p_ie) {
-	Ref<InputEventKey> k = p_ie;
-
-	if (k.is_valid() && (k->get_keycode() == Key::UP || k->get_keycode() == Key::DOWN || k->get_keycode() == Key::PAGEUP || k->get_keycode() == Key::PAGEDOWN)) {
-		search_options->gui_input(k);
-		search_box->accept_event();
+void ScriptEditorQuickOpen::_sbox_input(const Ref<InputEvent> &p_event) {
+	// Redirect navigational key events to the tree.
+	Ref<InputEventKey> key = p_event;
+	if (key.is_valid()) {
+		if (key->is_action("ui_up", true) || key->is_action("ui_down", true) || key->is_action("ui_page_up") || key->is_action("ui_page_down")) {
+			search_options->gui_input(key);
+			search_box->accept_event();
+		}
 	}
 }
 
@@ -510,7 +514,7 @@ void ScriptEditor::_set_execution(Ref<RefCounted> p_script, int p_line) {
 				continue;
 			}
 
-			if ((scr != nullptr && se->get_edited_resource() == p_script) || se->get_edited_resource()->get_path() == scr->get_path()) {
+			if ((scr.is_valid() && se->get_edited_resource() == p_script) || se->get_edited_resource()->get_path() == scr->get_path()) {
 				se->set_executing_line(p_line);
 			}
 		}
@@ -526,7 +530,7 @@ void ScriptEditor::_clear_execution(Ref<RefCounted> p_script) {
 				continue;
 			}
 
-			if ((scr != nullptr && se->get_edited_resource() == p_script) || se->get_edited_resource()->get_path() == scr->get_path()) {
+			if ((scr.is_valid() && se->get_edited_resource() == p_script) || se->get_edited_resource()->get_path() == scr->get_path()) {
 				se->clear_executing_line();
 			}
 		}
@@ -711,7 +715,7 @@ void ScriptEditor::_go_to_tab(int p_idx) {
 		}
 
 		Ref<Script> scr = Object::cast_to<ScriptEditorBase>(c)->get_edited_resource();
-		if (scr != nullptr) {
+		if (scr.is_valid()) {
 			notify_script_changed(scr);
 		}
 
@@ -1017,7 +1021,7 @@ void ScriptEditor::_resave_scripts(const String &p_str) {
 		}
 
 		Ref<TextFile> text_file = scr;
-		if (text_file != nullptr) {
+		if (text_file.is_valid()) {
 			se->apply_code();
 			_save_text_file(text_file, text_file->get_path());
 			break;
@@ -1228,7 +1232,7 @@ Ref<Script> ScriptEditor::_get_current_script() {
 
 	if (current) {
 		Ref<Script> scr = current->get_edited_resource();
-		return scr != nullptr ? scr : nullptr;
+		return scr.is_valid() ? scr : nullptr;
 	} else {
 		return nullptr;
 	}
@@ -1398,6 +1402,15 @@ void ScriptEditor::_menu_option(int p_option) {
 		}
 	}
 
+	if (p_option >= EditorContextMenuPlugin::BASE_ID) {
+		Ref<Resource> resource;
+		if (current) {
+			resource = current->get_edited_resource();
+		}
+		EditorContextMenuPluginManager::get_singleton()->activate_custom_option(EditorContextMenuPlugin::CONTEXT_SLOT_SCRIPT_EDITOR, p_option, resource);
+		return;
+	}
+
 	if (current) {
 		switch (p_option) {
 			case FILE_SAVE: {
@@ -1420,7 +1433,7 @@ void ScriptEditor::_menu_option(int p_option) {
 				Ref<TextFile> text_file = resource;
 				Ref<Script> scr = resource;
 
-				if (text_file != nullptr) {
+				if (text_file.is_valid()) {
 					file_dialog->set_file_mode(EditorFileDialog::FILE_MODE_SAVE_FILE);
 					file_dialog->set_access(EditorFileDialog::ACCESS_FILESYSTEM);
 					file_dialog_option = FILE_SAVE_AS;
@@ -1449,7 +1462,7 @@ void ScriptEditor::_menu_option(int p_option) {
 
 			case FILE_TOOL_RELOAD_SOFT: {
 				Ref<Script> scr = current->get_edited_resource();
-				if (scr == nullptr || scr.is_null()) {
+				if (scr.is_null()) {
 					EditorNode::get_singleton()->show_warning(TTR("Can't obtain the script for reloading."));
 					break;
 				}
@@ -1463,14 +1476,14 @@ void ScriptEditor::_menu_option(int p_option) {
 
 			case FILE_RUN: {
 				Ref<Script> scr = current->get_edited_resource();
-				if (scr == nullptr || scr.is_null()) {
+				if (scr.is_null()) {
 					EditorToaster::get_singleton()->popup_str(TTR("Cannot run the edited file because it's not a script."), EditorToaster::SEVERITY_WARNING);
 					break;
 				}
 
 				current->apply_code();
 
-				Error err = scr->reload(false); // Always hard reload the script before running.
+				Error err = scr->reload(true); // Always hard reload the script before running.
 				if (err != OK || !scr->is_valid()) {
 					EditorToaster::get_singleton()->popup_str(TTR("Cannot run the script because it contains errors, check the output log."), EditorToaster::SEVERITY_WARNING);
 					return;
@@ -1796,7 +1809,7 @@ void ScriptEditor::_close_builtin_scripts_from_scene(const String &p_scene) {
 
 		if (se) {
 			Ref<Script> scr = se->get_edited_resource();
-			if (scr == nullptr || !scr.is_valid()) {
+			if (scr.is_null()) {
 				continue;
 			}
 
@@ -2500,7 +2513,7 @@ bool ScriptEditor::edit(const Ref<Resource> &p_resource, int p_line, int p_col, 
 			continue;
 		}
 
-		if ((scr != nullptr && se->get_edited_resource() == p_resource) || se->get_edited_resource()->get_path() == p_resource->get_path()) {
+		if ((scr.is_valid() && se->get_edited_resource() == p_resource) || se->get_edited_resource()->get_path() == p_resource->get_path()) {
 			if (should_open) {
 				se->enable_editor(this);
 
@@ -2550,7 +2563,7 @@ bool ScriptEditor::edit(const Ref<Resource> &p_resource, int p_line, int p_col, 
 
 		PackedStringArray languages = highlighter->_get_supported_languages();
 		// If script try language, else use extension.
-		if (scr != nullptr) {
+		if (scr.is_valid()) {
 			if (languages.has(scr->get_language()->get_name())) {
 				se->set_syntax_highlighter(highlighter);
 				highlighter_set = true;
@@ -2660,7 +2673,7 @@ void ScriptEditor::save_current_script() {
 	Ref<TextFile> text_file = resource;
 	Ref<Script> scr = resource;
 
-	if (text_file != nullptr) {
+	if (text_file.is_valid()) {
 		current->apply_code();
 		_save_text_file(text_file, text_file->get_path());
 		return;
@@ -2711,7 +2724,7 @@ void ScriptEditor::save_all_scripts() {
 			Ref<TextFile> text_file = edited_res;
 			Ref<Script> scr = edited_res;
 
-			if (text_file != nullptr) {
+			if (text_file.is_valid()) {
 				_save_text_file(text_file, text_file->get_path());
 				continue;
 			}
@@ -2788,7 +2801,7 @@ void ScriptEditor::_reload_scripts(bool p_refresh_only) {
 			}
 
 			Ref<JSON> json = edited_res;
-			if (json != nullptr) {
+			if (json.is_valid()) {
 				Ref<JSON> rel_json = ResourceLoader::load(json->get_path(), json->get_class(), ResourceFormatLoader::CACHE_MODE_IGNORE);
 				ERR_CONTINUE(!rel_json.is_valid());
 				json->parse(rel_json->get_parsed_text(), true);
@@ -3088,6 +3101,7 @@ Variant ScriptEditor::get_drag_data_fw(const Point2 &p_point, Control *p_from) {
 		drag_preview->add_child(tf);
 	}
 	Label *label = memnew(Label(preview_name));
+	label->set_auto_translate_mode(AUTO_TRANSLATE_MODE_DISABLED); // Don't translate script names and class names.
 	drag_preview->add_child(label);
 	set_drag_preview(drag_preview);
 
@@ -3304,6 +3318,17 @@ void ScriptEditor::shortcut_input(const Ref<InputEvent> &p_event) {
 		_menu_option(WINDOW_MOVE_DOWN);
 		accept_event();
 	}
+
+	Callable custom_callback = EditorContextMenuPluginManager::get_singleton()->match_custom_shortcut(EditorContextMenuPlugin::CONTEXT_SLOT_SCRIPT_EDITOR, p_event);
+	if (custom_callback.is_valid()) {
+		Ref<Resource> resource;
+		ScriptEditorBase *current = _get_current_editor();
+		if (current) {
+			resource = current->get_edited_resource();
+		}
+		EditorContextMenuPluginManager::get_singleton()->invoke_callback(custom_callback, resource);
+		accept_event();
+	}
 }
 
 void ScriptEditor::_script_list_clicked(int p_item, Vector2 p_local_mouse_pos, MouseButton p_mouse_button_index) {
@@ -3338,7 +3363,7 @@ void ScriptEditor::_make_script_list_context_menu() {
 	context_menu->add_separator();
 	if (se) {
 		Ref<Script> scr = se->get_edited_resource();
-		if (scr != nullptr) {
+		if (scr.is_valid()) {
 			if (!scr.is_null() && scr->is_tool()) {
 				context_menu->add_shortcut(ED_GET_SHORTCUT("script_editor/reload_script_soft"), FILE_TOOL_RELOAD_SOFT);
 				context_menu->add_shortcut(ED_GET_SHORTCUT("script_editor/run_file"), FILE_RUN);
@@ -3361,6 +3386,17 @@ void ScriptEditor::_make_script_list_context_menu() {
 	context_menu->set_item_disabled(context_menu->get_item_index(WINDOW_MOVE_UP), tab_container->get_current_tab() <= 0);
 	context_menu->set_item_disabled(context_menu->get_item_index(WINDOW_MOVE_DOWN), tab_container->get_current_tab() >= tab_container->get_tab_count() - 1);
 	context_menu->set_item_disabled(context_menu->get_item_index(WINDOW_SORT), tab_container->get_tab_count() <= 1);
+
+	// Context menu plugin.
+	Vector<String> selected_paths;
+	if (se) {
+		Ref<Resource> scr = se->get_edited_resource();
+		if (scr.is_valid()) {
+			String path = scr->get_path();
+			selected_paths.push_back(path);
+		}
+	}
+	EditorContextMenuPluginManager::get_singleton()->add_options_from_plugins(context_menu, EditorContextMenuPlugin::CONTEXT_SLOT_SCRIPT_EDITOR, selected_paths);
 
 	context_menu->set_position(get_screen_position() + get_local_mouse_position());
 	context_menu->reset_size();
@@ -3685,7 +3721,7 @@ void ScriptEditor::_update_history_pos(int p_new_pos) {
 		seb->ensure_focus();
 
 		Ref<Script> scr = seb->get_edited_resource();
-		if (scr != nullptr) {
+		if (scr.is_valid()) {
 			notify_script_changed(scr);
 		}
 	}
@@ -3724,7 +3760,7 @@ Vector<Ref<Script>> ScriptEditor::get_open_scripts() const {
 		}
 
 		Ref<Script> scr = se->get_edited_resource();
-		if (scr != nullptr) {
+		if (scr.is_valid()) {
 			out_scripts.push_back(scr);
 		}
 	}
@@ -4025,6 +4061,7 @@ void ScriptEditor::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("open_script_create_dialog", "base_name", "base_path"), &ScriptEditor::open_script_create_dialog);
 
 	ClassDB::bind_method(D_METHOD("goto_help", "topic"), &ScriptEditor::goto_help);
+	ClassDB::bind_method(D_METHOD("update_docs_from_script", "script"), &ScriptEditor::update_docs_from_script);
 
 	ADD_SIGNAL(MethodInfo("editor_script_changed", PropertyInfo(Variant::OBJECT, "script", PROPERTY_HINT_RESOURCE_TYPE, "Script")));
 	ADD_SIGNAL(MethodInfo("script_close", PropertyInfo(Variant::OBJECT, "script", PROPERTY_HINT_RESOURCE_TYPE, "Script")));
@@ -4073,9 +4110,9 @@ ScriptEditor::ScriptEditor(WindowWrapper *p_wrapper) {
 	script_list = memnew(ItemList);
 	script_list->set_auto_translate_mode(AUTO_TRANSLATE_MODE_DISABLED);
 	scripts_vbox->add_child(script_list);
-	script_list->set_custom_minimum_size(Size2(150, 60) * EDSCALE); //need to give a bit of limit to avoid it from disappearing
+	script_list->set_custom_minimum_size(Size2(100, 60) * EDSCALE); //need to give a bit of limit to avoid it from disappearing
 	script_list->set_v_size_flags(SIZE_EXPAND_FILL);
-	script_split->set_split_offset(70 * EDSCALE);
+	script_split->set_split_offset(200 * EDSCALE);
 	_sort_list_on_update = true;
 	script_list->connect("item_clicked", callable_mp(this, &ScriptEditor::_script_list_clicked), CONNECT_DEFERRED);
 	script_list->set_allow_rmb_select(true);
@@ -4282,7 +4319,7 @@ ScriptEditor::ScriptEditor(WindowWrapper *p_wrapper) {
 	make_floating->connect("request_open_in_screen", callable_mp(window_wrapper, &WindowWrapper::enable_window_on_screen).bind(true));
 	if (!make_floating->is_disabled()) {
 		// Override default ScreenSelect tooltip if multi-window support is available.
-		make_floating->set_tooltip_text(TTR("Make the script editor floating."));
+		make_floating->set_tooltip_text(TTR("Make the script editor floating.\nRight-click to open the screen selector."));
 	}
 
 	menu_hb->add_child(make_floating);
@@ -4585,26 +4622,12 @@ ScriptEditorPlugin::ScriptEditorPlugin() {
 	Ref<Shortcut> make_floating_shortcut = ED_SHORTCUT_AND_COMMAND("script_editor/make_floating", TTR("Make Floating"));
 	window_wrapper->set_wrapped_control(script_editor, make_floating_shortcut);
 
-	EditorNode::get_singleton()->get_main_screen_control()->add_child(window_wrapper);
+	EditorNode::get_singleton()->get_editor_main_screen()->get_control()->add_child(window_wrapper);
 	window_wrapper->set_v_size_flags(Control::SIZE_EXPAND_FILL);
 	window_wrapper->hide();
 	window_wrapper->connect("window_visibility_changed", callable_mp(this, &ScriptEditorPlugin::_window_visibility_changed));
 
-	EDITOR_GET("text_editor/behavior/files/auto_reload_scripts_on_external_change");
-	ScriptServer::set_reload_scripts_on_save(EDITOR_DEF("text_editor/behavior/files/auto_reload_and_parse_scripts_on_save", true));
-	EDITOR_DEF("text_editor/behavior/files/open_dominant_script_on_scene_change", false);
-	EDITOR_DEF("text_editor/external/use_external_editor", false);
-	EDITOR_DEF("text_editor/external/exec_path", "");
-	EDITOR_DEF("text_editor/script_list/script_temperature_enabled", true);
-	EDITOR_DEF("text_editor/script_list/script_temperature_history_size", 15);
-	EDITOR_DEF("text_editor/script_list/group_help_pages", true);
-	EditorSettings::get_singleton()->add_property_hint(PropertyInfo(Variant::INT, "text_editor/script_list/sort_scripts_by", PROPERTY_HINT_ENUM, "Name,Path,None"));
-	EDITOR_DEF("text_editor/script_list/sort_scripts_by", 0);
-	EditorSettings::get_singleton()->add_property_hint(PropertyInfo(Variant::INT, "text_editor/script_list/list_script_names_as", PROPERTY_HINT_ENUM, "Name,Parent Directory And Name,Full Path"));
-	EDITOR_DEF("text_editor/script_list/list_script_names_as", 0);
-	EditorSettings::get_singleton()->add_property_hint(PropertyInfo(Variant::STRING, "text_editor/external/exec_path", PROPERTY_HINT_GLOBAL_FILE));
-	EDITOR_DEF("text_editor/external/exec_flags", "{file}");
-	EditorSettings::get_singleton()->add_property_hint(PropertyInfo(Variant::STRING, "text_editor/external/exec_flags", PROPERTY_HINT_PLACEHOLDER_TEXT, "Call flags with placeholders: {project}, {file}, {col}, {line}."));
+	ScriptServer::set_reload_scripts_on_save(EDITOR_GET("text_editor/behavior/files/auto_reload_and_parse_scripts_on_save"));
 }
 
 ScriptEditorPlugin::~ScriptEditorPlugin() {

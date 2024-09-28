@@ -405,7 +405,7 @@ void ShaderEditorPlugin::_setup_popup_menu(PopupMenuType p_type, PopupMenu *p_me
 		if (p_type == CONTEXT_VALID_ITEM) {
 			p_menu->add_separator();
 			p_menu->add_item(TTR("Copy Script Path"), COPY_PATH);
-			p_menu->add_item(TTR("Show in File System"), SHOW_IN_FILE_SYSTEM);
+			p_menu->add_item(TTR("Show in FileSystem"), SHOW_IN_FILE_SYSTEM);
 		}
 	}
 }
@@ -614,6 +614,7 @@ Variant ShaderEditorPlugin::get_drag_data_fw(const Point2 &p_point, Control *p_f
 		drag_preview->add_child(tf);
 	}
 	Label *label = memnew(Label(preview_name));
+	label->set_auto_translate_mode(AUTO_TRANSLATE_MODE_DISABLED); // Don't translate script names.
 	drag_preview->add_child(label);
 	main_split->set_drag_preview(drag_preview);
 
@@ -773,6 +774,7 @@ ShaderEditorPlugin::ShaderEditorPlugin() {
 	window_wrapper->set_margins_enabled(true);
 
 	main_split = memnew(HSplitContainer);
+	main_split->set_split_offset(200 * EDSCALE);
 	Ref<Shortcut> make_floating_shortcut = ED_SHORTCUT_AND_COMMAND("shader_editor/make_floating", TTR("Make Floating"));
 	window_wrapper->set_wrapped_control(main_split, make_floating_shortcut);
 
@@ -802,7 +804,7 @@ ShaderEditorPlugin::ShaderEditorPlugin() {
 	make_floating->connect("request_open_in_screen", callable_mp(window_wrapper, &WindowWrapper::enable_window_on_screen).bind(true));
 	if (!make_floating->is_disabled()) {
 		// Override default ScreenSelect tooltip if multi-window support is available.
-		make_floating->set_tooltip_text(TTR("Make the shader editor floating."));
+		make_floating->set_tooltip_text(TTR("Make the shader editor floating.\nRight-click to open the screen selector."));
 	}
 
 	menu_hb->add_child(make_floating);
@@ -818,7 +820,7 @@ ShaderEditorPlugin::ShaderEditorPlugin() {
 	SET_DRAG_FORWARDING_GCD(shader_list, ShaderEditorPlugin);
 
 	main_split->add_child(left_panel);
-	left_panel->set_custom_minimum_size(Size2(200, 300) * EDSCALE);
+	left_panel->set_custom_minimum_size(Size2(100, 300) * EDSCALE);
 
 	shader_tabs = memnew(TabContainer);
 	shader_tabs->set_tabs_visible(false);
