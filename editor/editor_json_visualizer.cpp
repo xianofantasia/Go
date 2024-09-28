@@ -72,7 +72,7 @@ void EditorJsonVisualizer::load_theme(Ref<EditorJsonVisualizerSyntaxHighlighter>
 	set_syntax_highlighter(p_syntax_highlighter);
 	add_theme_font_override(SceneStringName(font), get_theme_font("source", EditorStringName(EditorFonts)));
 	add_theme_font_size_override(SceneStringName(font_size), get_theme_font_size("source_size", EditorStringName(EditorFonts)));
-	add_theme_constant_override("line_spacing", EDITOR_DEF("text_editor/theme/line_spacing", 6));
+	add_theme_constant_override("line_spacing", EDITOR_GET("text_editor/theme/line_spacing"));
 
 	// Appearance: Caret
 	set_caret_type((TextEdit::CaretType)EDITOR_GET("text_editor/appearance/caret/type").operator int());
