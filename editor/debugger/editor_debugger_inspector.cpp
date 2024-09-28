@@ -105,20 +105,20 @@ int EditorDebuggerRemoteObject::update_props(SceneDebuggerObject &obj, HashSet<S
 					// built-in resource
 					String base_path = path.get_slice("::", 0);
 					Ref<Resource> dependency = ResourceLoader::load(base_path);
-					if (dependency.is_valid()) {
-						remote_dependencies.insert(dependency);
+					if (dependency.is_valid() && remote_dependencies) {
+						remote_dependencies->insert(dependency);
 					}
 				}
 				var = ResourceLoader::load(path);
 
 				if (pinfo.hint_string == "Script") {
-					if (debug_obj->get_script() != var) {
-						debug_obj->set_script(Ref<RefCounted>());
+					if (get_script() != var) {
+						set_script(Ref<RefCounted>());
 						Ref<Script> scr(var);
 						if (!scr.is_null()) {
-							ScriptInstance *scr_instance = scr->placeholder_instance_create(debug_obj);
+							ScriptInstance *scr_instance = scr->placeholder_instance_create(this);
 							if (scr_instance) {
-								debug_obj->set_script_and_instance(var, scr_instance);
+								set_script_and_instance(var, scr_instance);
 							}
 						}
 					}
@@ -127,15 +127,17 @@ int EditorDebuggerRemoteObject::update_props(SceneDebuggerObject &obj, HashSet<S
 		}
 
 		//always add the property, since props may have been added or removed
-		debug_obj->prop_list.push_back(pinfo);
+		prop_list.push_back(pinfo);
 
-		if (!debug_obj->prop_values.has(pinfo.name)) {
+		if (!prop_values.has(pinfo.name)) {
 			new_props_added++;
-			debug_obj->prop_values[pinfo.name] = var;
+			prop_values[pinfo.name] = var;
 		} else {
-			if (bool(Variant::evaluate(Variant::OP_NOT_EQUAL, debug_obj->prop_values[pinfo.name], var))) {
-				debug_obj->prop_values[pinfo.name] = var;
-				changed.insert(pinfo.name);
+			if (bool(Variant::evaluate(Variant::OP_NOT_EQUAL, prop_values[pinfo.name], var))) {
+				prop_values[pinfo.name] = var;
+				if (changed) {
+					changed->insert(pinfo.name);
+				}
 			}
 		}
 	}

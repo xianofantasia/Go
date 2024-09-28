@@ -93,9 +93,9 @@ SnapshotSummaryView::SnapshotSummaryView() {
 	content->add_child(explainer_text);
 	VBoxContainer *explainer_lines = memnew(VBoxContainer);
 	explainer_text->add_child(explainer_lines);
-	Label *l1 = memnew(Label("No snapshot selected. Press 'Take ObjectDB Snapshot' to snapshot game Objects."));
-	Label *l2 = memnew(Label("ObjectDB Snapshots capture all Objects and Properties in a game."));
-	Label *l3 = memnew(Label("Not all memory in Godot is exposed as an Object or Property, so ObjectDB Snapshots are a partial view of a game's memory."));
+	Label *l1 = memnew(Label("Press 'Take ObjectDB Snapshot' to snapshot the ObjectDB."));
+	Label *l2 = memnew(Label("Memory in Godot is either owned natively by the engine or owned by the ObjectDB."));
+	Label *l3 = memnew(Label("ObjectDB Snapshots capture only memory owned by the ObjectDB."));
 	l1->set_horizontal_alignment(HorizontalAlignment::HORIZONTAL_ALIGNMENT_CENTER);
 	l2->set_horizontal_alignment(HorizontalAlignment::HORIZONTAL_ALIGNMENT_CENTER);
 	l3->set_horizontal_alignment(HorizontalAlignment::HORIZONTAL_ALIGNMENT_CENTER);
