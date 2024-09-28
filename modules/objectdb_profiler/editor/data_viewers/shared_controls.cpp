@@ -30,15 +30,11 @@
 
 #include "shared_controls.h"
 
-#include "../snapshot_data.h"
 #include "editor/editor_node.h"
 #include "editor/editor_string_names.h"
 #include "editor/themes/editor_scale.h"
-#include "scene/gui/center_container.h"
 #include "scene/gui/label.h"
-#include "scene/gui/margin_container.h"
 #include "scene/resources/style_box_flat.h"
-#include "snapshot_view.h"
 
 SpanningHeader::SpanningHeader(const String &p_text) {
 	StyleBoxFlat *title_sbf = memnew(StyleBoxFlat);

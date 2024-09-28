@@ -1,5 +1,5 @@
 /**************************************************************************/
-/*  summary_view.h                                                        */
+/*  objectdb_profiler_plugin.h                                            */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                             GODOT ENGINE                               */
@@ -28,42 +28,38 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef SUMMARY_VIEW_H
-#define SUMMARY_VIEW_H
+#ifndef OBJECTDB_PROFILER_PLUGIN_H
+#define OBJECTDB_PROFILER_PLUGIN_H
 
-#include "../snapshot_data.h"
-#include "scene/gui/center_container.h"
-#include "scene/gui/margin_container.h"
-#include "scene/gui/rich_text_label.h"
-#include "scene/gui/tree.h"
-#include "snapshot_view.h"
+#include "editor/plugins/editor_debugger_plugin.h"
+#include "editor/plugins/editor_plugin.h"
 
-class SummaryBlurb : public MarginContainer {
-	GDCLASS(SummaryBlurb, MarginContainer);
-
-public:
-	RichTextLabel *label;
-
-	SummaryBlurb(const String &p_title, const String &p_rtl_content);
-};
-
-class SnapshotSummaryView : public SnapshotView {
-	GDCLASS(SnapshotSummaryView, SnapshotView);
+// First, ObjectDBProfilerPlugin is loaded. Then it loads ObjectDBProfilerDebuggerPlugin.
+class ObjectDBProfilerPlugin : public EditorPlugin {
+	GDCLASS(ObjectDBProfilerPlugin, EditorPlugin);
 
 protected:
-	VBoxContainer *blurb_list;
-	CenterContainer *explainer_text;
-
-	void _push_overview_blurb(const String &p_title, GameStateSnapshot *p_snapshot);
-	void _push_node_blurb(const String &p_title, GameStateSnapshot *p_snapshot);
-	void _push_refcounted_blurb(const String &p_title, GameStateSnapshot *p_snapshot);
-	void _push_object_blurb(const String &p_title, GameStateSnapshot *p_snapshot);
+	Ref<class ObjectDBProfilerDebuggerPlugin> debugger;
+	void _notification(int p_what);
 
 public:
-	SnapshotSummaryView();
-
-	virtual void show_snapshot(GameStateSnapshot *p_data, GameStateSnapshot *p_diff_data) override;
-	virtual void clear_snapshot() override;
+	ObjectDBProfilerPlugin();
 };
 
-#endif // SUMMARY_VIEW_H
+class ObjectDBProfilerDebuggerPlugin : public EditorDebuggerPlugin {
+	GDCLASS(ObjectDBProfilerDebuggerPlugin, EditorDebuggerPlugin);
+
+protected:
+	class ObjectDBProfilerPanel *debugger_panel;
+
+	void _request_object_snapshot(int p_request_id);
+
+public:
+	ObjectDBProfilerDebuggerPlugin() {}
+
+	virtual bool has_capture(const String &p_capture) const override;
+	virtual bool capture(const String &p_message, const Array &p_data, int p_index) override;
+	virtual void setup_session(int p_session_id) override;
+};
+
+#endif // OBJECTDB_PROFILER_PLUGIN_H

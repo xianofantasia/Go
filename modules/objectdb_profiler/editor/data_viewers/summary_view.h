@@ -1,5 +1,5 @@
 /**************************************************************************/
-/*  json_view.h                                                           */
+/*  summary_view.h                                                        */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                             GODOT ENGINE                               */
@@ -28,30 +28,41 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef JSON_VIEW_H
-#define JSON_VIEW_H
+#ifndef SUMMARY_VIEW_H
+#define SUMMARY_VIEW_H
 
 #include "../snapshot_data.h"
-#include "editor/editor_json_visualizer.h"
+#include "scene/gui/center_container.h"
+#include "scene/gui/margin_container.h"
 #include "scene/gui/rich_text_label.h"
-#include "scene/gui/tree.h"
 #include "snapshot_view.h"
 
-#include "scene/gui/code_edit.h"
-
-class SnapshotJsonView : public SnapshotView {
-	GDCLASS(SnapshotJsonView, SnapshotView);
-
-protected:
-	EditorJsonVisualizer *json_content;
-	EditorJsonVisualizer *diff_json_content;
-
-	void _load_theme_settings();
-	String _snapshot_to_json(GameStateSnapshot *p_snapshot);
+class SummaryBlurb : public MarginContainer {
+	GDCLASS(SummaryBlurb, MarginContainer);
 
 public:
-	SnapshotJsonView();
-	virtual void show_snapshot(GameStateSnapshot *p_data, GameStateSnapshot *p_diff_data) override;
+	RichTextLabel *label;
+
+	SummaryBlurb(const String &p_title, const String &p_rtl_content);
 };
 
-#endif // JSON_VIEW_H
+class SnapshotSummaryView : public SnapshotView {
+	GDCLASS(SnapshotSummaryView, SnapshotView);
+
+protected:
+	VBoxContainer *blurb_list;
+	CenterContainer *explainer_text;
+
+	void _push_overview_blurb(const String &p_title, GameStateSnapshot *p_snapshot);
+	void _push_node_blurb(const String &p_title, GameStateSnapshot *p_snapshot);
+	void _push_refcounted_blurb(const String &p_title, GameStateSnapshot *p_snapshot);
+	void _push_object_blurb(const String &p_title, GameStateSnapshot *p_snapshot);
+
+public:
+	SnapshotSummaryView();
+
+	virtual void show_snapshot(GameStateSnapshot *p_data, GameStateSnapshot *p_diff_data) override;
+	virtual void clear_snapshot() override;
+};
+
+#endif // SUMMARY_VIEW_H

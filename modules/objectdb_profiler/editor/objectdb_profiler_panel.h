@@ -31,17 +31,11 @@
 #ifndef OBJECTDB_PROFILER_PANEL_H
 #define OBJECTDB_PROFILER_PANEL_H
 
-#include "editor/debugger/editor_debugger_inspector.h"
-#include "editor/plugins/editor_debugger_plugin.h"
-#include "editor/plugins/editor_plugin.h"
-#include "scene/debugger/scene_debugger.h"
-#include "scene/gui/tab_container.h"
-#include "scene/gui/tree.h"
-#include "snapshot_data.h"
-
 #include "core/io/dir_access.h"
 #include "core/templates/lru.h"
 #include "data_viewers/snapshot_view.h"
+#include "scene/gui/tab_container.h"
+#include "scene/gui/tree.h"
 #include "snapshot_data.h"
 
 const int SNAPSHOT_CACHE_MAX_SIZE = 10;

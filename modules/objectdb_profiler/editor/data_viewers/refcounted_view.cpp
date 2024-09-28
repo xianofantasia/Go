@@ -30,26 +30,10 @@
 
 #include "refcounted_view.h"
 
-#include "core/object/class_db.h"
 #include "core/object/object.h"
-#include "core/object/ref_counted.h"
-#include "core/os/memory.h"
-#include "core/os/time.h"
-#include "editor/debugger/editor_debugger_node.h"
-#include "editor/debugger/script_editor_debugger.h"
 #include "editor/editor_node.h"
 #include "editor/themes/editor_scale.h"
-#include "modules/gdscript/gdscript.h"
-#include "scene/gui/button.h"
-#include "scene/gui/control.h"
-#include "scene/gui/label.h"
-#include "scene/gui/panel_container.h"
 #include "scene/gui/rich_text_label.h"
-#include "scene/gui/split_container.h"
-#include "scene/gui/tab_container.h"
-#include "scene/gui/tree.h"
-#include "scene/resources/style_box_flat.h"
-#include "shared_controls.h"
 
 #include "../snapshot_data.h"
 

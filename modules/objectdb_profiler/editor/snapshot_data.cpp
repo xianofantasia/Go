@@ -28,25 +28,15 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "objectdb_profiler_plugin.h"
-#include "zlib.h"
+#include "snapshot_data.h"
 
 #include "core/core_bind.h"
 #include "core/object/object.h"
 #include "core/object/ref_counted.h"
-#include "core/os/memory.h"
-#include "core/os/time.h"
 #include "core/version.h"
-#include "editor/debugger/editor_debugger_node.h"
-#include "editor/debugger/script_editor_debugger.h"
-#include "editor/editor_node.h"
-#include "editor/themes/editor_scale.h"
-#include "scene/gui/button.h"
-#include "scene/gui/control.h"
-#include "scene/gui/label.h"
-#include "scene/gui/panel_container.h"
-#include "scene/gui/tab_container.h"
-#include "scene/gui/tree.h"
+#include "modules/gdscript/gdscript.h"
+#include "scene/debugger/scene_debugger.h"
+#include "zlib.h"
 
 String SnapshotDataObject::get_node_path() {
 	if (!is_node())
@@ -301,12 +291,4 @@ bool GameStateSnapshotRef::unreference() {
 		memdelete(gamestate_snapshot);
 	}
 	return die;
-}
-
-String get_godot_version_string() {
-	String hash = String(VERSION_HASH);
-	if (hash.length() != 0) {
-		hash = " " + vformat("[%s]", hash.left(9));
-	}
-	return "v" VERSION_FULL_BUILD + hash;
 }

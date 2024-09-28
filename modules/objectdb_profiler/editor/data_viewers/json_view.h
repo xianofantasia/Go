@@ -1,5 +1,5 @@
 /**************************************************************************/
-/*  objectdb_profiler_plugin.h                                            */
+/*  json_view.h                                                           */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                             GODOT ENGINE                               */
@@ -28,39 +28,28 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef OBJECTDB_PROFILER_PLUGIN_H
-#define OBJECTDB_PROFILER_PLUGIN_H
+#ifndef JSON_VIEW_H
+#define JSON_VIEW_H
 
-#include "editor/plugins/editor_debugger_plugin.h"
-#include "editor/plugins/editor_plugin.h"
-#include "snapshot_data.h"
+#include "../snapshot_data.h"
+#include "editor/editor_json_visualizer.h"
+#include "snapshot_view.h"
 
-// First, ObjectDBProfilerPlugin is loaded. Then it loads ObjectDBProfilerDebuggerPlugin.
-class ObjectDBProfilerPlugin : public EditorPlugin {
-	GDCLASS(ObjectDBProfilerPlugin, EditorPlugin);
+#include "scene/gui/code_edit.h"
 
-protected:
-	Ref<class ObjectDBProfilerDebuggerPlugin> debugger;
-	void _notification(int p_what);
-
-public:
-	ObjectDBProfilerPlugin();
-};
-
-class ObjectDBProfilerDebuggerPlugin : public EditorDebuggerPlugin {
-	GDCLASS(ObjectDBProfilerDebuggerPlugin, EditorDebuggerPlugin);
+class SnapshotJsonView : public SnapshotView {
+	GDCLASS(SnapshotJsonView, SnapshotView);
 
 protected:
-	class ObjectDBProfilerPanel *debugger_panel;
+	EditorJsonVisualizer *json_content;
+	EditorJsonVisualizer *diff_json_content;
 
-	void _request_object_snapshot(int p_request_id);
+	void _load_theme_settings();
+	String _snapshot_to_json(GameStateSnapshot *p_snapshot);
 
 public:
-	ObjectDBProfilerDebuggerPlugin() {}
-
-	virtual bool has_capture(const String &p_capture) const override;
-	virtual bool capture(const String &p_message, const Array &p_data, int p_index) override;
-	virtual void setup_session(int p_session_id) override;
+	SnapshotJsonView();
+	virtual void show_snapshot(GameStateSnapshot *p_data, GameStateSnapshot *p_diff_data) override;
 };
 
-#endif // OBJECTDB_PROFILER_PLUGIN_H
+#endif // JSON_VIEW_H

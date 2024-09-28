@@ -30,11 +30,8 @@
 
 #include "objectdb_profiler_panel.h"
 
+#include "../snapshot_collector.h"
 #include "core/config/project_settings.h"
-#include "core/core_bind.h"
-#include "core/error/error_macros.h"
-#include "core/io/dir_access.h"
-#include "core/io/json.h"
 #include "core/object/object.h"
 #include "core/object/ref_counted.h"
 #include "core/os/memory.h"
@@ -53,11 +50,8 @@
 #include "scene/gui/control.h"
 #include "scene/gui/label.h"
 #include "scene/gui/option_button.h"
-#include "scene/gui/panel_container.h"
 #include "scene/gui/split_container.h"
 #include "scene/gui/tab_container.h"
-#include "scene/gui/tree.h"
-#include "snapshot_data.h"
 
 // ObjectDB snapshots are very large. In remote_debugger_peer.cpp, the max in_buf and out_buf size is 8mb.
 // Snapshots are typically larger than that, so we send them 6mb at a time. Leaving 2mb for other data.
@@ -68,7 +62,7 @@ void ObjectDBProfilerPanel::_request_object_snapshot() {
 	take_snapshot->set_text("Generating Snapshot");
 	Array args;
 	args.push_back(next_request_id++);
-	args.push_back(get_godot_version_string());
+	args.push_back(SnapshotCollector::get_godot_version_string());
 	EditorDebuggerNode::get_singleton()->get_current_debugger()->send_message("snapshot:request_prepare_snapshot", args);
 }
 
@@ -109,7 +103,7 @@ bool ObjectDBProfilerPanel::handle_debug_message(const String &p_message, const 
 }
 
 void ObjectDBProfilerPanel::receive_snapshot(int request_id) {
-	const Vector<uint8_t> &data = partial_snapshots[request_id].data;
+	const Vector<uint8_t> &in_data = partial_snapshots[request_id].data;
 	String snapshot_file_name = Time::get_singleton()->get_datetime_string_from_system(false).replace("T", "_").replace(":", "-");
 	Ref<DirAccess> snapshot_dir = _get_and_create_snapshot_storage_dir();
 	if (!snapshot_dir.is_null()) {
@@ -119,7 +113,7 @@ void ObjectDBProfilerPanel::receive_snapshot(int request_id) {
 
 		Ref<FileAccess> file = FileAccess::open(joined_dir, FileAccess::WRITE, &err);
 		if (err == OK) {
-			file->store_buffer(data);
+			file->store_buffer(in_data);
 			file->close(); // RAII could do this typically, but we want to read the file in _show_selected_snapshot, so we have to finalize the write before that
 
 			_add_snapshot_button(snapshot_file_name, joined_dir);
@@ -196,7 +190,7 @@ Ref<GameStateSnapshotRef> ObjectDBProfilerPanel::get_snapshot(const String &p_sn
 			return nullptr;
 		}
 
-		Vector<uint8_t> content = snapshot_file->get_buffer(snapshot_file->get_length()); // we wnat to split on newlines, so normalize them
+		Vector<uint8_t> content = snapshot_file->get_buffer(snapshot_file->get_length()); // we want to split on newlines, so normalize them
 		if (content.is_empty()) {
 			ERR_PRINT("ObjectDB Snapshot file is empty: " + full_file_path);
 			return nullptr;

@@ -31,9 +31,20 @@
 #ifndef SNAPSHOT_COLLECTOR_H
 #define SNAPSHOT_COLLECTOR_H
 
-#include "core/os/os.h"
 #include "core/templates/hash_map.h"
+#include "core/templates/vector.h"
 #include "core/variant/array.h"
+#include "core/variant/dictionary.h"
+#include "scene/debugger/scene_debugger.h"
+
+struct SnapshotDataTransportObject : public SceneDebuggerObject {
+	SnapshotDataTransportObject() :
+			SceneDebuggerObject() {}
+	SnapshotDataTransportObject(Object *p_obj) :
+			SceneDebuggerObject(p_obj) {}
+
+	Dictionary extra_debug_data;
+};
 
 class SnapshotCollector {
 public:
@@ -42,6 +53,7 @@ public:
 	static Error parse_message(void *p_user, const String &p_msg, const Array &p_args, bool &r_captured);
 	static void initialize();
 	static void deinitialize();
+	static String get_godot_version_string();
 };
 
 #endif // SNAPSHOT_COLLECTOR_H

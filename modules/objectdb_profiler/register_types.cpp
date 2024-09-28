@@ -30,17 +30,17 @@
 
 #include "register_types.h"
 
-#include "core/object/class_db.h"
-#include "editor/debugger/editor_debugger_node.h"
-#include "editor/editor_node.h"
-
-#include "objectdb_profiler_plugin.h"
+#ifdef TOOLS_ENABLED
+#include "editor/objectdb_profiler_plugin.h"
+#endif // TOOLS_ENABLED
 #include "snapshot_collector.h"
 
 void initialize_objectdb_profiler_module(ModuleInitializationLevel p_level) {
+#ifdef TOOLS_ENABLED
 	if (p_level == MODULE_INITIALIZATION_LEVEL_EDITOR) {
 		EditorPlugins::add_by_type<ObjectDBProfilerPlugin>();
 	}
+#endif // TOOLS_ENABLED
 
 	if (p_level == MODULE_INITIALIZATION_LEVEL_SCENE) {
 		SnapshotCollector::initialize();
@@ -48,10 +48,6 @@ void initialize_objectdb_profiler_module(ModuleInitializationLevel p_level) {
 }
 
 void uninitialize_objectdb_profiler_module(ModuleInitializationLevel p_level) {
-	if (p_level == MODULE_INITIALIZATION_LEVEL_EDITOR) {
-		// don't need to unregister the type, as unregistering a type isn't a thing
-	}
-
 	if (p_level == MODULE_INITIALIZATION_LEVEL_SCENE) {
 		SnapshotCollector::initialize();
 	}

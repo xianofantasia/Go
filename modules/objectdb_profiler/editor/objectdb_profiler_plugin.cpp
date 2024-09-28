@@ -1,5 +1,5 @@
 /**************************************************************************/
-/*  class_view.h                                                          */
+/*  objectdb_profiler_plugin.cpp                                          */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                             GODOT ENGINE                               */
@@ -28,49 +28,39 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef CLASS_VIEW_H
-#define CLASS_VIEW_H
+#include "objectdb_profiler_plugin.h"
 
-#include "../snapshot_data.h"
-#include "scene/gui/menu_button.h"
-#include "scene/gui/tree.h"
-#include "snapshot_view.h"
+#include "objectdb_profiler_panel.h"
 
-struct ClassData {
-	ClassData() {}
-	ClassData(String p_name, String p_parent) :
-			class_name(p_name), parent_class_name(p_parent) {}
-	String class_name;
-	String parent_class_name;
-	HashSet<String> child_classes;
-	List<SnapshotDataObject *> instances;
-	TreeItem *tree_node;
-	HashMap<GameStateSnapshot *, int> recursive_instance_count_cache;
+bool ObjectDBProfilerDebuggerPlugin::has_capture(const String &p_capture) const {
+	return p_capture == "snapshot";
+}
 
-	int instance_count(GameStateSnapshot *p_snapshot = nullptr);
-	int get_recursive_instance_count(HashMap<String, ClassData> &p_all_classes, GameStateSnapshot *p_snapshot = nullptr);
-};
+bool ObjectDBProfilerDebuggerPlugin::capture(const String &p_message, const Array &p_data, int p_index) {
+	ERR_FAIL_COND_V(debugger_panel == nullptr, false);
+	return debugger_panel->handle_debug_message(p_message, p_data, p_index);
+}
 
-// Bootstrapped by the plugin
-class SnapshotClassView : public SnapshotView {
-	GDCLASS(SnapshotClassView, SnapshotView);
+void ObjectDBProfilerDebuggerPlugin::setup_session(int p_session_id) {
+	Ref<EditorDebuggerSession> session = get_session(p_session_id);
+	ERR_FAIL_COND(session.is_null());
+	debugger_panel = memnew(ObjectDBProfilerPanel);
+	session->connect(SNAME("started"), callable_mp(debugger_panel, &ObjectDBProfilerPanel::set_enabled).bind(true));
+	session->connect(SNAME("stopped"), callable_mp(debugger_panel, &ObjectDBProfilerPanel::set_enabled).bind(false));
+	session->add_session_tab(debugger_panel);
+}
 
-protected:
-	Tree *class_tree;
-	Tree *object_list;
-	Tree *diff_object_list;
+ObjectDBProfilerPlugin::ObjectDBProfilerPlugin() {
+	debugger.instantiate();
+}
 
-	void _object_selected(Tree *p_tree);
-	void _class_selected();
-	void _add_objects_to_class_map(HashMap<String, ClassData> &p_class_map, GameStateSnapshot *p_objects);
-	void _notification(int p_what);
-
-	Tree *_make_object_list_tree(const String &p_column_name);
-	void _populate_object_list(GameStateSnapshot *p_snapshot, Tree *p_list, const String &p_name_base);
-
-public:
-	SnapshotClassView();
-	virtual void show_snapshot(GameStateSnapshot *p_data, GameStateSnapshot *p_diff_data) override;
-};
-
-#endif // CLASS_VIEW_H
+void ObjectDBProfilerPlugin::_notification(int p_what) {
+	switch (p_what) {
+		case Node::NOTIFICATION_ENTER_TREE: {
+			add_debugger_plugin(debugger);
+		} break;
+		case Node::NOTIFICATION_EXIT_TREE: {
+			remove_debugger_plugin(debugger);
+		}
+	}
+}

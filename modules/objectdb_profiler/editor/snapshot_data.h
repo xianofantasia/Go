@@ -32,19 +32,6 @@
 #define SNAPSHOT_DATA_H
 
 #include "editor/debugger/editor_debugger_inspector.h"
-#include "modules/gdscript/gdscript.h"
-#include "scene/debugger/scene_debugger.h"
-
-#include "scene/gui/tree.h"
-
-struct SnapshotDataTransportObject : public SceneDebuggerObject {
-	SnapshotDataTransportObject() :
-			SceneDebuggerObject() {}
-	SnapshotDataTransportObject(Object *p_obj) :
-			SceneDebuggerObject(p_obj) {}
-
-	Dictionary extra_debug_data;
-};
 
 class SnapshotDataObject : public EditorDebuggerRemoteObject {
 	GDCLASS(SnapshotDataObject, EditorDebuggerRemoteObject);
@@ -105,7 +92,5 @@ public:
 	_FORCE_INLINE_ GameStateSnapshot *operator->() const { return gamestate_snapshot; }
 	_FORCE_INLINE_ GameStateSnapshot *ptr() const { return gamestate_snapshot; }
 };
-
-String get_godot_version_string();
 
 #endif // SNAPSHOT_DATA_H

@@ -29,12 +29,14 @@
 /**************************************************************************/
 
 #include "snapshot_collector.h"
-#include "snapshot_data.h"
 
 #include "core/core_bind.h"
 #include "core/debugger/engine_debugger.h"
 #include "core/object/object.h"
 #include "core/os/time.h"
+#include "core/version.h"
+#include "scene/main/node.h"
+#include "scene/main/window.h"
 
 HashMap<int, Vector<uint8_t>> SnapshotCollector::pending_snapshots;
 
@@ -140,4 +142,12 @@ Error SnapshotCollector::parse_message(void *p_user, const String &p_msg, const 
 		r_captured = false;
 	}
 	return OK;
+}
+
+String SnapshotCollector::get_godot_version_string() {
+	String hash = String(VERSION_HASH);
+	if (hash.length() != 0) {
+		hash = " " + vformat("[%s]", hash.left(9));
+	}
+	return "v" VERSION_FULL_BUILD + hash;
 }
