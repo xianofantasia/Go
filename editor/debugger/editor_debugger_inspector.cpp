@@ -38,7 +38,7 @@
 EditorDebuggerRemoteObject::EditorDebuggerRemoteObject(SceneDebuggerObject &obj) {
 	remote_object_id = obj.id;
 	type_name = obj.class_name;
-	int new_props_added = update_props(obj, nullptr, nullptr);
+	update_props(obj, nullptr, nullptr);
 	update();
 }
 

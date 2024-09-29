@@ -65,7 +65,7 @@ String SnapshotDataObject::get_name() {
 	String found_type_name = type_name;
 
 	// Ideally, we will name it after the script attached to it
-	if (get_script() != nullptr) {
+	if (!get_script().is_null()) {
 		Object *maybe_script_obj = get_script().get_validated_object();
 
 		if (maybe_script_obj->is_class(Script::get_class_static())) {
@@ -214,9 +214,7 @@ void GameStateSnapshot::recompute_references() {
 		}
 	}
 
-	int i = 0;
 	for (const KeyValue<ObjectID, SnapshotDataObject *> &obj : objects) {
-		i++;
 		if (!obj.value->is_class(RefCounted::get_class_static()) || obj.value->is_class(WeakRef::get_class_static()))
 			continue;
 		HashSet<SnapshotDataObject *> traversed_objs;

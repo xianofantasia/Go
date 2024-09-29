@@ -197,7 +197,7 @@ Ref<GameStateSnapshotRef> ObjectDBProfilerPanel::get_snapshot(const String &p_sn
 		}
 
 		Ref<GameStateSnapshotRef> snapshot = GameStateSnapshot::create_ref(p_snapshot_file_name, content);
-		if (snapshot != nullptr) {
+		if (snapshot.is_valid()) {
 			// don't cache a null snapshot
 			snapshot_cache.insert(p_snapshot_file_name, snapshot);
 		}
@@ -212,7 +212,7 @@ void ObjectDBProfilerPanel::show_snapshot(const String &p_snapshot_file_name, co
 	if (p_snapshot_diff_file_name != "none") {
 		diff_snapshot = get_snapshot(p_snapshot_diff_file_name);
 	} else {
-		diff_snapshot = nullptr;
+		diff_snapshot.unref();
 	}
 
 	_view_tab_changed(view_tabs->get_current_tab());
@@ -222,8 +222,8 @@ void ObjectDBProfilerPanel::_view_tab_changed(int p_tab_idx) {
 	// populating tabs only on tab changed because we're handling a lot of data,
 	// and the editor freezes for while if we try to populate every tab at once
 	SnapshotView *view = cast_to<SnapshotView>(view_tabs->get_current_tab_control());
-	GameStateSnapshot *snapshot = current_snapshot == nullptr ? nullptr : current_snapshot->ptr();
-	GameStateSnapshot *diff = diff_snapshot == nullptr ? nullptr : diff_snapshot->ptr();
+	GameStateSnapshot *snapshot = current_snapshot.is_null() ? nullptr : current_snapshot->ptr();
+	GameStateSnapshot *diff = diff_snapshot.is_null() ? nullptr : diff_snapshot->ptr();
 	if (snapshot != nullptr && !view->is_showing_snapshot(snapshot, diff)) {
 		view->show_snapshot(snapshot, diff);
 	}
@@ -233,7 +233,7 @@ void ObjectDBProfilerPanel::clear_snapshot() {
 	for (SnapshotView *view : views) {
 		view->clear_snapshot();
 	}
-	current_snapshot = nullptr;
+	current_snapshot.unref();
 }
 
 void ObjectDBProfilerPanel::set_enabled(bool p_enabled) {

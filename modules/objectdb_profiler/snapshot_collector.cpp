@@ -52,7 +52,7 @@ void SnapshotCollector::snapshot_objects(Array *p_arr, Dictionary snapshot_conte
 	List<SnapshotDataTransportObject> debugger_objects;
 	p_arr->clear();
 	ObjectDB::debug_objects([](Object *p_obj, void *user_data) {
-		List<SnapshotDataTransportObject> *debugger_objects = (List<SnapshotDataTransportObject> *)user_data;
+		List<SnapshotDataTransportObject> *debugger_objects_ptr = (List<SnapshotDataTransportObject> *)user_data;
 		// This is the same way objects in the remote scene tree are seialized,
 		// but here we add a few extra properties via the extra_debug_data dictionary
 		SnapshotDataTransportObject debug_data(p_obj);
@@ -79,7 +79,7 @@ void SnapshotCollector::snapshot_objects(Array *p_arr, Dictionary snapshot_conte
 			debug_data.extra_debug_data["node_children"] = children;
 		}
 
-		debugger_objects->push_back(debug_data);
+		debugger_objects_ptr->push_back(debug_data);
 	},
 			(void *)&debugger_objects);
 

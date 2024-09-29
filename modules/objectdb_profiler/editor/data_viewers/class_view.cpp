@@ -114,6 +114,10 @@ void SnapshotClassView::show_snapshot(GameStateSnapshot *p_data, GameStateSnapsh
 		class_tree->set_column_expand(2, false);
 		class_tree->set_column_title(3, "Delta");
 		class_tree->set_column_expand(3, false);
+
+		// Add tooltip with the names of snapshot A and B
+		class_tree->set_column_title_tooltip_text(1, "A: " + snapshot_data->name);
+		class_tree->set_column_title_tooltip_text(2, "B: " + diff_data->name);
 	}
 	class_tree->connect("item_selected", callable_mp(this, &SnapshotClassView::_class_selected));
 	class_tree->set_h_size_flags(SizeFlags::SIZE_EXPAND_FILL);
@@ -140,7 +144,6 @@ void SnapshotClassView::show_snapshot(GameStateSnapshot *p_data, GameStateSnapsh
 	}
 
 	grouped_by_class[""].tree_node = class_tree->create_item();
-	ClassData &root = grouped_by_class[""];
 	List<String> classes_todo;
 	for (const String &c : grouped_by_class[""].child_classes) {
 		classes_todo.push_front(c);
