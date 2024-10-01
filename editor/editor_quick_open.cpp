@@ -34,6 +34,7 @@
 #include "editor/editor_node.h"
 #include "editor/editor_string_names.h"
 #include "editor/themes/editor_scale.h"
+#include "core/string/fuzzy_search.h"
 
 Rect2i EditorQuickOpen::prev_rect = Rect2i();
 bool EditorQuickOpen::was_showed = false;
@@ -92,41 +93,18 @@ void EditorQuickOpen::_build_search_cache(EditorFileSystemDirectory *p_efsd) {
 }
 
 void EditorQuickOpen::_update_search() {
-	const PackedStringArray search_tokens = search_box->get_text().to_lower().replace("/", " ").split(" ", false);
-	const bool empty_search = search_tokens.is_empty();
-
-	// Filter possible candidates.
-	Vector<Entry> entries;
-	for (int i = 0; i < files.size(); i++) {
-		Entry r;
-		r.path = files[i];
-		if (empty_search) {
-			entries.push_back(r);
-		} else {
-			r.score = _score_search_result(search_tokens, r.path.to_lower());
-			if (r.score > 0) {
-				entries.push_back(r);
-			}
-		}
-	}
-
 	// Display results
 	TreeItem *root = search_options->get_root();
 	root->clear_children();
 
-	if (entries.size() > 0) {
-		if (!empty_search) {
-			SortArray<Entry, EntryComparator> sorter;
-			sorter.sort(entries.ptrw(), entries.size());
-		}
+	Vector<Ref<FuzzySearchResult>> results = FuzzySearch::search_all(search_box->get_text(), files);
 
-		const int class_icon_size = search_options->get_theme_constant(SNAME("class_icon_size"), EditorStringName(Editor));
-		const int entry_limit = MIN(entries.size(), 300);
-		for (int i = 0; i < entry_limit; i++) {
+	if (results.size() > 0) {
+		for (int i = 0; i < results.size(); i++) {
 			TreeItem *ti = search_options->create_item(root);
-			ti->set_text(0, entries[i].path);
-			ti->set_icon_max_width(0, class_icon_size);
-			ti->set_icon(0, *icons.lookup_ptr(entries[i].path.get_extension()));
+			ti->set_text(0, results[i]->target);
+			ti->set_metadata(0, results[i]);
+			ti->set_icon(0, *icons.lookup_ptr(results[i]->target.get_extension()));
 		}
 
 		TreeItem *to_select = root->get_first_child();
@@ -140,44 +118,6 @@ void EditorQuickOpen::_update_search() {
 
 		get_ok_button()->set_disabled(true);
 	}
-}
-
-float EditorQuickOpen::_score_search_result(const PackedStringArray &p_search_tokens, const String &p_path) {
-	float score = 0.0f;
-	int prev_min_match_idx = -1;
-
-	for (const String &s : p_search_tokens) {
-		int min_match_idx = p_path.find(s);
-
-		if (min_match_idx == -1) {
-			return 0.0f;
-		}
-
-		float token_score = s.length();
-
-		int max_match_idx = p_path.rfind(s);
-
-		// Prioritize the actual file name over folder.
-		if (max_match_idx > p_path.rfind("/")) {
-			token_score *= 2.0f;
-		}
-
-		// Prioritize matches at the front of the path token.
-		if (min_match_idx == 0 || p_path.contains("/" + s)) {
-			token_score += 1.0f;
-		}
-
-		score += token_score;
-
-		// Prioritize tokens which appear in order.
-		if (prev_min_match_idx != -1 && max_match_idx > prev_min_match_idx) {
-			score += 1.0f;
-		}
-
-		prev_min_match_idx = min_match_idx;
-	}
-
-	return score;
 }
 
 void EditorQuickOpen::_confirmed() {
@@ -297,6 +237,7 @@ EditorQuickOpen::EditorQuickOpen() {
 	search_options = memnew(Tree);
 	search_options->set_auto_translate_mode(AUTO_TRANSLATE_MODE_DISABLED);
 	search_options->connect("item_activated", callable_mp(this, &EditorQuickOpen::_confirmed));
+	search_options->connect("draw", callable_mp(this, &EditorQuickOpen::_draw_search_options));
 	search_options->create_item();
 	search_options->set_hide_root(true);
 	search_options->set_hide_folding(true);
@@ -305,4 +246,8 @@ EditorQuickOpen::EditorQuickOpen() {
 
 	set_ok_button_text(TTR("Open"));
 	set_hide_on_ok(false);
+}
+
+void EditorQuickOpen::_draw_search_options() {
+	FuzzySearch::draw_matches(search_options);
 }
