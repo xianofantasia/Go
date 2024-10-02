@@ -138,23 +138,16 @@ RenderingDevice::ShaderSPIRVGetCacheKeyFunction RenderingDevice::get_spirv_cache
 /***************************/
 
 void RenderingDevice::_add_dependency(RID p_id, RID p_depends_on) {
-	HashSet<RID> *set = dependency_map.getptr(p_depends_on);
-	if (set == nullptr) {
-		set = &dependency_map.insert(p_depends_on, HashSet<RID>())->value;
-	}
-	set->insert(p_id);
-
-	set = reverse_dependency_map.getptr(p_id);
-	if (set == nullptr) {
-		set = &reverse_dependency_map.insert(p_id, HashSet<RID>())->value;
-	}
-	set->insert(p_depends_on);
+	dependency_map[p_depends_on].insert(p_id);
+	reverse_dependency_map[p_id].insert(p_depends_on);
 }
 
 void RenderingDevice::_free_dependencies(RID p_id) {
 	// Direct dependencies must be freed.
 
-	HashMap<RID, HashSet<RID>>::Iterator E = dependency_map.find(p_id);
+	HashMap<RID, HashSet<RID>, HashMapHasherDefault,
+			HashMapComparatorDefault<RID>,
+			PagedAllocator<HashMapElement<RID, HashSet<RID>>, false, 512>>::Iterator E = dependency_map.find(p_id);
 	if (E) {
 		while (E->value.size()) {
 			free(*E->value.begin());
@@ -167,10 +160,11 @@ void RenderingDevice::_free_dependencies(RID p_id) {
 
 	if (E) {
 		for (const RID &F : E->value) {
-			HashMap<RID, HashSet<RID>>::Iterator G = dependency_map.find(F);
+			HashMap<RID, HashSet<RID>, HashMapHasherDefault,
+					HashMapComparatorDefault<RID>,
+					PagedAllocator<HashMapElement<RID, HashSet<RID>>, false, 512>>::Iterator G = dependency_map.find(F);
 			ERR_CONTINUE(!G);
-			ERR_CONTINUE(!G->value.has(p_id));
-			G->value.erase(p_id);
+			ERR_CONTINUE_MSG(!G->value.erase(p_id), "Attempted to erase non-existing dependency, bug?");
 		}
 
 		reverse_dependency_map.remove(E);
@@ -4853,7 +4847,9 @@ bool RenderingDevice::_dependency_make_mutable(RID p_id, RID p_resource_id, RDG:
 
 bool RenderingDevice::_dependencies_make_mutable(RID p_id, RDG::ResourceTracker *p_resource_tracker) {
 	bool made_mutable = false;
-	HashMap<RID, HashSet<RID>>::Iterator E = dependency_map.find(p_id);
+	HashMap<RID, HashSet<RID>, HashMapHasherDefault,
+			HashMapComparatorDefault<RID>,
+			PagedAllocator<HashMapElement<RID, HashSet<RID>>, false, 512>>::Iterator E = dependency_map.find(p_id);
 	if (E) {
 		for (RID rid : E->value) {
 			made_mutable = _dependency_make_mutable(rid, p_id, p_resource_tracker) || made_mutable;
