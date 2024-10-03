@@ -254,7 +254,7 @@ void SnapshotSummaryView::_push_object_blurb(const String &p_title, GameStateSna
 	List<String> objects;
 	for (const KeyValue<ObjectID, SnapshotDataObject *> &pair : p_snapshot->objects) {
 		if (pair.value->inbound_references.size() == 0 && pair.value->outbound_references.size() == 0) {
-			if (pair.value->get_script() != nullptr) {
+			if (!pair.value->get_script().is_null()) {
 				// This blurb will have a lot of false positives, but we can at least suppress false positives
 				// from unreferenced nodes that are part of the scene tree
 				if (pair.value->is_node() && (bool)pair.value->extra_debug_data["node_is_scene_root"]) {

@@ -2,7 +2,7 @@
 
 
 def can_build(env, platform):
-    return True
+    return env.debug_features
 
 
 def configure(env):

@@ -285,7 +285,7 @@ void SnapshotRefCountedView::_refcounted_selected() {
 		cycles_tree->set_v_scroll_enabled(false);
 
 		TreeItem *root = cycles_tree->create_item();
-		for (const String &cycle : ref_cycles) {
+		for (const Variant &cycle : ref_cycles) {
 			TreeItem *i = cycles_tree->create_item(root);
 			i->set_text(0, cycle);
 			i->set_text_overrun_behavior(0, TextServer::OverrunBehavior::OVERRUN_NO_TRIMMING);
