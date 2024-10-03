@@ -33,7 +33,7 @@
 #include "core/object/object.h"
 #include "editor/editor_node.h"
 #include "editor/themes/editor_scale.h"
-#include "scene/gui/check_button.cpp"
+#include "scene/gui/check_button.h"
 #include "scene/gui/split_container.h"
 
 SnapshotNodeView::SnapshotNodeView() {
