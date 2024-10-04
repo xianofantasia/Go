@@ -4569,10 +4569,11 @@ void Main::cleanup(bool p_force) {
 #endif // _3D_DISABLED
 
 #ifdef TOOLS_ENABLED
-	GDExtensionManager::get_singleton()->deinitialize_extensions(GDExtension::INITIALIZATION_LEVEL_EDITOR);
-	uninitialize_modules(MODULE_INITIALIZATION_LEVEL_EDITOR);
-	unregister_editor_types();
-
+	if (editor || project_manager) {
+		GDExtensionManager::get_singleton()->deinitialize_extensions(GDExtension::INITIALIZATION_LEVEL_EDITOR);
+		uninitialize_modules(MODULE_INITIALIZATION_LEVEL_EDITOR);
+		unregister_editor_types();
+	}
 #endif
 
 	ImageLoader::cleanup();
