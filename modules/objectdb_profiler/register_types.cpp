@@ -49,6 +49,6 @@ void initialize_objectdb_profiler_module(ModuleInitializationLevel p_level) {
 
 void uninitialize_objectdb_profiler_module(ModuleInitializationLevel p_level) {
 	if (p_level == MODULE_INITIALIZATION_LEVEL_SCENE) {
-		SnapshotCollector::initialize();
+		SnapshotCollector::deinitialize();
 	}
 }

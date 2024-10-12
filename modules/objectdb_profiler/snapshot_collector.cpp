@@ -41,10 +41,13 @@
 HashMap<int, Vector<uint8_t>> SnapshotCollector::pending_snapshots;
 
 void SnapshotCollector::initialize() {
+	pending_snapshots.clear();
 	EngineDebugger::register_message_capture("snapshot", EngineDebugger::Capture(nullptr, SnapshotCollector::parse_message));
 }
 
 void SnapshotCollector::deinitialize() {
+	EngineDebugger::unregister_message_capture("snapshot");
+	pending_snapshots.clear();
 }
 
 void SnapshotCollector::snapshot_objects(Array *p_arr, Dictionary snapshot_context) {
