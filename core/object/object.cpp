@@ -2406,6 +2406,9 @@ void ObjectDB::cleanup() {
 				if (obj->is_class("Resource")) {
 					extra_info = " - Resource path: " + String(resource_get_path->call(obj, nullptr, 0, call_error));
 				}
+				if (obj->is_class("RefCounted")) {
+					extra_info = " - RefCount: " + itos(((RefCounted *)obj)->get_reference_count());
+				}
 
 				uint64_t id = uint64_t(i) | (uint64_t(object_slots[i].validator) << OBJECTDB_SLOT_MAX_COUNT_BITS) | (object_slots[i].is_ref_counted ? OBJECTDB_REFERENCE_BIT : 0);
 				DEV_ASSERT(id == (uint64_t)obj->get_instance_id()); // We could just use the id from the object, but this check may help catching memory corruption catastrophes.
