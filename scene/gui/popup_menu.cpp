@@ -1025,8 +1025,8 @@ void PopupMenu::_notification(int p_what) {
 				bind_global_menu();
 			}
 
-			if (Window *parent = get_transient_parent()) {
-				parent->connect(SceneStringName(focus_exited), callable_mp(this, &PopupMenu::_parent_unfocused));
+			if (Window *p = get_transient_parent()) {
+				p->connect(SceneStringName(focus_exited), callable_mp(this, &PopupMenu::_parent_unfocused));
 			}
 		} break;
 
@@ -1035,8 +1035,8 @@ void PopupMenu::_notification(int p_what) {
 				unbind_global_menu();
 			}
 
-			if (Window *parent = get_transient_parent()) {
-				parent->disconnect(SceneStringName(focus_exited), callable_mp(this, &PopupMenu::_parent_unfocused));
+			if (Window *p = get_transient_parent()) {
+				p->disconnect(SceneStringName(focus_exited), callable_mp(this, &PopupMenu::_parent_unfocused));
 			}
 		} break;
 
