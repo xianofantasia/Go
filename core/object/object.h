@@ -1011,8 +1011,10 @@ class ObjectDB {
 	};
 
 #ifdef DEBUG_ENABLED
+	// used to prevent Object::set from being called while
+	// debug_object is iterating over the ObjectDB
 	static Semaphore writes_blocked;
-	static bool waiting_to_debug; // no need for this to be a threadsafe lock, we're just using it to bleed off all writes, so threads can pick up the flag in their own time
+	static bool waiting_to_debug;
 	static void block_on_waiting_to_debug();
 #endif
 	static SpinLock spin_lock;

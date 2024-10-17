@@ -202,6 +202,10 @@ void SnapshotRefCountedView::_refcounted_selected() {
 	properties_container->set_h_size_flags(SizeFlags::SIZE_EXPAND_FILL);
 	properties_scroll->add_child(properties_container);
 	properties_container->add_theme_constant_override("separation", 5);
+	properties_container->add_theme_constant_override("margin_left", 2);
+	properties_container->add_theme_constant_override("margin_right", 2);
+	properties_container->add_theme_constant_override("margin_top", 2);
+	properties_container->add_theme_constant_override("margin_bottom", 2);
 
 	int total_refs = d->extra_debug_data.has("ref_count") ? (uint64_t)d->extra_debug_data["ref_count"] : 0;
 	int objectdb_refs = d->get_unique_inbound_references().size();
@@ -217,6 +221,7 @@ void SnapshotRefCountedView::_refcounted_selected() {
 	RichTextLabel *counts = memnew(RichTextLabel(count_str));
 	counts->set_use_bbcode(true);
 	counts->set_fit_content(true);
+	counts->add_theme_constant_override("line_separation", 6);
 	properties_container->add_child(counts);
 
 	if (d->inbound_references.size() > 0) {
