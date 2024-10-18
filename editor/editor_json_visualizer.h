@@ -44,6 +44,9 @@ public:
 class EditorJsonVisualizer : public CodeEdit {
 	GDCLASS(EditorJsonVisualizer, CodeEdit)
 
+protected:
+	void _notification(int p_what);
+
 public:
 	void load_theme(Ref<EditorJsonVisualizerSyntaxHighlighter> p_syntax_highlighter);
 };

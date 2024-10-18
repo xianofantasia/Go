@@ -247,9 +247,9 @@ void ObjectDBProfilerPanel::_snapshot_rmb(const Vector2 &p_pos, MouseButton p_bu
 	}
 	rmb_menu->clear(false);
 
-	rmb_menu->add_icon_item(get_editor_theme_icon(SNAME("Rename")), "Rename Snapshot", RC_MENU_OPERATIONS::RENAME);
-	rmb_menu->add_icon_item(get_editor_theme_icon(SNAME("Folder")), "Show In Folder", RC_MENU_OPERATIONS::SHOW_IN_FOLDER);
-	rmb_menu->add_icon_item(get_editor_theme_icon(SNAME("Remove")), "Delete Snapshot", RC_MENU_OPERATIONS::DELETE);
+	rmb_menu->add_icon_item(get_editor_theme_icon(SNAME("Rename")), TTR("Rename Snapshot"), RC_MENU_OPERATIONS::RENAME);
+	rmb_menu->add_icon_item(get_editor_theme_icon(SNAME("Folder")), TTR("Show in Folder"), RC_MENU_OPERATIONS::SHOW_IN_FOLDER);
+	rmb_menu->add_icon_item(get_editor_theme_icon(SNAME("Remove")), TTR("Delete Snapshot"), RC_MENU_OPERATIONS::DELETE);
 
 	rmb_menu->reset_size();
 	rmb_menu->set_position(get_screen_position() + p_pos);
