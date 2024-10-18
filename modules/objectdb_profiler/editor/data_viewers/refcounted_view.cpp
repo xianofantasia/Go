@@ -61,11 +61,11 @@ void SnapshotRefCountedView::show_snapshot(GameStateSnapshot *p_data, GameStateS
 	// Tree of Refs
 	refs_list = memnew(Tree);
 
-	filter_bar = memnew(TreeSortAndFilterBar(refs_list, "Filter RefCounteds"));
+	filter_bar = memnew(TreeSortAndFilterBar(refs_list, TTR("Filter RefCounteds")));
 	refs_column->add_child(filter_bar);
 	int offset = diff_data ? 1 : 0;
 	if (diff_data) {
-		filter_bar->add_sort_option("Snapshot", TreeSortAndFilterBar::SortType::ALPHA_SORT, 0);
+		filter_bar->add_sort_option(TTR("Snapshot"), TreeSortAndFilterBar::SortType::ALPHA_SORT, 0);
 	}
 	filter_bar->add_sort_option("Class", TreeSortAndFilterBar::SortType::ALPHA_SORT, offset + 0);
 	filter_bar->add_sort_option("Name", TreeSortAndFilterBar::SortType::ALPHA_SORT, offset + 1);
@@ -85,17 +85,17 @@ void SnapshotRefCountedView::show_snapshot(GameStateSnapshot *p_data, GameStateS
 	refs_list->set_columns(diff_data ? 7 : 6);
 	refs_list->set_column_titles_visible(true);
 	if (diff_data) {
-		refs_list->set_column_title(0, "Snapshot");
+		refs_list->set_column_title(0, TTR("Snapshot"));
 		refs_list->set_column_expand(0, false);
 		refs_list->set_column_title_tooltip_text(0, "A: " + snapshot_data->name + ", B: " + diff_data->name);
 	}
 	refs_list->set_column_title(offset + 0, "Class");
 	refs_list->set_column_expand(offset + 0, true);
-	refs_list->set_column_title_tooltip_text(offset + 0, "Objects's class");
+	refs_list->set_column_title_tooltip_text(offset + 0, TTR("Object's class"));
 	refs_list->set_column_title(offset + 1, "Name");
 	refs_list->set_column_expand(offset + 1, true);
 	refs_list->set_column_expand_ratio(offset + 1, 2);
-	refs_list->set_column_title_tooltip_text(offset + 1, "Obejects's name");
+	refs_list->set_column_title_tooltip_text(offset + 1, TTR("Object's name"));
 	refs_list->set_column_title(offset + 2, "Native Refs");
 	refs_list->set_column_expand(offset + 2, false);
 	refs_list->set_column_title_tooltip_text(offset + 2, "References not owned by the ObjectDB");
@@ -239,7 +239,7 @@ void SnapshotRefCountedView::_refcounted_selected() {
 		inbound_tree->set_column_title(0, "Source");
 		inbound_tree->set_column_expand(0, true);
 		inbound_tree->set_column_clip_content(0, false);
-		inbound_tree->set_column_title_tooltip_text(0, "Other object referencing this object");
+		inbound_tree->set_column_title_tooltip_text(0, TTR("Other object referencing this object"));
 		inbound_tree->set_column_title(1, "Property");
 		inbound_tree->set_column_expand(1, true);
 		inbound_tree->set_column_clip_content(1, true);
