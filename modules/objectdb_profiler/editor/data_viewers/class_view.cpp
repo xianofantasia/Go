@@ -57,7 +57,7 @@ int ClassData::get_recursive_instance_count(HashMap<String, ClassData> &p_all_cl
 }
 
 SnapshotClassView::SnapshotClassView() {
-	set_name("Classes");
+	set_name(TTR("Classes"));
 
 	class_tree = nullptr;
 	object_list = nullptr;
@@ -84,16 +84,16 @@ void SnapshotClassView::show_snapshot(GameStateSnapshot *p_data, GameStateSnapsh
 
 	class_tree = memnew(Tree);
 
-	TreeSortAndFilterBar *filter_bar = memnew(TreeSortAndFilterBar(class_tree, "Filter Classes"));
-	filter_bar->add_sort_option("Name", TreeSortAndFilterBar::SortType::ALPHA_SORT, 0);
+	TreeSortAndFilterBar *filter_bar = memnew(TreeSortAndFilterBar(class_tree, TTR("Filter Classes")));
+	filter_bar->add_sort_option(TTR("Name"), TreeSortAndFilterBar::SortType::ALPHA_SORT, 0);
 
 	TreeSortAndFilterBar::SortOptionIndexes default_sort;
 	if (!diff_data) {
-		default_sort = filter_bar->add_sort_option("Count", TreeSortAndFilterBar::SortType::NUMERIC_SORT, 1);
+		default_sort = filter_bar->add_sort_option(TTR("Count"), TreeSortAndFilterBar::SortType::NUMERIC_SORT, 1);
 	} else {
-		filter_bar->add_sort_option("A Count", TreeSortAndFilterBar::SortType::NUMERIC_SORT, 1);
-		filter_bar->add_sort_option("B Count", TreeSortAndFilterBar::SortType::NUMERIC_SORT, 2);
-		default_sort = filter_bar->add_sort_option("Delta", TreeSortAndFilterBar::SortType::NUMERIC_SORT, 3);
+		filter_bar->add_sort_option(TTR("A Count"), TreeSortAndFilterBar::SortType::NUMERIC_SORT, 1);
+		filter_bar->add_sort_option(TTR("B Count"), TreeSortAndFilterBar::SortType::NUMERIC_SORT, 2);
+		default_sort = filter_bar->add_sort_option(TTR("Delta"), TreeSortAndFilterBar::SortType::NUMERIC_SORT, 3);
 	}
 	class_list_column->add_child(filter_bar);
 
@@ -104,20 +104,20 @@ void SnapshotClassView::show_snapshot(GameStateSnapshot *p_data, GameStateSnapsh
 	class_tree->set_hide_root(true);
 	class_tree->set_columns(diff_data ? 4 : 2);
 	class_tree->set_column_titles_visible(true);
-	class_tree->set_column_title(0, "Object Class");
+	class_tree->set_column_title(0, TTR("Object Class"));
 	class_tree->set_column_expand(0, true);
 	class_tree->set_column_custom_minimum_width(0, 200 * EDSCALE);
-	class_tree->set_column_title(1, diff_data ? "A Count" : "Count");
+	class_tree->set_column_title(1, diff_data ? TTR("A Count") : TTR("Count"));
 	class_tree->set_column_expand(1, false);
 	if (diff_data) {
-		class_tree->set_column_title(2, "B Count");
+		class_tree->set_column_title(2, TTR("B Count"));
 		class_tree->set_column_expand(2, false);
-		class_tree->set_column_title(3, "Delta");
+		class_tree->set_column_title(3, TTR("Delta"));
 		class_tree->set_column_expand(3, false);
 
 		// Add tooltip with the names of snapshot A and B
-		class_tree->set_column_title_tooltip_text(1, "A: " + snapshot_data->name);
-		class_tree->set_column_title_tooltip_text(2, "B: " + diff_data->name);
+		class_tree->set_column_title_tooltip_text(1, TTR("A: ") + snapshot_data->name);
+		class_tree->set_column_title_tooltip_text(2, TTR("B: ") + diff_data->name);
 	}
 	class_tree->connect("item_selected", callable_mp(this, &SnapshotClassView::_class_selected));
 	class_tree->set_h_size_flags(SizeFlags::SIZE_EXPAND_FILL);
@@ -130,10 +130,10 @@ void SnapshotClassView::show_snapshot(GameStateSnapshot *p_data, GameStateSnapsh
 	object_lists->set_h_size_flags(SizeFlags::SIZE_EXPAND_FILL);
 	object_lists->set_v_size_flags(SizeFlags::SIZE_EXPAND_FILL);
 	if (!diff_data) {
-		object_lists->add_child(object_list = _make_object_list_tree("Objects"));
+		object_lists->add_child(object_list = _make_object_list_tree(TTR("Objects")));
 	} else {
-		object_lists->add_child(object_list = _make_object_list_tree("A Objects"));
-		object_lists->add_child(diff_object_list = _make_object_list_tree("B Objects"));
+		object_lists->add_child(object_list = _make_object_list_tree(TTR("A Objects")));
+		object_lists->add_child(diff_object_list = _make_object_list_tree(TTR("B Objects")));
 	}
 
 	HashMap<String, ClassData> grouped_by_class;
@@ -235,10 +235,10 @@ void SnapshotClassView::_object_selected(Tree *p_tree) {
 
 void SnapshotClassView::_class_selected() {
 	if (!diff_data) {
-		_populate_object_list(snapshot_data, object_list, "Objects");
+		_populate_object_list(snapshot_data, object_list, TTR("Objects"));
 	} else {
-		_populate_object_list(snapshot_data, object_list, "A Objects");
-		_populate_object_list(diff_data, diff_object_list, "B Objects");
+		_populate_object_list(snapshot_data, object_list, TTR("A Objects"));
+		_populate_object_list(diff_data, diff_object_list, TTR("B Objects"));
 	}
 }
 

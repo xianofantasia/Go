@@ -38,7 +38,7 @@
 #include "../snapshot_data.h"
 
 SnapshotRefCountedView::SnapshotRefCountedView() {
-	set_name("RefCounted");
+	set_name(TTR("RefCounted"));
 }
 
 void SnapshotRefCountedView::show_snapshot(GameStateSnapshot *p_data, GameStateSnapshot *p_diff_data) {
@@ -67,15 +67,15 @@ void SnapshotRefCountedView::show_snapshot(GameStateSnapshot *p_data, GameStateS
 	if (diff_data) {
 		filter_bar->add_sort_option(TTR("Snapshot"), TreeSortAndFilterBar::SortType::ALPHA_SORT, 0);
 	}
-	filter_bar->add_sort_option("Class", TreeSortAndFilterBar::SortType::ALPHA_SORT, offset + 0);
-	filter_bar->add_sort_option("Name", TreeSortAndFilterBar::SortType::ALPHA_SORT, offset + 1);
+	filter_bar->add_sort_option(TTR("Class"), TreeSortAndFilterBar::SortType::ALPHA_SORT, offset + 0);
+	filter_bar->add_sort_option(TTR("Name"), TreeSortAndFilterBar::SortType::ALPHA_SORT, offset + 1);
 	TreeSortAndFilterBar::SortOptionIndexes default_sort = filter_bar->add_sort_option(
-			"Native Refs",
+			TTR("Native Refs"),
 			TreeSortAndFilterBar::SortType::NUMERIC_SORT,
 			offset + 2);
-	filter_bar->add_sort_option("ObjectDB Refs", TreeSortAndFilterBar::SortType::NUMERIC_SORT, offset + 3);
-	filter_bar->add_sort_option("Total Refs", TreeSortAndFilterBar::SortType::NUMERIC_SORT, offset + 4);
-	filter_bar->add_sort_option("ObjectDB Cycles", TreeSortAndFilterBar::SortType::NUMERIC_SORT, offset + 5);
+	filter_bar->add_sort_option(TTR("ObjectDB Refs"), TreeSortAndFilterBar::SortType::NUMERIC_SORT, offset + 3);
+	filter_bar->add_sort_option(TTR("Total Refs"), TreeSortAndFilterBar::SortType::NUMERIC_SORT, offset + 4);
+	filter_bar->add_sort_option(TTR("ObjectDB Cycles"), TreeSortAndFilterBar::SortType::NUMERIC_SORT, offset + 5);
 
 	refs_list->set_select_mode(Tree::SelectMode::SELECT_ROW);
 	refs_list->set_custom_minimum_size(Size2(200, 0) * EDSCALE);
@@ -89,25 +89,25 @@ void SnapshotRefCountedView::show_snapshot(GameStateSnapshot *p_data, GameStateS
 		refs_list->set_column_expand(0, false);
 		refs_list->set_column_title_tooltip_text(0, "A: " + snapshot_data->name + ", B: " + diff_data->name);
 	}
-	refs_list->set_column_title(offset + 0, "Class");
+	refs_list->set_column_title(offset + 0, TTR("Class"));
 	refs_list->set_column_expand(offset + 0, true);
 	refs_list->set_column_title_tooltip_text(offset + 0, TTR("Object's class"));
-	refs_list->set_column_title(offset + 1, "Name");
+	refs_list->set_column_title(offset + 1, TTR("Name"));
 	refs_list->set_column_expand(offset + 1, true);
 	refs_list->set_column_expand_ratio(offset + 1, 2);
 	refs_list->set_column_title_tooltip_text(offset + 1, TTR("Object's name"));
-	refs_list->set_column_title(offset + 2, "Native Refs");
+	refs_list->set_column_title(offset + 2, TTR("Native Refs"));
 	refs_list->set_column_expand(offset + 2, false);
-	refs_list->set_column_title_tooltip_text(offset + 2, "References not owned by the ObjectDB");
-	refs_list->set_column_title(offset + 3, "ObjectDB Refs");
+	refs_list->set_column_title_tooltip_text(offset + 2, TTR("References not owned by the ObjectDB"));
+	refs_list->set_column_title(offset + 3, TTR("ObjectDB Refs"));
 	refs_list->set_column_expand(offset + 3, false);
-	refs_list->set_column_title_tooltip_text(offset + 3, "References owned by the ObjectDB");
-	refs_list->set_column_title(offset + 4, "Total Refs");
+	refs_list->set_column_title_tooltip_text(offset + 3, TTR("References owned by the ObjectDB"));
+	refs_list->set_column_title(offset + 4, TTR("Total Refs"));
 	refs_list->set_column_expand(offset + 4, false);
-	refs_list->set_column_title_tooltip_text(offset + 4, "ObjectDB References + Native References");
-	refs_list->set_column_title(offset + 5, "ObjectDB Cycles");
+	refs_list->set_column_title_tooltip_text(offset + 4, TTR("ObjectDB References + Native References"));
+	refs_list->set_column_title(offset + 5, TTR("ObjectDB Cycles"));
 	refs_list->set_column_expand(offset + 5, false);
-	refs_list->set_column_title_tooltip_text(offset + 5, "Cycles detected in the ObjectDB");
+	refs_list->set_column_title_tooltip_text(offset + 5, TTR("Cycles detected in the ObjectDB"));
 	refs_list->connect("item_selected", callable_mp(this, &SnapshotRefCountedView::_refcounted_selected));
 	refs_list->set_h_size_flags(SizeFlags::SIZE_EXPAND_FILL);
 	refs_list->set_v_size_flags(SizeFlags::SIZE_EXPAND_FILL);
@@ -120,9 +120,9 @@ void SnapshotRefCountedView::show_snapshot(GameStateSnapshot *p_data, GameStateS
 	ref_details->set_v_size_flags(SizeFlags::SIZE_EXPAND_FILL);
 
 	refs_list->create_item();
-	_insert_data(snapshot_data, "A");
+	_insert_data(snapshot_data, TTR("A"));
 	if (diff_data) {
-		_insert_data(diff_data, "B");
+		_insert_data(diff_data, TTR("B"));
 	}
 
 	// push the split as far right as possible
@@ -213,10 +213,10 @@ void SnapshotRefCountedView::_refcounted_selected() {
 	Array ref_cycles = (Array)d->extra_debug_data["ref_cycles"];
 
 	String count_str = "[ul]\n";
-	count_str += " Native References: " + String::num_uint64(native_refs) + "\n";
-	count_str += " ObjectDB References: " + String::num_uint64(objectdb_refs) + "\n";
-	count_str += " Total References: " + String::num_uint64(total_refs) + "\n";
-	count_str += " ObjectDB Cycles: " + String::num_uint64(ref_cycles.size()) + "\n";
+	count_str += TTR(" Native References: ") + String::num_uint64(native_refs) + "\n";
+	count_str += TTR(" ObjectDB References: ") + String::num_uint64(objectdb_refs) + "\n";
+	count_str += TTR(" Total References: ") + String::num_uint64(total_refs) + "\n";
+	count_str += TTR(" ObjectDB Cycles: ") + String::num_uint64(ref_cycles.size()) + "\n";
 	count_str += "[/ul]\n";
 	RichTextLabel *counts = memnew(RichTextLabel(count_str));
 	counts->set_use_bbcode(true);
@@ -225,7 +225,7 @@ void SnapshotRefCountedView::_refcounted_selected() {
 	properties_container->add_child(counts);
 
 	if (d->inbound_references.size() > 0) {
-		RichTextLabel *inbound_lbl = memnew(RichTextLabel("[center]ObjectDB References[center]"));
+		RichTextLabel *inbound_lbl = memnew(RichTextLabel(TTR("[center]ObjectDB References[center]")));
 		inbound_lbl->set_fit_content(true);
 		inbound_lbl->set_use_bbcode(true);
 		properties_container->add_child(inbound_lbl);
@@ -236,17 +236,17 @@ void SnapshotRefCountedView::_refcounted_selected() {
 		inbound_tree->set_hide_root(true);
 		inbound_tree->set_columns(3);
 		inbound_tree->set_column_titles_visible(true);
-		inbound_tree->set_column_title(0, "Source");
+		inbound_tree->set_column_title(0, TTR("Source"));
 		inbound_tree->set_column_expand(0, true);
 		inbound_tree->set_column_clip_content(0, false);
 		inbound_tree->set_column_title_tooltip_text(0, TTR("Other object referencing this object"));
-		inbound_tree->set_column_title(1, "Property");
+		inbound_tree->set_column_title(1, TTR("Property"));
 		inbound_tree->set_column_expand(1, true);
 		inbound_tree->set_column_clip_content(1, true);
-		inbound_tree->set_column_title_tooltip_text(1, "Property of other object referencing this object");
-		inbound_tree->set_column_title(2, "Duplicate?");
+		inbound_tree->set_column_title_tooltip_text(1, TTR("Property of other object referencing this object"));
+		inbound_tree->set_column_title(2, TTR("Duplicate?"));
 		inbound_tree->set_column_expand(2, false);
-		inbound_tree->set_column_title_tooltip_text(2, "Was the same reference returned by multiple getters on the source object?");
+		inbound_tree->set_column_title_tooltip_text(2, TTR("Was the same reference returned by multiple getters on the source object?"));
 		inbound_tree->set_h_size_flags(SizeFlags::SIZE_EXPAND_FILL);
 		inbound_tree->set_v_size_flags(SizeFlags::SIZE_EXPAND_FILL);
 		inbound_tree->set_v_scroll_enabled(false);
@@ -269,13 +269,13 @@ void SnapshotRefCountedView::_refcounted_selected() {
 			SnapshotDataObject *target = d->snapshot->objects[ob.value];
 			i->set_text(0, target->get_name());
 			i->set_text(1, ob.key);
-			i->set_text(2, property_repeat_count[ob.value] > 1 ? "No" : "Yes");
+			i->set_text(2, property_repeat_count[ob.value] > 1 ? TTR("Yes") : TTR("No"));
 			reference_item_map[i] = data_item_map[target];
 		}
 	}
 
 	if (ref_cycles.size() > 0) {
-		properties_container->add_child(memnew(SpanningHeader("ObjectDB Cycles")));
+		properties_container->add_child(memnew(SpanningHeader(TTR("ObjectDB Cycles"))));
 		Tree *cycles_tree = memnew(Tree);
 		cycles_tree->set_hide_folding(true);
 		properties_container->add_child(cycles_tree);

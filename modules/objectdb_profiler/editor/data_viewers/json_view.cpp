@@ -37,7 +37,7 @@
 #include "shared_controls.h"
 
 SnapshotJsonView::SnapshotJsonView() {
-	set_name("JSON");
+	set_name(TTR("JSON"));
 }
 
 void SnapshotJsonView::show_snapshot(GameStateSnapshot *p_data, GameStateSnapshot *p_diff_data) {
@@ -51,7 +51,7 @@ void SnapshotJsonView::show_snapshot(GameStateSnapshot *p_data, GameStateSnapsho
 
 	loading_panel = memnew(DarkPanelContainer);
 	CenterContainer *loading_center = memnew(CenterContainer);
-	Label *loading_label = memnew(Label("Loading"));
+	Label *loading_label = memnew(Label(TTR("Loading")));
 	add_child(loading_panel);
 	loading_panel->add_child(loading_center);
 	loading_center->add_child(loading_label);
@@ -62,10 +62,10 @@ void SnapshotJsonView::show_snapshot(GameStateSnapshot *p_data, GameStateSnapsho
 	json_box->set_v_size_flags(SizeFlags::SIZE_EXPAND_FILL);
 	json_box->set_h_size_flags(SizeFlags::SIZE_EXPAND_FILL);
 	box->add_child(json_box);
-	String hdr_a_text = diff_data ? "Snapshot A JSON" : "Snapshot JSON";
+	String hdr_a_text = diff_data ? TTR("Snapshot A JSON") : TTR("Snapshot JSON");
 	SpanningHeader *hdr_a = memnew(SpanningHeader(hdr_a_text));
 	if (diff_data) {
-		hdr_a->set_tooltip_text("Snapshot A: " + snapshot_data->name);
+		hdr_a->set_tooltip_text(TTR("Snapshot A: ") + snapshot_data->name);
 	}
 	json_box->add_child(hdr_a);
 
@@ -84,9 +84,9 @@ void SnapshotJsonView::show_snapshot(GameStateSnapshot *p_data, GameStateSnapsho
 		diff_json_box->set_v_size_flags(SizeFlags::SIZE_EXPAND_FILL);
 		diff_json_box->set_h_size_flags(SizeFlags::SIZE_EXPAND_FILL);
 		box->add_child(diff_json_box);
-		String hrd_b_text = "Snapshot B JSON";
+		String hrd_b_text = TTR("Snapshot B JSON");
 		SpanningHeader *hdr_b = memnew(SpanningHeader(hrd_b_text));
-		hdr_b->set_tooltip_text("Snapshot B: " + diff_data->name);
+		hdr_b->set_tooltip_text(TTR("Snapshot B: ") + diff_data->name);
 		diff_json_box->add_child(hdr_b);
 
 		diff_json_content = memnew(EditorJsonVisualizer);

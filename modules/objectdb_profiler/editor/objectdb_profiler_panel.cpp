@@ -59,7 +59,7 @@ const int SNAPSHOT_CHUNK_SIZE = 6 << 20;
 
 void ObjectDBProfilerPanel::_request_object_snapshot() {
 	take_snapshot->set_disabled(true);
-	take_snapshot->set_text("Generating Snapshot");
+	take_snapshot->set_text(TTR("Generating Snapshot"));
 	Array args;
 	args.push_back(next_request_id++);
 	args.push_back(SnapshotCollector::get_godot_version_string());
@@ -76,7 +76,7 @@ bool ObjectDBProfilerPanel::handle_debug_message(const String &p_message, const 
 		args.push_back(request_id);
 		args.push_back(0);
 		args.push_back(SNAPSHOT_CHUNK_SIZE);
-		take_snapshot->set_text("Receiving Snapshot (0/" + _to_mb(total_size) + " mb)");
+		take_snapshot->set_text(TTR("Receiving Snapshot") + " (0/" + _to_mb(total_size) + " mb)");
 		EditorDebuggerNode::get_singleton()->get_current_debugger()->send_message("snapshot:request_snapshot_chunk", args);
 		return true;
 	}
@@ -84,7 +84,7 @@ bool ObjectDBProfilerPanel::handle_debug_message(const String &p_message, const 
 		int request_id = p_data.get(0);
 		PartialSnapshot &chunk = partial_snapshots[request_id];
 		chunk.data.append_array(p_data.get(1));
-		take_snapshot->set_text("Receiving Snapshot (" + _to_mb(chunk.data.size()) + "/" + _to_mb(chunk.total_size) + " mb)");
+		take_snapshot->set_text(TTR("Receiving Snapshot") + " (" + _to_mb(chunk.data.size()) + "/" + _to_mb(chunk.total_size) + " mb)");
 		if (chunk.data.size() != chunk.total_size) {
 			Array args;
 			args.push_back(request_id);
@@ -94,7 +94,7 @@ bool ObjectDBProfilerPanel::handle_debug_message(const String &p_message, const 
 			return true;
 		}
 
-		take_snapshot->set_text("Visualizing Snapshot");
+		take_snapshot->set_text(TTR("Visualizing Snapshot"));
 		// Wait a frame just so the button has a chance to update it's text so the user knows what's going on
 		get_tree()->connect("process_frame", callable_mp(this, &ObjectDBProfilerPanel::receive_snapshot).bind(request_id), CONNECT_ONE_SHOT);
 		return true;
@@ -237,7 +237,7 @@ void ObjectDBProfilerPanel::clear_snapshot() {
 }
 
 void ObjectDBProfilerPanel::set_enabled(bool p_enabled) {
-	take_snapshot->set_text("Take ObjectDB Snapshot");
+	take_snapshot->set_text(TTR("Take ObjectDB Snapshot"));
 	take_snapshot->set_disabled(!p_enabled);
 }
 

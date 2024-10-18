@@ -38,7 +38,7 @@
 #include "scene/gui/rich_text_label.h"
 
 SnapshotObjectView::SnapshotObjectView() {
-	set_name("Objects");
+	set_name(TTR("Objects"));
 }
 
 void SnapshotObjectView::show_snapshot(GameStateSnapshot *p_data, GameStateSnapshot *p_diff_data) {
@@ -62,17 +62,17 @@ void SnapshotObjectView::show_snapshot(GameStateSnapshot *p_data, GameStateSnaps
 
 	object_list = memnew(Tree);
 
-	filter_bar = memnew(TreeSortAndFilterBar(object_list, "Filter Objects"));
+	filter_bar = memnew(TreeSortAndFilterBar(object_list, TTR("Filter Objects")));
 	object_column->add_child(filter_bar);
 	int sort_idx = 0;
 	if (diff_data) {
-		filter_bar->add_sort_option("Snapshot", TreeSortAndFilterBar::SortType::ALPHA_SORT, sort_idx++);
+		filter_bar->add_sort_option(TTR("Snapshot"), TreeSortAndFilterBar::SortType::ALPHA_SORT, sort_idx++);
 	}
-	filter_bar->add_sort_option("Class", TreeSortAndFilterBar::SortType::ALPHA_SORT, sort_idx++);
-	filter_bar->add_sort_option("Name", TreeSortAndFilterBar::SortType::ALPHA_SORT, sort_idx++);
-	filter_bar->add_sort_option("Inbound References", TreeSortAndFilterBar::SortType::NUMERIC_SORT, sort_idx++);
+	filter_bar->add_sort_option(TTR("Class"), TreeSortAndFilterBar::SortType::ALPHA_SORT, sort_idx++);
+	filter_bar->add_sort_option(TTR("Name"), TreeSortAndFilterBar::SortType::ALPHA_SORT, sort_idx++);
+	filter_bar->add_sort_option(TTR("Inbound References"), TreeSortAndFilterBar::SortType::NUMERIC_SORT, sort_idx++);
 	TreeSortAndFilterBar::SortOptionIndexes default_sort = filter_bar->add_sort_option(
-			"Outbound References", TreeSortAndFilterBar::SortType::NUMERIC_SORT, sort_idx++);
+			TTR("Outbound References"), TreeSortAndFilterBar::SortType::NUMERIC_SORT, sort_idx++);
 
 	// Tree of objects
 	object_list->set_select_mode(Tree::SelectMode::SELECT_ROW);
@@ -84,27 +84,27 @@ void SnapshotObjectView::show_snapshot(GameStateSnapshot *p_data, GameStateSnaps
 	object_list->set_column_titles_visible(true);
 	int offset = 0;
 	if (diff_data) {
-		object_list->set_column_title(0, "Snapshot");
+		object_list->set_column_title(0, TTR("Snapshot"));
 		object_list->set_column_expand(0, false);
 		object_list->set_column_title_tooltip_text(0, "A: " + snapshot_data->name + ", B: " + diff_data->name);
 		offset++;
 	}
-	object_list->set_column_title(offset + 0, "Class");
+	object_list->set_column_title(offset + 0, TTR("Class"));
 	object_list->set_column_expand(offset + 0, true);
-	object_list->set_column_title_tooltip_text(offset + 0, "Object's class");
-	object_list->set_column_title(offset + 1, "Object");
+	object_list->set_column_title_tooltip_text(offset + 0, TTR("Object's class"));
+	object_list->set_column_title(offset + 1, TTR("Object"));
 	object_list->set_column_expand(offset + 1, true);
 	object_list->set_column_expand_ratio(offset + 1, 2);
-	object_list->set_column_title_tooltip_text(offset + 1, "Object's name");
-	object_list->set_column_title(offset + 2, "In");
+	object_list->set_column_title_tooltip_text(offset + 1, TTR("Object's name"));
+	object_list->set_column_title(offset + 2, TTR("In"));
 	object_list->set_column_expand(offset + 2, false);
 	object_list->set_column_clip_content(offset + 2, false);
-	object_list->set_column_title_tooltip_text(offset + 2, "Number of inbound references");
+	object_list->set_column_title_tooltip_text(offset + 2, TTR("Number of inbound references"));
 	object_list->set_column_custom_minimum_width(offset + 2, 30 * EDSCALE);
-	object_list->set_column_title(offset + 3, "Out");
+	object_list->set_column_title(offset + 3, TTR("Out"));
 	object_list->set_column_expand(offset + 3, false);
 	object_list->set_column_clip_content(offset + 3, false);
-	object_list->set_column_title_tooltip_text(offset + 3, "Number of outbound references");
+	object_list->set_column_title_tooltip_text(offset + 3, TTR("Number of outbound references"));
 	object_list->set_column_custom_minimum_width(offset + 2, 30 * EDSCALE);
 	object_list->connect("item_selected", callable_mp(this, &SnapshotObjectView::_object_selected));
 	object_list->set_h_size_flags(SizeFlags::SIZE_EXPAND_FILL);
@@ -117,9 +117,9 @@ void SnapshotObjectView::show_snapshot(GameStateSnapshot *p_data, GameStateSnaps
 	object_details->set_v_size_flags(SizeFlags::SIZE_EXPAND_FILL);
 
 	object_list->create_item();
-	_insert_data(snapshot_data, "A");
+	_insert_data(snapshot_data, TTR("A"));
 	if (diff_data) {
-		_insert_data(diff_data, "B");
+		_insert_data(diff_data, TTR("B"));
 	}
 
 	filter_bar->select_sort(default_sort.descending);
@@ -179,7 +179,7 @@ void SnapshotObjectView::_object_selected() {
 	properties_scroll->add_child(properties_container);
 	properties_container->add_theme_constant_override("separation", 8);
 
-	inbound_tree = _make_references_list(properties_container, "Inbound References", "Source", "Other object referencing this object", "Property", "Property of other object referencing this object");
+	inbound_tree = _make_references_list(properties_container, TTR("Inbound References"), TTR("Source"), TTR("Other object referencing this object"), TTR("Property"), TTR("Property of other object referencing this object"));
 	inbound_tree->connect("item_selected", callable_mp(this, &SnapshotObjectView::_reference_selected).bind(inbound_tree));
 	TreeItem *ib_root = inbound_tree->create_item();
 	for (const KeyValue<String, ObjectID> &ob : d->inbound_references) {
@@ -190,7 +190,7 @@ void SnapshotObjectView::_object_selected() {
 		reference_item_map[i] = data_item_map[target];
 	}
 
-	outbound_tree = _make_references_list(properties_container, "Outbound References", "Property", "Property of this object referencing other object", "Target", "Other object being referenced");
+	outbound_tree = _make_references_list(properties_container, TTR("Outbound References"), TTR("Property"), TTR("Property of this object referencing other object"), TTR("Target"), TTR("Other object being referenced"));
 	outbound_tree->connect("item_selected", callable_mp(this, &SnapshotObjectView::_reference_selected).bind(outbound_tree));
 	TreeItem *ob_root = outbound_tree->create_item();
 	for (const KeyValue<String, ObjectID> &ob : d->outbound_references) {

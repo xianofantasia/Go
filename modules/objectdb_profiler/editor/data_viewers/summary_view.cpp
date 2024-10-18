@@ -67,7 +67,7 @@ SnapshotSummaryView::SnapshotSummaryView() {
 	pc->add_theme_style_override("panel", sbf);
 	content->add_child(pc);
 	pc->set_anchors_preset(LayoutPreset::PRESET_TOP_WIDE);
-	Label *title = memnew(Label("ObjectDB Snapshot Summary"));
+	Label *title = memnew(Label(TTR("ObjectDB Snapshot Summary")));
 	pc->add_child(title);
 	title->set_horizontal_alignment(HorizontalAlignment::HORIZONTAL_ALIGNMENT_CENTER);
 	title->set_vertical_alignment(VerticalAlignment::VERTICAL_ALIGNMENT_CENTER);
@@ -78,9 +78,9 @@ SnapshotSummaryView::SnapshotSummaryView() {
 	content->add_child(explainer_text);
 	VBoxContainer *explainer_lines = memnew(VBoxContainer);
 	explainer_text->add_child(explainer_lines);
-	Label *l1 = memnew(Label("Press 'Take ObjectDB Snapshot' to snapshot the ObjectDB."));
-	Label *l2 = memnew(Label("Memory in Godot is either owned natively by the engine or owned by the ObjectDB."));
-	Label *l3 = memnew(Label("ObjectDB Snapshots capture only memory owned by the ObjectDB."));
+	Label *l1 = memnew(Label(TTR("Press 'Take ObjectDB Snapshot' to snapshot the ObjectDB.")));
+	Label *l2 = memnew(Label(TTR("Memory in Godot is either owned natively by the engine or owned by the ObjectDB.")));
+	Label *l3 = memnew(Label(TTR("ObjectDB Snapshots capture only memory owned by the ObjectDB.")));
 	l1->set_horizontal_alignment(HorizontalAlignment::HORIZONTAL_ALIGNMENT_CENTER);
 	l2->set_horizontal_alignment(HorizontalAlignment::HORIZONTAL_ALIGNMENT_CENTER);
 	l3->set_horizontal_alignment(HorizontalAlignment::HORIZONTAL_ALIGNMENT_CENTER);
@@ -104,27 +104,27 @@ void SnapshotSummaryView::show_snapshot(GameStateSnapshot *p_data, GameStateSnap
 	SnapshotView::show_snapshot(p_data, p_diff_data);
 	explainer_text->set_visible(false);
 
-	String snapshot_a_name = diff_data == nullptr ? "Snapshot" : "Snapshot A";
-	String snapshot_b_name = "Snapshot B";
+	String snapshot_a_name = diff_data == nullptr ? TTR("Snapshot") : TTR("Snapshot A");
+	String snapshot_b_name = TTR("Snapshot B");
 
-	_push_overview_blurb(snapshot_a_name + " Overview", snapshot_data);
+	_push_overview_blurb(snapshot_a_name + TTR(" Overview"), snapshot_data);
 	if (diff_data) {
-		_push_overview_blurb(snapshot_b_name + " Overview", diff_data);
+		_push_overview_blurb(snapshot_b_name + TTR(" Overview"), diff_data);
 	}
 
-	_push_node_blurb(snapshot_a_name + " Nodes", snapshot_data);
+	_push_node_blurb(snapshot_a_name + TTR(" Nodes"), snapshot_data);
 	if (diff_data) {
-		_push_node_blurb(snapshot_b_name + " Nodes", diff_data);
+		_push_node_blurb(snapshot_b_name + TTR(" Nodes"), diff_data);
 	}
 
-	_push_refcounted_blurb(snapshot_a_name + " RefCounteds", snapshot_data);
+	_push_refcounted_blurb(snapshot_a_name + TTR(" RefCounteds"), snapshot_data);
 	if (diff_data) {
-		_push_refcounted_blurb(snapshot_b_name + " RefCounteds", diff_data);
+		_push_refcounted_blurb(snapshot_b_name + TTR(" RefCounteds"), diff_data);
 	}
 
-	_push_object_blurb(snapshot_a_name + " Objects", snapshot_data);
+	_push_object_blurb(snapshot_a_name + TTR(" Objects"), snapshot_data);
 	if (diff_data) {
-		_push_object_blurb(snapshot_b_name + " Objects", diff_data);
+		_push_object_blurb(snapshot_b_name + TTR(" Objects"), diff_data);
 	}
 }
 
@@ -162,30 +162,30 @@ void SnapshotSummaryView::_push_overview_blurb(const String &p_title, GameStateS
 	String c = "";
 
 	c += "[ul]\n";
-	c += " [i]Name:[/i] " + p_snapshot->name + "\n";
+	c += TTR(" [i]Name:[/i] ") + p_snapshot->name + "\n";
 	if (p_snapshot->snapshot_context.has("timestamp")) {
-		c += " [i]Timestamp:[/i] " + Time::get_singleton()->get_datetime_string_from_unix_time((double)p_snapshot->snapshot_context["timestamp"]) + "\n";
+		c += TTR(" [i]Timestamp:[/i] ") + Time::get_singleton()->get_datetime_string_from_unix_time((double)p_snapshot->snapshot_context["timestamp"]) + "\n";
 	}
 	if (p_snapshot->snapshot_context.has("game_version")) {
-		c += " [i]Game Version:[/i] " + (String)p_snapshot->snapshot_context["game_version"] + "\n";
+		c += TTR(" [i]Game Version:[/i] ") + (String)p_snapshot->snapshot_context["game_version"] + "\n";
 	}
 	if (p_snapshot->snapshot_context.has("editor_version")) {
-		c += " [i]Editor Version:[/i] " + (String)p_snapshot->snapshot_context["editor_version"] + "\n";
+		c += TTR(" [i]Editor Version:[/i] ") + (String)p_snapshot->snapshot_context["editor_version"] + "\n";
 	}
 
 	double bytes_to_mb = 0.000001;
 	if (p_snapshot->snapshot_context.has("mem_usage")) {
-		c += " [i]Memory Used:[/i] " + String::num((double)((uint64_t)p_snapshot->snapshot_context["mem_usage"]) * bytes_to_mb, 3) + " MB\n";
+		c += TTR(" [i]Memory Used:[/i] ") + String::num((double)((uint64_t)p_snapshot->snapshot_context["mem_usage"]) * bytes_to_mb, 3) + " MB\n";
 	}
 	if (p_snapshot->snapshot_context.has("mem_max_usage")) {
-		c += " [i]Max Memory Used:[/i] " + String::num((double)((uint64_t)p_snapshot->snapshot_context["mem_max_usage"]) * bytes_to_mb, 3) + " MB\n";
+		c += TTR(" [i]Max Memory Used:[/i] ") + String::num((double)((uint64_t)p_snapshot->snapshot_context["mem_max_usage"]) * bytes_to_mb, 3) + " MB\n";
 	}
 	if (p_snapshot->snapshot_context.has("mem_available")) {
 		// I'm guessing pretty hard about what this is supposed to be. It's hard coded to be -1 cast to a uint64_t in Memory.h,
 		// so it _could_ be checking if we're on a 64 bit system, I think...
-		c += " [i]Max uint64 value:[/i] " + String::num_uint64((uint64_t)p_snapshot->snapshot_context["mem_available"]) + "\n";
+		c += TTR(" [i]Max uint64 value:[/i] ") + String::num_uint64((uint64_t)p_snapshot->snapshot_context["mem_available"]) + "\n";
 	}
-	c += " [i]Total Objects:[/i] " + itos(p_snapshot->objects.size()) + "\n";
+	c += TTR(" [i]Total Objects:[/i] ") + itos(p_snapshot->objects.size()) + "\n";
 
 	int node_count = 0;
 	for (const KeyValue<ObjectID, SnapshotDataObject *> &pair : p_snapshot->objects) {
@@ -193,7 +193,7 @@ void SnapshotSummaryView::_push_overview_blurb(const String &p_title, GameStateS
 			node_count++;
 		}
 	}
-	c += " [i]Total Nodes:[/i] " + itos(node_count) + "\n";
+	c += TTR(" [i]Total Nodes:[/i] ") + itos(node_count) + "\n";
 	c += "[/ul]\n";
 
 	blurb_list->add_child(memnew(SummaryBlurb(p_title, c)));
@@ -213,7 +213,7 @@ void SnapshotSummaryView::_push_node_blurb(const String &p_title, GameStateSnaps
 		return;
 	}
 
-	String c = "Multiple root nodes [i](possible call to 'remove_child' without 'queue_free')[/i]\n";
+	String c = TTR("Multiple root nodes [i](possible call to 'remove_child' without 'queue_free')[/i]\n");
 	c += "[ul]\n";
 	for (const String &node : nodes) {
 		c += " " + node + "\n";
@@ -240,7 +240,7 @@ void SnapshotSummaryView::_push_refcounted_blurb(const String &p_title, GameStat
 		return;
 	}
 
-	String c = "RefCounted objects only referenced in cycles [i](cycles often indicate a memory leaks)[/i]\n";
+	String c = TTR("RefCounted objects only referenced in cycles [i](cycles often indicate a memory leaks)[/i]\n");
 	c += "[ul]\n";
 	for (const String &rc : rcs) {
 		c += " " + rc + "\n";
@@ -268,7 +268,7 @@ void SnapshotSummaryView::_push_object_blurb(const String &p_title, GameStateSna
 		return;
 	}
 
-	String c = "Scripted objects not referenced by any other objects [i](unreferenced objects may indicate a memory leak)[/i]\n";
+	String c = TTR("Scripted objects not referenced by any other objects [i](unreferenced objects may indicate a memory leak)[/i]\n");
 	c += "[ul]\n";
 	for (const String &object : objects) {
 		c += " " + object + "\n";

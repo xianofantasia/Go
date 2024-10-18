@@ -51,12 +51,12 @@ void SnapshotNodeView::show_snapshot(GameStateSnapshot *p_data, GameStateSnapsho
 	add_child(diff_sides);
 
 	bool show_diff_label = diff_data && combined_diff_view;
-	main_tree = _make_node_tree(diff_data && !combined_diff_view ? "A Nodes" : "Nodes", snapshot_data);
+	main_tree = _make_node_tree(diff_data && !combined_diff_view ? TTR("A Nodes") : TTR("Nodes"), snapshot_data);
 	diff_sides->add_child(main_tree.root);
 	_add_snapshot_to_tree(main_tree.tree, snapshot_data, show_diff_label ? "-" : "");
 
 	if (diff_data) {
-		CheckButton *diff_mode_toggle = memnew(CheckButton("Combine Diff"));
+		CheckButton *diff_mode_toggle = memnew(CheckButton(TTR("Combine Diff")));
 		diff_mode_toggle->set_pressed(combined_diff_view);
 		diff_mode_toggle->connect("toggled", callable_mp(this, &SnapshotNodeView::_toggle_diff_mode));
 		main_tree.filter_bar->add_child(diff_mode_toggle);
@@ -67,7 +67,7 @@ void SnapshotNodeView::show_snapshot(GameStateSnapshot *p_data, GameStateSnapsho
 			_add_snapshot_to_tree(main_tree.tree, diff_data, "+");
 		} else {
 			// add a second column with the diff snapshot
-			diff_tree = _make_node_tree("B Nodes", diff_data);
+			diff_tree = _make_node_tree(TTR("B Nodes"), diff_data);
 			diff_sides->add_child(diff_tree.root);
 			_add_snapshot_to_tree(diff_tree.tree, diff_data, "");
 		}
@@ -90,7 +90,7 @@ NodeTreeElements SnapshotNodeView::_make_node_tree(const String &p_tree_name, Ga
 	elements.root = memnew(VBoxContainer);
 	elements.root->set_anchors_preset(LayoutPreset::PRESET_FULL_RECT);
 	elements.tree = memnew(Tree);
-	elements.filter_bar = memnew(TreeSortAndFilterBar(elements.tree, "Filter Nodes"));
+	elements.filter_bar = memnew(TreeSortAndFilterBar(elements.tree, TTR("Filter Nodes")));
 	elements.root->add_child(elements.filter_bar);
 	elements.tree->set_select_mode(Tree::SelectMode::SELECT_ROW);
 	elements.tree->set_custom_minimum_size(Size2(150, 0) * EDSCALE);
@@ -255,8 +255,8 @@ void SnapshotNodeView::_show_choose_object_menu() {
 	remove_child(choose_object_menu);
 	add_child(choose_object_menu);
 	choose_object_menu->clear(false);
-	choose_object_menu->add_item("Snapshot A", 0);
-	choose_object_menu->add_item("Snapshot B", 1);
+	choose_object_menu->add_item(TTR("Snapshot A"), 0);
+	choose_object_menu->add_item(TTR("Snapshot B"), 1);
 	choose_object_menu->reset_size();
 	choose_object_menu->set_position(get_screen_position() + get_local_mouse_position());
 	choose_object_menu->popup();
