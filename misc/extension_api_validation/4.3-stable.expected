@@ -261,3 +261,12 @@ Validate extension JSON: Error: Field 'classes/PointLight2D/properties/texture':
 
 Property hints modified to disallow resource types that don't work. The types allowed are now more restricted, but this change only impacts the editor and not the actual exposed API. No adjustments should be necessary.
 Decal properties were previously changed from Texture to Texture2D in 4.2, so we need to silence those warnings too.
+
+
+GH-100521
+---------
+Validate extension JSON: Error: Field 'classes/CodeEdit/methods/add_code_completion_option/arguments': size changed value in new API, from 7 to 8.
+Validate extension JSON: Error: Field 'classes/CodeEdit/methods/add_code_completion_option/arguments': size changed value in new API, from 6 to 8.
+
+Add swizzling for shader vector completion.
+Compatibility method registered.
