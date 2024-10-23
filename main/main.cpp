@@ -958,6 +958,7 @@ Error Main::setup(const char *execpath, int argc, char *argv[], bool p_second_ph
 	input_map = memnew(InputMap);
 	globals = memnew(ProjectSettings);
 	filesystem = memnew(FileSystem);
+	OS::get_singleton()->initialize_filesystem();
 
 	register_core_settings(); //here globals are present
 

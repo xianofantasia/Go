@@ -38,12 +38,14 @@
 
 #include "core/debugger/engine_debugger.h"
 #include "core/debugger/script_debugger.h"
+#include "core/io/file_system.h"
 #include "core/io/marshalls.h"
 #include "core/version_generated.gen.h"
 #include "drivers/unix/net_socket_posix.h"
 #include "drivers/windows/dir_access_windows.h"
 #include "drivers/windows/file_access_windows.h"
 #include "drivers/windows/file_access_windows_pipe.h"
+#include "drivers/windows/file_system_protocol_os_windows.h"
 #include "main/main.h"
 #include "servers/audio_server.h"
 #include "servers/rendering/rendering_server_default.h"
@@ -201,14 +203,6 @@ void OS_Windows::initialize() {
 	add_error_handler(&error_handlers);
 #endif
 
-	FileAccess::make_default<FileAccessWindows>(FileAccess::ACCESS_RESOURCES);
-	FileAccess::make_default<FileAccessWindows>(FileAccess::ACCESS_USERDATA);
-	FileAccess::make_default<FileAccessWindows>(FileAccess::ACCESS_FILESYSTEM);
-	FileAccess::make_default<FileAccessWindowsPipe>(FileAccess::ACCESS_PIPE);
-	DirAccess::make_default<DirAccessWindows>(DirAccess::ACCESS_RESOURCES);
-	DirAccess::make_default<DirAccessWindows>(DirAccess::ACCESS_USERDATA);
-	DirAccess::make_default<DirAccessWindows>(DirAccess::ACCESS_FILESYSTEM);
-
 	NetSocketPosix::make_default();
 
 	// We need to know how often the clock is updated
@@ -250,8 +244,22 @@ void OS_Windows::initialize() {
 	} else if (!dwrite2_init) {
 		print_verbose("Unable to load IDWriteFactory2, automatic system font fallback is disabled.");
 	}
+}
+void OS_Windows::initialize_filesystem() {
+	FileSystem *fs = FileSystem::get_singleton();
+	FileSystemProtocolOSWindows::initialize();
+	
+	Ref<FileSystemProtocolOSWindows> protocol_os = Ref<FileSystemProtocolOSWindows>();
+	protocol_os.instantiate();
+	fs->add_protocol(FileSystem::protocol_name_os, protocol_os);
 
-	FileAccessWindows::initialize();
+	FileAccess::make_default<FileAccessWindows>(FileAccess::ACCESS_RESOURCES);
+	FileAccess::make_default<FileAccessWindows>(FileAccess::ACCESS_USERDATA);
+	FileAccess::make_default<FileAccessWindows>(FileAccess::ACCESS_FILESYSTEM);
+	FileAccess::make_default<FileAccessWindowsPipe>(FileAccess::ACCESS_PIPE);
+	DirAccess::make_default<DirAccessWindows>(DirAccess::ACCESS_RESOURCES);
+	DirAccess::make_default<DirAccessWindows>(DirAccess::ACCESS_USERDATA);
+	DirAccess::make_default<DirAccessWindows>(DirAccess::ACCESS_FILESYSTEM);
 }
 
 void OS_Windows::delete_main_loop() {
@@ -298,7 +306,7 @@ void OS_Windows::finalize_core() {
 		_remove_temp_library(temp_libraries.last()->key);
 	}
 
-	FileAccessWindows::finalize();
+	FileSystemProtocolOSWindows::finalize();
 
 	timeEndPeriod(1);
 

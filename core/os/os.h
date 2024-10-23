@@ -109,6 +109,7 @@ protected:
 	void add_logger(Logger *p_logger);
 
 	virtual void initialize() = 0;
+	virtual void initialize_filesystem() = 0;
 	virtual void initialize_joypads() = 0;
 
 	void set_display_driver_id(int p_display_driver_id) { _display_driver_id = p_display_driver_id; }

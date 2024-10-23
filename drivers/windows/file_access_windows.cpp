@@ -31,6 +31,7 @@
 #ifdef WINDOWS_ENABLED
 
 #include "file_access_windows.h"
+#include "file_system_protocol_os_windows.h"
 
 #include "core/config/project_settings.h"
 #include "core/os/os.h"
@@ -60,37 +61,14 @@ void FileAccessWindows::check_errors() const {
 	}
 }
 
-bool FileAccessWindows::is_path_invalid(const String &p_path) {
-	// Check for invalid operating system file.
-	String fname = p_path.get_file().to_lower();
-
-	int dot = fname.find(".");
-	if (dot != -1) {
-		fname = fname.substr(0, dot);
-	}
-	return invalid_files.has(fname);
-}
-
 String FileAccessWindows::fix_path(const String &p_path) const {
 	String r_path = FileAccess::fix_path(p_path);
 
-	if (r_path.is_relative_path()) {
-		Char16String current_dir_name;
-		size_t str_len = GetCurrentDirectoryW(0, nullptr);
-		current_dir_name.resize(str_len + 1);
-		GetCurrentDirectoryW(current_dir_name.size(), (LPWSTR)current_dir_name.ptrw());
-		r_path = String::utf16((const char16_t *)current_dir_name.get_data()).trim_prefix(R"(\\?\)").replace("\\", "/").path_join(r_path);
-	}
-	r_path = r_path.simplify_path();
-	r_path = r_path.replace("/", "\\");
-	if (!r_path.is_network_share_path() && !r_path.begins_with(R"(\\?\)")) {
-		r_path = R"(\\?\)" + r_path;
-	}
-	return r_path;
+	return FileSystemProtocolOSWindows::fix_path(r_path);
 }
 
 Error FileAccessWindows::open_internal(const String &p_path, int p_mode_flags) {
-	if (is_path_invalid(p_path)) {
+	if (FileSystemProtocolOSWindows::is_path_invalid(p_path)) {
 #ifdef DEBUG_ENABLED
 		if (p_mode_flags != READ) {
 			WARN_PRINT("The path :" + p_path + " is a reserved Windows system pipe, so it can't be used for creating files.");
@@ -388,23 +366,13 @@ void FileAccessWindows::store_buffer(const uint8_t *p_src, uint64_t p_length) {
 	ERR_FAIL_COND(fwrite(p_src, 1, p_length, f) != (size_t)p_length);
 }
 
+// TODO: Remove
 bool FileAccessWindows::file_exists(const String &p_name) {
-	if (is_path_invalid(p_name)) {
-		return false;
-	}
-
-	String filename = fix_path(p_name);
-	FILE *g = _wfsopen((LPCWSTR)(filename.utf16().get_data()), L"rb", _SH_DENYNO);
-	if (g == nullptr) {
-		return false;
-	} else {
-		fclose(g);
-		return true;
-	}
+	return FileSystemProtocolOSWindows::file_exists_static(p_name);
 }
 
 uint64_t FileAccessWindows::_get_modified_time(const String &p_file) {
-	if (is_path_invalid(p_file)) {
+	if (FileSystemProtocolOSWindows::is_path_invalid(p_file)) {
 		return 0;
 	}
 
@@ -512,23 +480,6 @@ void FileAccessWindows::close() {
 
 FileAccessWindows::~FileAccessWindows() {
 	_close();
-}
-
-HashSet<String> FileAccessWindows::invalid_files;
-
-void FileAccessWindows::initialize() {
-	static const char *reserved_files[]{
-		"con", "prn", "aux", "nul", "com0", "com1", "com2", "com3", "com4", "com5", "com6", "com7", "com8", "com9", "lpt0", "lpt1", "lpt2", "lpt3", "lpt4", "lpt5", "lpt6", "lpt7", "lpt8", "lpt9", nullptr
-	};
-	int reserved_file_index = 0;
-	while (reserved_files[reserved_file_index] != nullptr) {
-		invalid_files.insert(reserved_files[reserved_file_index]);
-		reserved_file_index++;
-	}
-}
-
-void FileAccessWindows::finalize() {
-	invalid_files.clear();
 }
 
 #endif // WINDOWS_ENABLED

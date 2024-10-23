@@ -50,10 +50,7 @@ class FileAccessWindows : public FileAccess {
 
 	void _close();
 
-	static HashSet<String> invalid_files;
-
 public:
-	static bool is_path_invalid(const String &p_path);
 
 	virtual String fix_path(const String &p_path) const override;
 	virtual Error open_internal(const String &p_path, int p_mode_flags) override; ///< open a file
@@ -89,9 +86,6 @@ public:
 	virtual Error _set_read_only_attribute(const String &p_file, bool p_ro) override;
 
 	virtual void close() override;
-
-	static void initialize();
-	static void finalize();
 
 	FileAccessWindows() {}
 	virtual ~FileAccessWindows();
