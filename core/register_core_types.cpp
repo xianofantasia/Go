@@ -338,6 +338,7 @@ void register_core_singletons() {
 	GDREGISTER_CLASS(Time);
 
 	Engine::get_singleton()->add_singleton(Engine::Singleton("ProjectSettings", ProjectSettings::get_singleton()));
+	Engine::get_singleton()->add_singleton(Engine::Singleton("FileSystem", FileSystem::get_singleton()));
 	Engine::get_singleton()->add_singleton(Engine::Singleton("IP", IP::get_singleton(), "IP"));
 	Engine::get_singleton()->add_singleton(Engine::Singleton("Geometry2D", core_bind::Geometry2D::get_singleton()));
 	Engine::get_singleton()->add_singleton(Engine::Singleton("Geometry3D", core_bind::Geometry3D::get_singleton()));

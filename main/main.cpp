@@ -42,6 +42,7 @@
 #include "core/io/dir_access.h"
 #include "core/io/file_access_pack.h"
 #include "core/io/file_access_zip.h"
+#include "core/io/file_system.h"
 #include "core/io/image.h"
 #include "core/io/image_loader.h"
 #include "core/io/ip.h"
@@ -145,6 +146,7 @@ static Input *input = nullptr;
 static InputMap *input_map = nullptr;
 static TranslationServer *translation_server = nullptr;
 static Performance *performance = nullptr;
+static FileSystem *filesystem = nullptr;
 static PackedData *packed_data = nullptr;
 #ifdef MINIZIP_ENABLED
 static ZipArchive *zip_packed_data = nullptr;
@@ -955,6 +957,7 @@ Error Main::setup(const char *execpath, int argc, char *argv[], bool p_second_ph
 
 	input_map = memnew(InputMap);
 	globals = memnew(ProjectSettings);
+	filesystem = memnew(FileSystem);
 
 	register_core_settings(); //here globals are present
 
@@ -2670,6 +2673,9 @@ error:
 	}
 	if (globals) {
 		memdelete(globals);
+	}
+	if (filesystem) {
+		memdelete(filesystem);
 	}
 	if (packed_data) {
 		memdelete(packed_data);
@@ -4664,6 +4670,9 @@ void Main::cleanup(bool p_force) {
 	}
 	if (globals) {
 		memdelete(globals);
+	}
+	if (filesystem) {
+		memdelete(filesystem);
 	}
 
 	if (OS::get_singleton()->is_restart_on_exit_set()) {
