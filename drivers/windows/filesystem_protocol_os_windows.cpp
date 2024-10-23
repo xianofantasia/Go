@@ -1,5 +1,5 @@
 /**************************************************************************/
-/*  file_system_protocol_os_windows.h                                     */
+/*  filesystem_protocol_os_windows.h                                      */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                             GODOT ENGINE                               */
@@ -30,7 +30,7 @@
 
 #ifdef WINDOWS_ENABLED
 
-#include "file_system_protocol_os_windows.h"
+#include "filesystem_protocol_os_windows.h"
 
 #include <share.h> // _SH_DENYNO
 #include <shlwapi.h>

@@ -1,5 +1,5 @@
 /**************************************************************************/
-/*  file_system_protocol_os_windows.cpp                                   */
+/*  filesystem_protocol.h                                                 */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                             GODOT ENGINE                               */
@@ -28,28 +28,28 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef FILE_SYSTEM_PROTOCOL_OS_WINDOWS_H
-#define FILE_SYSTEM_PROTOCOL_OS_WINDOWS_H
+#ifndef FILESYSTEM_PROTOCOL_H
+#define FILESYSTEM_PROTOCOL_H
 
-#ifdef WINDOWS_ENABLED
+#include "core/object/ref_counted.h"
+#include "core/io/file_access.h"
 
-#include "core/io/file_system_protocol.h"
 
-class FileSystemProtocolOSWindows : public FileSystemProtocol {
+class FileSystemProtocol : public RefCounted {
+	GDCLASS(FileSystemProtocol, RefCounted);
+
 private:
-	static HashSet<String> invalid_files;
+	Error open_error;
+	Ref<FileAccess> _open_file(const String &p_path, int p_mode_flags);
+
+protected:
+	static void _bind_methods();
 
 public:
-	static void initialize();
-	static void finalize();
+	Error get_open_error() const;
 
-	static String fix_path(const String &p_path);
-	static bool is_path_invalid(const String &p_path);
-	static bool file_exists_static(const String &p_path);
-
-	virtual Ref<FileAccess> open_file(const String &p_path, int p_mode_flags, Error *r_error) const override;
-	virtual bool file_exists(const String &p_path) const override;
+	virtual Ref<FileAccess> open_file(const String &p_path, int p_mode_flags, Error *r_error) const = 0;
+	virtual bool file_exists(const String &p_path) const = 0;
 };
-#endif // WINDOWS_ENABLED
 
-#endif // FILE_SYSTEM_PROTOCOL_OS_WINDOWS_H
+#endif // FILESYSTEM_PROTOCOL_H

@@ -1,5 +1,5 @@
 /**************************************************************************/
-/*  file_system.cpp                                                       */
+/*  filesystem.cpp                                                        */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                             GODOT ENGINE                               */
@@ -28,7 +28,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "file_system.h"
+#include "filesystem.h"
 
 FileSystem *FileSystem::singleton = nullptr;
 FileSystem *FileSystem::get_singleton() {

@@ -1,5 +1,5 @@
 /**************************************************************************/
-/*  file_system.h                                                         */
+/*  filesystem_protocol.cpp                                               */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                             GODOT ENGINE                               */
@@ -28,53 +28,17 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef FILE_SYSTEM_H
-#define FILE_SYSTEM_H
+#include "filesystem_protocol.h"
 
-#include "core/io/file_access.h"
-#include "core/object/ref_counted.h"
-#include "file_system_protocol.h"
+Error FileSystemProtocol::get_open_error() const {
+	return open_error;
+}
+Ref<FileAccess> FileSystemProtocol::_open_file(const String &p_path, int p_mode_flags) {
+	return open_file(p_path, p_mode_flags, &open_error);
+}
 
-class FileSystem : public Object {
-	GDCLASS(FileSystem, Object);
-
-protected:
-	static void _bind_methods();
-
-private:
-	static FileSystem *singleton;
-
-	HashMap<String, Ref<FileSystemProtocol>> protocols;
-
-	// returns whether it found a protocol delimiter
-	static bool split_path(const String &p_path, String *r_protocol_name, String *r_file_path);
-	// for paths that doesn't have the protocol part, it fallsback to host://
-	// if r_protocol returns null, the protocol of the path targeted is invalid.
-	void process_path(const String &p_path, String *r_protocol_name, Ref<FileSystemProtocol> *r_protocol, String *r_file_path) const;
-
-	Error open_error;
-	Ref<FileAccess> _open_file(const String &p_path, int p_mode_flags);
-
-public:
-	static String protocol_name_os;
-	static String protocol_name_resources;
-	static String protocol_name_user_data;
-    static String protocol_name_memory;
-
-	FileSystem();
-	~FileSystem();
-	static FileSystem *get_singleton();
-
-	bool protocol_exists(const String &p_protocol) const;
-	bool add_protocol(const String &p_name, const Ref<FileSystemProtocol> &p_protocol);
-	bool remove_protocol(const String &p_name);
-	Ref<FileSystemProtocol> get_protocol(const String &p_name) const;
-	Ref<FileSystemProtocol> get_protocol_or_null(const String &p_name) const;
-
-	Error get_open_error() const;
-
-	Ref<FileAccess> open_file(const String &p_path, int p_mode_flags, Error *r_error) const;
-	bool file_exists(const String &p_path) const;
-};
-
-#endif // FILE_SYSTEM_H
+void FileSystemProtocol::_bind_methods(){
+    ClassDB::bind_method(D_METHOD("get_open_error"), &FileSystemProtocol::get_open_error);
+	ClassDB::bind_method(D_METHOD("open_file", "path","mode_flags"), &FileSystemProtocol::_open_file);
+	ClassDB::bind_method(D_METHOD("file_exists", "name"), &FileSystemProtocol::file_exists);
+}

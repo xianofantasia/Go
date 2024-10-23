@@ -1,5 +1,5 @@
 /**************************************************************************/
-/*  file_system_protocol.cpp                                              */
+/*  filesystem_protocol_os_windows.cpp                                    */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                             GODOT ENGINE                               */
@@ -28,17 +28,28 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "file_system_protocol.h"
+#ifndef FILESYSTEM_PROTOCOL_OS_WINDOWS_H
+#define FILESYSTEM_PROTOCOL_OS_WINDOWS_H
 
-Error FileSystemProtocol::get_open_error() const {
-	return open_error;
-}
-Ref<FileAccess> FileSystemProtocol::_open_file(const String &p_path, int p_mode_flags) {
-	return open_file(p_path, p_mode_flags, &open_error);
-}
+#ifdef WINDOWS_ENABLED
 
-void FileSystemProtocol::_bind_methods(){
-    ClassDB::bind_method(D_METHOD("get_open_error"), &FileSystemProtocol::get_open_error);
-	ClassDB::bind_method(D_METHOD("open_file", "path","mode_flags"), &FileSystemProtocol::_open_file);
-	ClassDB::bind_method(D_METHOD("file_exists", "name"), &FileSystemProtocol::file_exists);
-}
+#include "core/io/filesystem_protocol.h"
+
+class FileSystemProtocolOSWindows : public FileSystemProtocol {
+private:
+	static HashSet<String> invalid_files;
+
+public:
+	static void initialize();
+	static void finalize();
+
+	static String fix_path(const String &p_path);
+	static bool is_path_invalid(const String &p_path);
+	static bool file_exists_static(const String &p_path);
+
+	virtual Ref<FileAccess> open_file(const String &p_path, int p_mode_flags, Error *r_error) const override;
+	virtual bool file_exists(const String &p_path) const override;
+};
+#endif // WINDOWS_ENABLED
+
+#endif // FILESYSTEM_PROTOCOL_OS_WINDOWS_H
