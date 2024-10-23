@@ -44,6 +44,8 @@
 #include "core/input/shortcut.h"
 #include "core/io/config_file.h"
 #include "core/io/dir_access.h"
+#include "core/io/file_system.h"
+#include "core/io/file_system_protocol.h"
 #include "core/io/dtls_server.h"
 #include "core/io/http_client.h"
 #include "core/io/image_loader.h"
@@ -241,6 +243,7 @@ void register_core_types() {
 	GDREGISTER_CLASS(ResourceFormatLoader);
 	GDREGISTER_CLASS(ResourceFormatSaver);
 
+	GDREGISTER_ABSTRACT_CLASS(FileSystemProtocol);
 	GDREGISTER_ABSTRACT_CLASS(FileAccess);
 	GDREGISTER_ABSTRACT_CLASS(DirAccess);
 	GDREGISTER_CLASS(core_bind::Thread);
@@ -317,6 +320,7 @@ void register_core_singletons() {
 	OS::get_singleton()->benchmark_begin_measure("Core", "Register Singletons");
 
 	GDREGISTER_CLASS(ProjectSettings);
+	GDREGISTER_CLASS(FileSystem);
 	GDREGISTER_ABSTRACT_CLASS(IP);
 	GDREGISTER_CLASS(core_bind::Geometry2D);
 	GDREGISTER_CLASS(core_bind::Geometry3D);
