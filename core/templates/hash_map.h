@@ -172,7 +172,7 @@ private:
 #ifdef DEV_ENABLED
 				if (unlikely(distance > 12)) {
 					WARN_PRINT("Excessive collision count (" +
-							itos(distance) + "), is the right hash function being used?\nClass Name:" + __PRETTY_FUNCTION__);
+							itos(distance) + "), is the right hash function being used?");
 				}
 #endif
 				return;
@@ -651,21 +651,6 @@ public:
 			capacity(INITIAL_CAPACITY - 1) {
 	}
 
-	uint32_t debug_get_hash(uint32_t p_index) {
-		if (num_elements == 0) {
-			return 0;
-		}
-		ERR_FAIL_INDEX_V(p_index, get_capacity(), 0);
-		return hashes[p_index];
-	}
-	Iterator debug_get_element(uint32_t p_index) {
-		if (num_elements == 0) {
-			return Iterator();
-		}
-		ERR_FAIL_INDEX_V(p_index, get_capacity(), Iterator());
-		return Iterator(elements[p_index]);
-	}
-
 	~HashMap() {
 		if (elements != nullptr) {
 			HashMapElement<TKey, TValue> *current = tail_element;
@@ -686,5 +671,13 @@ public:
 		}
 	}
 };
+
+extern template class HashMap<int, int>;
+extern template class HashMap<String, int>;
+extern template class HashMap<StringName, bool>;
+extern template class HashMap<StringName, StringName>;
+extern template class HashMap<StringName, String>;
+extern template class HashMap<StringName, Variant>;
+extern template class HashMap<StringName, int>;
 
 #endif // HASH_MAP_H
