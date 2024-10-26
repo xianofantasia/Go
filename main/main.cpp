@@ -718,6 +718,11 @@ Error Main::test_setup() {
 
 	globals = memnew(ProjectSettings);
 
+	filesystem = memnew(FileSystem);
+	OS::get_singleton()->initialize_filesystem();
+	filesystem->register_protocols();
+	OS::get_singleton()->initialize_filesystem_additional();
+
 	register_core_settings(); // Here globals are present.
 
 	translation_server = memnew(TranslationServer);
@@ -873,6 +878,9 @@ void Main::test_cleanup() {
 	}
 	if (globals) {
 		memdelete(globals);
+	}
+	if (filesystem) {
+		memdelete(filesystem);
 	}
 
 	unregister_core_driver_types();
