@@ -32,10 +32,10 @@
 
 #include "../gdscript.h"
 #include "../gdscript_analyzer.h"
+#include "core/io/filesystem.h"
 #include "editor/editor_settings.h"
 #include "gdscript_language_protocol.h"
 #include "gdscript_workspace.h"
-#include "core/io/filesystem.h"
 
 int get_indent_size() {
 	if (EditorSettings::get_singleton()) {
@@ -193,7 +193,7 @@ void ExtendGDScriptParser::update_document_links(const String &p_code) {
 	document_links.clear();
 
 	GDScriptTokenizerText scr_tokenizer;
-	FileSystem* fs = FileSystem::get_singleton();
+	FileSystem *fs = FileSystem::get_singleton();
 	scr_tokenizer.set_source_code(p_code);
 	while (true) {
 		GDScriptTokenizer::Token token = scr_tokenizer.scan();

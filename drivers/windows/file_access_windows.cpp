@@ -99,7 +99,7 @@ Error FileAccessWindows::open_internal(const String &p_path, int p_mode_flags) {
 	}
 
 // TODO: reimplement this in protocol level
-#if 0//TOOLS_ENABLED
+#if 0 //TOOLS_ENABLED
 	// Windows is case insensitive, but all other platforms are sensitive to it
 	// To ease cross-platform development, we issue a warning if users try to access
 	// a file using the wrong case (which *works* on Windows, but won't on other

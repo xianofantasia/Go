@@ -30,8 +30,8 @@
 
 #include "filesystem_protocol_resources.h"
 #include "core/config/project_settings.h"
-#include "core/io/filesystem.h"
 #include "core/io/file_access_pack.h"
+#include "core/io/filesystem.h"
 #include "core/os/os.h"
 
 FileSystemProtocolResources::FileSystemProtocolResources() {}
@@ -69,7 +69,7 @@ bool FileSystemProtocolResources::file_exists(const String &p_path) const {
 	// TODO: Replace this with resource mounting stack
 
 	//try packed data first
-	if (PackedData::get_singleton() && !PackedData::get_singleton()->is_disabled() && PackedData::get_singleton()->has_path("res://"+p_path)) {
+	if (PackedData::get_singleton() && !PackedData::get_singleton()->is_disabled() && PackedData::get_singleton()->has_path("res://" + p_path)) {
 		return true;
 	}
 
@@ -81,7 +81,7 @@ uint64_t FileSystemProtocolResources::get_modified_time(const String &p_path) co
 	if (PackedData::get_singleton() && !PackedData::get_singleton()->is_disabled() && (PackedData::get_singleton()->has_path(p_path) || PackedData::get_singleton()->has_directory(p_path))) {
 		return 0;
 	}
-	
+
 	String path = globalize_path(p_path);
 	return protocol_os->get_modified_time(path);
 }
@@ -89,7 +89,7 @@ BitField<FileAccess::UnixPermissionFlags> FileSystemProtocolResources::get_unix_
 	if (PackedData::get_singleton() && !PackedData::get_singleton()->is_disabled() && (PackedData::get_singleton()->has_path(p_path) || PackedData::get_singleton()->has_directory(p_path))) {
 		return 0;
 	}
-	
+
 	String path = globalize_path(p_path);
 	return protocol_os->get_unix_permissions(path);
 }
@@ -129,7 +129,7 @@ Error FileSystemProtocolResources::set_read_only_attribute(const String &p_path,
 	if (PackedData::get_singleton() && !PackedData::get_singleton()->is_disabled() && (PackedData::get_singleton()->has_path(p_path) || PackedData::get_singleton()->has_directory(p_path))) {
 		return ERR_UNAVAILABLE;
 	}
-	
+
 	String path = globalize_path(p_path);
 	return protocol_os->set_read_only_attribute(path, p_ro);
 }

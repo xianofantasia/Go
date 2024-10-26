@@ -1,5 +1,5 @@
 /**************************************************************************/
-/*  filesystem_protocol_os_windows.cpp                                    */
+/*  filesystem_protocol_os_windows.h                                      */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                             GODOT ENGINE                               */

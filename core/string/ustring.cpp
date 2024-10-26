@@ -31,10 +31,10 @@
 #include "ustring.h"
 
 #include "core/crypto/crypto_core.h"
+#include "core/io/filesystem.h"
 #include "core/math/color.h"
 #include "core/math/math_funcs.h"
 #include "core/os/memory.h"
-#include "core/io/filesystem.h"
 #include "core/string/print_string.h"
 #include "core/string/string_name.h"
 #include "core/string/translation_server.h"
@@ -4512,12 +4512,12 @@ String String::simplify_path() const {
 	String drive;
 
 	// Check if we have a special path (like res://) or a protocol identifier.
-	int file_path_start=0;
-	bool found=FileSystem::try_find_protocol_in_path(s,nullptr,&file_path_start);
-	if(found){
-		drive=s.substr(0,file_path_start);
-		s=s.substr(file_path_start);
-	}else{
+	int file_path_start = 0;
+	bool found = FileSystem::try_find_protocol_in_path(s, nullptr, &file_path_start);
+	if (found) {
+		drive = s.substr(0, file_path_start);
+		s = s.substr(file_path_start);
+	} else {
 		if (is_network_share_path()) {
 			// Network path, beginning with // or \\.
 			drive = s.substr(0, 2);

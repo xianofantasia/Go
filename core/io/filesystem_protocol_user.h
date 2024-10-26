@@ -33,19 +33,19 @@
 
 #include "core/io/filesystem_protocol.h"
 
-
 class FileSystemProtocolUser : public FileSystemProtocol {
 	GDCLASS(FileSystemProtocolUser, FileSystemProtocol);
 
 private:
 	Ref<FileSystemProtocol> protocol_os;
+
 public:
 	FileSystemProtocolUser();
-	FileSystemProtocolUser(const Ref<FileSystemProtocol>& p_protocol_os);
+	FileSystemProtocolUser(const Ref<FileSystemProtocol> &p_protocol_os);
 
-	void set_protocol_os(const Ref<FileSystemProtocol>& p_protocol_os);
+	void set_protocol_os(const Ref<FileSystemProtocol> &p_protocol_os);
 
-	virtual String globalize_path(const String& p_path) const override;
+	virtual String globalize_path(const String &p_path) const override;
 
 	virtual Ref<FileAccess> open_file(const String &p_path, int p_mode_flags, Error &r_error) const override;
 	virtual bool file_exists(const String &p_path) const override;

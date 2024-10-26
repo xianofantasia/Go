@@ -34,9 +34,9 @@
 #include "core/input/input_map.h"
 #include "core/io/config_file.h"
 #include "core/io/dir_access.h"
-#include "core/io/filesystem.h"
 #include "core/io/file_access.h"
 #include "core/io/file_access_pack.h"
+#include "core/io/filesystem.h"
 #include "core/io/marshalls.h"
 #include "core/io/resource_uid.h"
 #include "core/object/script_language.h"
@@ -156,7 +156,7 @@ String ProjectSettings::localize_path(const String &p_path) const {
 	}
 
 	// Check if we have a special path (like res://) or a protocol identifier.
-	bool found=FileSystem::try_find_protocol_in_path(path,nullptr,nullptr);
+	bool found = FileSystem::try_find_protocol_in_path(path, nullptr, nullptr);
 	if (found) {
 		return path;
 	}

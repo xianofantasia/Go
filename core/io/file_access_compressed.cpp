@@ -318,7 +318,6 @@ void FileAccessCompressed::store_buffer(const uint8_t *p_src, uint64_t p_length)
 	write_pos += p_length;
 }
 
-
 void FileAccessCompressed::close() {
 	_close();
 }

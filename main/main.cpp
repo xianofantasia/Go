@@ -958,7 +958,7 @@ Error Main::setup(const char *execpath, int argc, char *argv[], bool p_second_ph
 
 	input_map = memnew(InputMap);
 	globals = memnew(ProjectSettings);
-	
+
 	filesystem = memnew(FileSystem);
 	OS::get_singleton()->initialize_filesystem();
 	filesystem->register_protocols();

@@ -92,7 +92,6 @@ __declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
 #define GetProcAddress (void *)GetProcAddress
 #endif
 
-
 static String format_error_message(DWORD id) {
 	LPWSTR messageBuffer = nullptr;
 	size_t size = FormatMessageW(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
@@ -232,7 +231,7 @@ void OS_Windows::initialize() {
 void OS_Windows::initialize_filesystem() {
 	FileSystem *fs = FileSystem::get_singleton();
 	FileSystemProtocolOSWindows::initialize();
-	
+
 	Ref<FileSystemProtocolOSWindows> protocol_os = Ref<FileSystemProtocolOSWindows>();
 	protocol_os.instantiate();
 	fs->add_protocol(FileSystem::protocol_name_os, protocol_os);
@@ -240,7 +239,7 @@ void OS_Windows::initialize_filesystem() {
 	/* Ref<FileSystemProtocolPipeWindows> protocol_pipe = Ref<FileSystemProtocolPipeWindows>();
 	protocol_pipe.instantiate();
 	fs->add_protocol(FileSystem::protocol_name_pipe, protocol_pipe); */
-	
+
 	DirAccess::make_default<DirAccessWindows>(DirAccess::ACCESS_RESOURCES);
 	DirAccess::make_default<DirAccessWindows>(DirAccess::ACCESS_USERDATA);
 	DirAccess::make_default<DirAccessWindows>(DirAccess::ACCESS_FILESYSTEM);

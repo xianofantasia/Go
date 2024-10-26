@@ -46,7 +46,6 @@ private:
 
 	HashMap<String, Ref<FileSystemProtocol>> protocols;
 
-	
 	// for paths that doesn't have the protocol part, it fallsback to host://
 	// if r_protocol returns null, the protocol of the path targeted is invalid.
 	void process_path(const String &p_path, String *r_protocol_name, Ref<FileSystemProtocol> *r_protocol, String *r_file_path) const;
@@ -60,7 +59,7 @@ private:
 
 public:
 	// out values are only valid when method returns true
-	static bool try_find_protocol_in_path(const String& p_path,int* r_protocol_name_end,int* r_file_path_start);
+	static bool try_find_protocol_in_path(const String &p_path, int *r_protocol_name_end, int *r_file_path_start);
 	// returns whether it found a protocol present in the path
 	static bool split_path(const String &p_path, String *r_protocol_name, String *r_file_path);
 
@@ -68,7 +67,7 @@ public:
 	static String protocol_name_pipe;
 	static String protocol_name_resources;
 	static String protocol_name_user;
-    static String protocol_name_memory;
+	static String protocol_name_memory;
 
 	FileSystem();
 	~FileSystem();
@@ -81,13 +80,13 @@ public:
 	Ref<FileSystemProtocol> get_protocol_or_null(const String &p_name) const;
 
 	// Basic path fix. Replaces FileAccess::fix_path.
-	static String fix_path(const String& p_path);
+	static String fix_path(const String &p_path);
 
 	Error get_open_error() const;
 
-	String globalize_path(const String& path) const;
+	String globalize_path(const String &path) const;
 
-	Ref<FileAccess> open_file(const String &p_path, int p_mode_flags, Error *r_error=nullptr) const;
+	Ref<FileAccess> open_file(const String &p_path, int p_mode_flags, Error *r_error = nullptr) const;
 	bool file_exists(const String &p_path) const;
 
 	uint64_t get_modified_time(const String &p_path) const;

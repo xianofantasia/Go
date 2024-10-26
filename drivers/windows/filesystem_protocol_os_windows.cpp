@@ -1,5 +1,5 @@
 /**************************************************************************/
-/*  filesystem_protocol_os_windows.h                                      */
+/*  filesystem_protocol_os_windows.cpp                                    */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                             GODOT ENGINE                               */
@@ -96,13 +96,13 @@ bool FileSystemProtocolOSWindows::file_exists_static(const String &p_path) {
 		return true;
 	}
 }
-BitField<FileAccess::UnixPermissionFlags> FileSystemProtocolOSWindows::get_unix_permissions_static(const String &p_path){
+BitField<FileAccess::UnixPermissionFlags> FileSystemProtocolOSWindows::get_unix_permissions_static(const String &p_path) {
 	return 0;
 }
-Error FileSystemProtocolOSWindows::set_unix_permissions_static(const String &p_path, BitField<FileAccess::UnixPermissionFlags> p_permissions){
+Error FileSystemProtocolOSWindows::set_unix_permissions_static(const String &p_path, BitField<FileAccess::UnixPermissionFlags> p_permissions) {
 	return ERR_UNAVAILABLE;
 }
-uint64_t FileSystemProtocolOSWindows::get_modified_time_static(const String& p_path){
+uint64_t FileSystemProtocolOSWindows::get_modified_time_static(const String &p_path) {
 	if (is_path_invalid(p_path)) {
 		return 0;
 	}
@@ -147,14 +147,14 @@ uint64_t FileSystemProtocolOSWindows::get_modified_time_static(const String& p_p
 	return 0;
 }
 
-bool FileSystemProtocolOSWindows::get_hidden_attribute_static(const String& p_path){
+bool FileSystemProtocolOSWindows::get_hidden_attribute_static(const String &p_path) {
 	String file = fix_path(p_path);
 
 	DWORD attrib = GetFileAttributesW((LPCWSTR)file.utf16().get_data());
 	ERR_FAIL_COND_V_MSG(attrib == INVALID_FILE_ATTRIBUTES, false, "Failed to get attributes for: " + p_path);
 	return (attrib & FILE_ATTRIBUTE_HIDDEN);
 }
-Error FileSystemProtocolOSWindows::set_hidden_attribute_static(const String& p_path,bool p_hidden){
+Error FileSystemProtocolOSWindows::set_hidden_attribute_static(const String &p_path, bool p_hidden) {
 	String file = fix_path(p_path);
 	const Char16String &file_utf16 = file.utf16();
 
@@ -170,14 +170,14 @@ Error FileSystemProtocolOSWindows::set_hidden_attribute_static(const String& p_p
 
 	return OK;
 }
-bool FileSystemProtocolOSWindows::get_read_only_attribute_static(const String& p_path){
+bool FileSystemProtocolOSWindows::get_read_only_attribute_static(const String &p_path) {
 	String file = fix_path(p_path);
 
 	DWORD attrib = GetFileAttributesW((LPCWSTR)file.utf16().get_data());
 	ERR_FAIL_COND_V_MSG(attrib == INVALID_FILE_ATTRIBUTES, false, "Failed to get attributes for: " + p_path);
 	return (attrib & FILE_ATTRIBUTE_READONLY);
 }
-Error FileSystemProtocolOSWindows::set_read_only_attribute_static(const String& p_path,bool p_ro){
+Error FileSystemProtocolOSWindows::set_read_only_attribute_static(const String &p_path, bool p_ro) {
 	String file = fix_path(p_path);
 	const Char16String &file_utf16 = file.utf16();
 
@@ -197,7 +197,7 @@ Error FileSystemProtocolOSWindows::set_read_only_attribute_static(const String& 
 Ref<FileAccess> FileSystemProtocolOSWindows::open_file(const String &p_path, int p_mode_flags, Error &r_error) const {
 	Ref<FileAccessWindows> file = Ref<FileAccessWindows>();
 	file.instantiate();
-	
+
 	r_error = file->open_internal(p_path, p_mode_flags);
 
 	if (r_error != OK) {
@@ -217,18 +217,18 @@ BitField<FileAccess::UnixPermissionFlags> FileSystemProtocolOSWindows::get_unix_
 	return get_unix_permissions_static(p_path);
 }
 Error FileSystemProtocolOSWindows::set_unix_permissions(const String &p_path, BitField<FileAccess::UnixPermissionFlags> p_permissions) const {
-	return set_unix_permissions_static(p_path,p_permissions);
+	return set_unix_permissions_static(p_path, p_permissions);
 }
 bool FileSystemProtocolOSWindows::get_hidden_attribute(const String &p_path) const {
 	return get_hidden_attribute_static(p_path);
 }
 Error FileSystemProtocolOSWindows::set_hidden_attribute(const String &p_path, bool p_hidden) const {
-	return set_hidden_attribute_static(p_path,p_hidden);
+	return set_hidden_attribute_static(p_path, p_hidden);
 }
 bool FileSystemProtocolOSWindows::get_read_only_attribute(const String &p_path) const {
 	return get_read_only_attribute_static(p_path);
 }
 Error FileSystemProtocolOSWindows::set_read_only_attribute(const String &p_path, bool p_ro) const {
-	return set_read_only_attribute_static(p_path,p_ro);
+	return set_read_only_attribute_static(p_path, p_ro);
 }
 #endif // WINDOWS_ENABLED

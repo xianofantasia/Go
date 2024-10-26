@@ -992,7 +992,7 @@ void FindInFilesPanel::apply_replaces_in_file(const String &fpath, const Vector<
 
 	// Now the modified contents are in the buffer, rewrite the file with our changes.
 	Error err;
-	f = FileAccess::open(fpath, FileAccess::WRITE,&err);
+	f = FileAccess::open(fpath, FileAccess::WRITE, &err);
 	ERR_FAIL_COND_MSG(err != OK, "Cannot create file in path '" + fpath + "'.");
 
 	f->store_string(buffer);
