@@ -111,18 +111,18 @@ Error FileAccess::get_open_error() {
 	return last_file_open_error;
 }
 
-void FileAccess::set_path_override(const String &p_path) {
-	has_path_override = true;
-	path_override = p_path;
+void FileAccess::set_path_disguise(const String &p_path) {
+	has_path_disguise = true;
+	path_disguise = p_path;
 }
-void FileAccess::clear_path_override() {
-	has_path_override = false;
-	path_override = String();
+void FileAccess::clear_path_disguise() {
+	has_path_disguise = false;
+	path_disguise = String();
 }
 
 String FileAccess::get_path() const {
-	if (has_path_override) {
-		return path_override;
+	if (has_path_disguise) {
+		return path_disguise;
 	}
 	return _get_path();
 }

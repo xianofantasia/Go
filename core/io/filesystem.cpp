@@ -145,6 +145,9 @@ Ref<FileAccess> FileSystem::open_file(const String &p_path, int p_mode_flags, Er
 
 	Error err;
 	Ref<FileAccess> file = protocol->open_file(file_path, p_mode_flags, err);
+	if (file.is_valid()) {
+		protocol->disguise_file(file, protocol_name, file_path);
+	}
 	if (r_error) {
 		*r_error = err;
 	}

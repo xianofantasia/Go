@@ -94,17 +94,17 @@ private:
 
 	static Ref<FileAccess> _open(const String &p_path, ModeFlags p_mode_flags);
 
-	bool has_path_override = false;
-	String path_override;
+	bool has_path_disguise = false;
+	String path_disguise;
 
 protected:
 	virtual String _get_path() const { return ""; }
 
 public:
 	// path override is essentially `path_src` variable in platform FileAccess implementations.
-	// protocols like res:// and user:// can make the FileAccess show their paths.
-	void set_path_override(const String &p_path);
-	void clear_path_override();
+	// protocols like res:// and user:// can make the FileAccess show their own protocol-prefixed paths.
+	void set_path_disguise(const String &p_path);
+	void clear_path_disguise();
 
 	static void set_file_close_fail_notify_callback(FileCloseFailNotify p_cbk) { close_fail_notify = p_cbk; }
 

@@ -53,6 +53,8 @@ public:
 	virtual Ref<FileAccess> open_file(const String &p_path, int p_mode_flags, Error &r_error) const = 0;
 	virtual bool file_exists(const String &p_path) const = 0;
 
+	virtual void disguise_file(const Ref<FileAccess> &p_file, const String &p_protocol_name, const String &p_path) const;
+
 	virtual uint64_t get_modified_time(const String &p_path) const = 0;
 	virtual BitField<FileAccess::UnixPermissionFlags> get_unix_permissions(const String &p_path) const = 0;
 	virtual Error set_unix_permissions(const String &p_path, BitField<FileAccess::UnixPermissionFlags> p_permissions) const = 0;

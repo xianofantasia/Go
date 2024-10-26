@@ -41,6 +41,10 @@ String FileSystemProtocol::globalize_path(const String& p_path) const {
 	return p_path;
 }
 
+void FileSystemProtocol::disguise_file(const Ref<FileAccess> &p_file, const String &p_protocol_name, const String &p_path) const {
+	p_file->set_path_disguise(p_protocol_name+"://"+p_path);
+}
+
 void FileSystemProtocol::_bind_methods(){
 	ClassDB::bind_method(D_METHOD("globalize_path", "path"), &FileSystemProtocol::globalize_path);
     
