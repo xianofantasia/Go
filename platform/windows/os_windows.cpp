@@ -46,6 +46,7 @@
 #include "drivers/windows/file_access_windows.h"
 #include "drivers/windows/file_access_windows_pipe.h"
 #include "drivers/windows/filesystem_protocol_os_windows.h"
+#include "drivers/windows/filesystem_protocol_pipe_windows.h"
 #include "main/main.h"
 #include "servers/audio_server.h"
 #include "servers/rendering/rendering_server_default.h"
@@ -236,9 +237,9 @@ void OS_Windows::initialize_filesystem() {
 	protocol_os.instantiate();
 	fs->add_protocol(FileSystem::protocol_name_os, protocol_os);
 
-	/* Ref<FileSystemProtocolPipeWindows> protocol_pipe = Ref<FileSystemProtocolPipeWindows>();
+	Ref<FileSystemProtocolPipeWindows> protocol_pipe = Ref<FileSystemProtocolPipeWindows>();
 	protocol_pipe.instantiate();
-	fs->add_protocol(FileSystem::protocol_name_pipe, protocol_pipe); */
+	fs->add_protocol(FileSystem::protocol_name_pipe, protocol_pipe);
 
 	DirAccess::make_default<DirAccessWindows>(DirAccess::ACCESS_RESOURCES);
 	DirAccess::make_default<DirAccessWindows>(DirAccess::ACCESS_USERDATA);

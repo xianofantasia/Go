@@ -1,5 +1,5 @@
 /**************************************************************************/
-/*  file_access_windows_pipe.h                                            */
+/*  filesystem_protocol_pipe_windows.h                                    */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                             GODOT ENGINE                               */
@@ -28,57 +28,26 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef FILE_ACCESS_WINDOWS_PIPE_H
-#define FILE_ACCESS_WINDOWS_PIPE_H
+#ifndef FILESYSTEM_PROTOCOL_PIPE_WINDOWS_H
+#define FILESYSTEM_PROTOCOL_PIPE_WINDOWS_H
 
 #ifdef WINDOWS_ENABLED
 
-#include "core/io/file_access.h"
-#include "core/os/memory.h"
+#include "core/io/filesystem_protocol.h"
 
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
-class FileAccessWindowsPipe : public FileAccess {
-	HANDLE fd[2] = { 0, 0 };
-
-	mutable Error last_error = OK;
-
-	String path;
-
-	void _close();
-
-protected:
-	virtual String _get_path() const override; /// returns the path for the current open file
-
+class FileSystemProtocolPipeWindows : public FileSystemProtocol {
 public:
-	Error open_existing(HANDLE p_rfd, HANDLE p_wfd, bool p_blocking);
+	virtual Ref<FileAccess> open_file(const String &p_path, int p_mode_flags, Error &r_error) const override;
+	virtual bool file_exists(const String &p_path) const override { return false; }
 
-	virtual Error open_internal(const String &p_path, int p_mode_flags) override; ///< open a file
-	virtual bool is_open() const override; ///< true when file is open
-
-	virtual String get_path_absolute() const override; /// returns the absolute path for the current open file
-
-	virtual void seek(uint64_t p_position) override {}
-	virtual void seek_end(int64_t p_position = 0) override {}
-	virtual uint64_t get_position() const override { return 0; }
-	virtual uint64_t get_length() const override { return 0; }
-
-	virtual bool eof_reached() const override { return false; }
-
-	virtual uint64_t get_buffer(uint8_t *p_dst, uint64_t p_length) const override;
-
-	virtual Error get_error() const override; ///< get last error
-
-	virtual Error resize(int64_t p_length) override { return ERR_UNAVAILABLE; }
-	virtual void flush() override {}
-	virtual void store_buffer(const uint8_t *p_src, uint64_t p_length) override; ///< store an array of bytes
-
-	virtual void close() override;
-
-	FileAccessWindowsPipe() {}
-	virtual ~FileAccessWindowsPipe();
+	virtual uint64_t get_modified_time(const String &p_path) const override { return 0; }
+	virtual BitField<FileAccess::UnixPermissionFlags> get_unix_permissions(const String &p_path) const override { return 0; }
+	virtual Error set_unix_permissions(const String &p_path, BitField<FileAccess::UnixPermissionFlags> p_permissions) const override { return ERR_UNAVAILABLE; }
+	virtual bool get_hidden_attribute(const String &p_path) const override { return false; }
+	virtual Error set_hidden_attribute(const String &p_path, bool p_hidden) const override { return ERR_UNAVAILABLE; }
+	virtual bool get_read_only_attribute(const String &p_path) const override { return false; }
+	virtual Error set_read_only_attribute(const String &p_path, bool p_ro) const override { return ERR_UNAVAILABLE; }
 };
-
 #endif // WINDOWS_ENABLED
 
-#endif // FILE_ACCESS_WINDOWS_PIPE_H
+#endif // FILESYSTEM_PROTOCOL_PIPE_WINDOWS_H
