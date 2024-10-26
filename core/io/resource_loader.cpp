@@ -33,6 +33,7 @@
 #include "core/config/project_settings.h"
 #include "core/core_bind.h"
 #include "core/io/file_access.h"
+#include "core/io/filesystem.h"
 #include "core/io/resource_importer.h"
 #include "core/object/script_language.h"
 #include "core/os/condition_variable.h"
@@ -307,8 +308,7 @@ Ref<Resource> ResourceLoader::_load(const String &p_path, const String &p_origin
 			vformat("Failed loading resource: %s. Make sure resources have been imported by opening the project in the editor at least once.", p_path));
 
 #ifdef TOOLS_ENABLED
-	Ref<FileAccess> file_check = FileAccess::create(FileAccess::ACCESS_RESOURCES);
-	ERR_FAIL_COND_V_MSG(!file_check->file_exists(p_path), Ref<Resource>(), vformat("Resource file not found: %s (expected type: %s)", p_path, p_type_hint));
+	ERR_FAIL_COND_V_MSG(!FileSystem::get_singleton()->file_exists(p_path), Ref<Resource>(), vformat("Resource file not found: %s (expected type: %s)", p_path, p_type_hint));
 #endif
 
 	ERR_FAIL_V_MSG(Ref<Resource>(), vformat("No loader found for resource: %s (expected type: %s)", p_path, p_type_hint));

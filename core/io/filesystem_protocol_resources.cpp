@@ -31,6 +31,7 @@
 #include "filesystem_protocol_resources.h"
 #include "core/config/project_settings.h"
 #include "core/io/filesystem.h"
+#include "core/io/file_access_pack.h"
 #include "core/os/os.h"
 
 FileSystemProtocolResources::FileSystemProtocolResources() {}
@@ -53,9 +54,9 @@ Ref<FileAccess> FileSystemProtocolResources::open_file(const String &p_path, int
 	// TODO: Replace this with resource mounting stack
 
 	//try packed data first
-	if (!(p_mode_flags & WRITE) && PackedData::get_singleton() && !PackedData::get_singleton()->is_disabled()) {
+	if (!(p_mode_flags & FileAccess::WRITE) && PackedData::get_singleton() && !PackedData::get_singleton()->is_disabled()) {
 		Ref<FileAccess> file = PackedData::get_singleton()->try_open_path("res://" + p_path);
-		if (ret.is_valid()) {
+		if (file.is_valid()) {
 			r_error = OK;
 			return file;
 		}
@@ -68,7 +69,7 @@ bool FileSystemProtocolResources::file_exists(const String &p_path) const {
 	// TODO: Replace this with resource mounting stack
 
 	//try packed data first
-	if (PackedData::get_singleton() && !PackedData::get_singleton()->is_disabled() && PackedData::get_singleton()->has_path("res://"+p_name)) {
+	if (PackedData::get_singleton() && !PackedData::get_singleton()->is_disabled() && PackedData::get_singleton()->has_path("res://"+p_path)) {
 		return true;
 	}
 
@@ -77,23 +78,23 @@ bool FileSystemProtocolResources::file_exists(const String &p_path) const {
 }
 
 uint64_t FileSystemProtocolResources::get_modified_time(const String &p_path) const {
-	if (PackedData::get_singleton() && !PackedData::get_singleton()->is_disabled() && (PackedData::get_singleton()->has_path(p_file) || PackedData::get_singleton()->has_directory(p_file))) {
+	if (PackedData::get_singleton() && !PackedData::get_singleton()->is_disabled() && (PackedData::get_singleton()->has_path(p_path) || PackedData::get_singleton()->has_directory(p_path))) {
 		return 0;
 	}
 	
 	String path = globalize_path(p_path);
 	return protocol_os->get_modified_time(path);
 }
-BitField<FileSystem::UnixPermissionFlags> FileSystemProtocolResources::get_unix_permissions(const String &p_path) const {
-	if (PackedData::get_singleton() && !PackedData::get_singleton()->is_disabled() && (PackedData::get_singleton()->has_path(p_file) || PackedData::get_singleton()->has_directory(p_file))) {
+BitField<FileAccess::UnixPermissionFlags> FileSystemProtocolResources::get_unix_permissions(const String &p_path) const {
+	if (PackedData::get_singleton() && !PackedData::get_singleton()->is_disabled() && (PackedData::get_singleton()->has_path(p_path) || PackedData::get_singleton()->has_directory(p_path))) {
 		return 0;
 	}
 	
 	String path = globalize_path(p_path);
 	return protocol_os->get_unix_permissions(path);
 }
-Error FileSystemProtocolResources::set_unix_permissions(const String &p_path, BitField<FileSystem::UnixPermissionFlags> p_permissions) const {
-	if (PackedData::get_singleton() && !PackedData::get_singleton()->is_disabled() && (PackedData::get_singleton()->has_path(p_file) || PackedData::get_singleton()->has_directory(p_file))) {
+Error FileSystemProtocolResources::set_unix_permissions(const String &p_path, BitField<FileAccess::UnixPermissionFlags> p_permissions) const {
+	if (PackedData::get_singleton() && !PackedData::get_singleton()->is_disabled() && (PackedData::get_singleton()->has_path(p_path) || PackedData::get_singleton()->has_directory(p_path))) {
 		return ERR_UNAVAILABLE;
 	}
 
@@ -101,7 +102,7 @@ Error FileSystemProtocolResources::set_unix_permissions(const String &p_path, Bi
 	return protocol_os->set_unix_permissions(path, p_permissions);
 }
 bool FileSystemProtocolResources::get_hidden_attribute(const String &p_path) const {
-	if (PackedData::get_singleton() && !PackedData::get_singleton()->is_disabled() && (PackedData::get_singleton()->has_path(p_file) || PackedData::get_singleton()->has_directory(p_file))) {
+	if (PackedData::get_singleton() && !PackedData::get_singleton()->is_disabled() && (PackedData::get_singleton()->has_path(p_path) || PackedData::get_singleton()->has_directory(p_path))) {
 		return false;
 	}
 
@@ -109,7 +110,7 @@ bool FileSystemProtocolResources::get_hidden_attribute(const String &p_path) con
 	return protocol_os->get_hidden_attribute(path);
 }
 Error FileSystemProtocolResources::set_hidden_attribute(const String &p_path, bool p_hidden) const {
-	if (PackedData::get_singleton() && !PackedData::get_singleton()->is_disabled() && (PackedData::get_singleton()->has_path(p_file) || PackedData::get_singleton()->has_directory(p_file))) {
+	if (PackedData::get_singleton() && !PackedData::get_singleton()->is_disabled() && (PackedData::get_singleton()->has_path(p_path) || PackedData::get_singleton()->has_directory(p_path))) {
 		return ERR_UNAVAILABLE;
 	}
 
@@ -117,7 +118,7 @@ Error FileSystemProtocolResources::set_hidden_attribute(const String &p_path, bo
 	return protocol_os->set_hidden_attribute(path, p_hidden);
 }
 bool FileSystemProtocolResources::get_read_only_attribute(const String &p_path) const {
-	if (PackedData::get_singleton() && !PackedData::get_singleton()->is_disabled() && (PackedData::get_singleton()->has_path(p_file) || PackedData::get_singleton()->has_directory(p_file))) {
+	if (PackedData::get_singleton() && !PackedData::get_singleton()->is_disabled() && (PackedData::get_singleton()->has_path(p_path) || PackedData::get_singleton()->has_directory(p_path))) {
 		return false;
 	}
 
@@ -125,7 +126,7 @@ bool FileSystemProtocolResources::get_read_only_attribute(const String &p_path) 
 	return protocol_os->get_read_only_attribute(path);
 }
 Error FileSystemProtocolResources::set_read_only_attribute(const String &p_path, bool p_ro) const {
-	if (PackedData::get_singleton() && !PackedData::get_singleton()->is_disabled() && (PackedData::get_singleton()->has_path(p_file) || PackedData::get_singleton()->has_directory(p_file))) {
+	if (PackedData::get_singleton() && !PackedData::get_singleton()->is_disabled() && (PackedData::get_singleton()->has_path(p_path) || PackedData::get_singleton()->has_directory(p_path))) {
 		return ERR_UNAVAILABLE;
 	}
 	

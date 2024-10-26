@@ -51,8 +51,8 @@ public:
 	virtual bool file_exists(const String &p_path) const override;
 
 	virtual uint64_t get_modified_time(const String &p_path) const override;
-	virtual BitField<FileSystem::UnixPermissionFlags> get_unix_permissions(const String &p_path) const override;
-	virtual Error set_unix_permissions(const String &p_path, BitField<FileSystem::UnixPermissionFlags> p_permissions) const override;
+	virtual BitField<FileAccess::UnixPermissionFlags> get_unix_permissions(const String &p_path) const override;
+	virtual Error set_unix_permissions(const String &p_path, BitField<FileAccess::UnixPermissionFlags> p_permissions) const override;
 	virtual bool get_hidden_attribute(const String &p_path) const override;
 	virtual Error set_hidden_attribute(const String &p_path, bool p_hidden) const override;
 	virtual bool get_read_only_attribute(const String &p_path) const override;

@@ -61,11 +61,11 @@ uint64_t FileSystemProtocolUser::get_modified_time(const String &p_path) const {
 	String path = globalize_path(p_path);
 	return protocol_os->get_modified_time(path);
 }
-BitField<FileSystem::UnixPermissionFlags> FileSystemProtocolUser::get_unix_permissions(const String &p_path) const {
+BitField<FileAccess::UnixPermissionFlags> FileSystemProtocolUser::get_unix_permissions(const String &p_path) const {
 	String path = globalize_path(p_path);
 	return protocol_os->get_unix_permissions(path);
 }
-Error FileSystemProtocolUser::set_unix_permissions(const String &p_path, BitField<FileSystem::UnixPermissionFlags> p_permissions) const {
+Error FileSystemProtocolUser::set_unix_permissions(const String &p_path, BitField<FileAccess::UnixPermissionFlags> p_permissions) const {
 	String path = globalize_path(p_path);
 	return protocol_os->set_unix_permissions(path, p_permissions);
 }
