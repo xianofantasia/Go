@@ -33,6 +33,7 @@
 #include "core/config/project_settings.h"
 #include "core/io/dir_access.h"
 #include "core/io/file_access.h"
+#include "core/io/filesystem.h"
 #include "core/io/resource_loader.h"
 #include "core/os/keyboard.h"
 #include "core/os/os.h"
@@ -1547,14 +1548,13 @@ void FileSystemDock::_try_duplicate_item(const FileOrFolder &p_item, const Strin
 		Ref<DirAccess> old_dir = DirAccess::open(old_path);
 		ERR_FAIL_COND(old_dir.is_null());
 
-		Ref<FileAccess> file_access = FileAccess::create(FileAccess::ACCESS_RESOURCES);
 		old_dir->set_include_navigational(false);
 		old_dir->list_dir_begin();
 		for (String f = old_dir->_get_next(); !f.is_empty(); f = old_dir->_get_next()) {
 			if (f.get_extension() == "import") {
 				continue;
 			}
-			if (file_access->file_exists(old_path + f)) {
+			if (FileSystem::get_singleton()->file_exists(old_path + f)) {
 				_try_duplicate_item(FileOrFolder(old_path + f, true), new_path + f);
 			} else if (da->dir_exists(old_path + f)) {
 				_try_duplicate_item(FileOrFolder(old_path + f, false), new_path + f);

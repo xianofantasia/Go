@@ -94,7 +94,7 @@ bool FileAccessWindowsPipe::is_open() const {
 	return (fd[0] != 0 || fd[1] != 0);
 }
 
-String FileAccessWindowsPipe::get_path() const {
+String FileAccessWindowsPipe::_get_path() const {
 	return path_src;
 }
 

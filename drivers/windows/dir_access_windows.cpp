@@ -32,7 +32,7 @@
 
 #include "dir_access_windows.h"
 #include "file_access_windows.h"
-#include "file_system_protocol_os_windows.h"
+#include "filesystem_protocol_os_windows.h"
 
 #include "core/config/project_settings.h"
 #include "core/os/memory.h"

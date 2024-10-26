@@ -31,10 +31,10 @@
 #ifndef FILESYSTEM_PROTOCOL_H
 #define FILESYSTEM_PROTOCOL_H
 
-#include "core/object/ref_counted.h"
 #include "core/io/file_access.h"
+#include "core/object/ref_counted.h"
 
-
+// File paths without the protocol part are sent in.
 class FileSystemProtocol : public RefCounted {
 	GDCLASS(FileSystemProtocol, RefCounted);
 
@@ -48,8 +48,18 @@ protected:
 public:
 	Error get_open_error() const;
 
-	virtual Ref<FileAccess> open_file(const String &p_path, int p_mode_flags, Error *r_error) const = 0;
+	virtual String globalize_path(const String &path) const;
+
+	virtual Ref<FileAccess> open_file(const String &p_path, int p_mode_flags, Error &r_error) const = 0;
 	virtual bool file_exists(const String &p_path) const = 0;
+
+	virtual uint64_t get_modified_time(const String &p_path) const = 0;
+	virtual BitField<FileAccess::UnixPermissionFlags> get_unix_permissions(const String &p_path) const = 0;
+	virtual Error set_unix_permissions(const String &p_path, BitField<FileAccess::UnixPermissionFlags> p_permissions) const = 0;
+	virtual bool get_hidden_attribute(const String &p_path) const = 0;
+	virtual Error set_hidden_attribute(const String &p_path, bool p_hidden) const = 0;
+	virtual bool get_read_only_attribute(const String &p_path) const = 0;
+	virtual Error set_read_only_attribute(const String &p_path, bool p_ro) const = 0;
 };
 
 #endif // FILESYSTEM_PROTOCOL_H

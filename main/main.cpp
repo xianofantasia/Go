@@ -42,7 +42,7 @@
 #include "core/io/dir_access.h"
 #include "core/io/file_access_pack.h"
 #include "core/io/file_access_zip.h"
-#include "core/io/file_system.h"
+#include "core/io/filesystem.h"
 #include "core/io/image.h"
 #include "core/io/image_loader.h"
 #include "core/io/ip.h"
@@ -957,8 +957,11 @@ Error Main::setup(const char *execpath, int argc, char *argv[], bool p_second_ph
 
 	input_map = memnew(InputMap);
 	globals = memnew(ProjectSettings);
+	
 	filesystem = memnew(FileSystem);
 	OS::get_singleton()->initialize_filesystem();
+	filesystem->register_protocols();
+	OS::get_singleton()->initialize_filesystem_additional();
 
 	register_core_settings(); //here globals are present
 
@@ -1928,7 +1931,7 @@ Error Main::setup(const char *execpath, int argc, char *argv[], bool p_second_ph
 	// and even if file logging is disabled in the Project Settings.
 	// `--log-file` can be used with any path (including absolute paths outside the project folder),
 	// so check for filesystem access if it's used.
-	if (FileAccess::get_create_func(!log_file.is_empty() ? FileAccess::ACCESS_FILESYSTEM : FileAccess::ACCESS_USERDATA) &&
+	if (FileSystem::get_singleton()->has_protocol(!log_file.is_empty() ? FileSystem::protocol_name_os : FileSystem::protocol_name_user) &&
 			(!log_file.is_empty() || (!project_manager && !editor && GLOBAL_GET("debug/file_logging/enable_file_logging")))) {
 		// Don't create logs for the project manager as they would be written to
 		// the current working directory, which is inconvenient.

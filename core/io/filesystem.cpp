@@ -29,6 +29,8 @@
 /**************************************************************************/
 
 #include "filesystem.h"
+#include "filesystem_protocol_user.h"
+#include "filesystem_protocol_resources.h"
 
 FileSystem *FileSystem::singleton = nullptr;
 FileSystem *FileSystem::get_singleton() {
@@ -44,11 +46,12 @@ FileSystem::~FileSystem() {
 }
 
 String FileSystem::protocol_name_os = "os";
+String FileSystem::protocol_name_pipe = "pipe";
 String FileSystem::protocol_name_resources = "res";
-String FileSystem::protocol_name_user_data = "user";
+String FileSystem::protocol_name_user = "user";
 String FileSystem::protocol_name_memory = "mem";
 
-bool FileSystem::protocol_exists(const String &p_name) const {
+bool FileSystem::has_protocol(const String &p_name) const {
 	return protocols.has(p_name);
 }
 bool FileSystem::remove_protocol(const String &p_name) {
@@ -73,16 +76,45 @@ Ref<FileSystemProtocol> FileSystem::get_protocol(const String &p_name) const {
 	ERR_FAIL_COND_V_MSG(protocol.is_null(), Ref<FileSystemProtocol>(), "FileSystemProtocol with name " + p_name + " doesn't exist!");
 	return protocol;
 }
-bool FileSystem::split_path(const String &p_path, String *r_protocol_name, String *r_file_path) {
+
+bool FileSystem::try_find_protocol_in_path(const String &p_path, int *r_protocol_name_end, int *r_file_path_start) {
 	int index = p_path.find("://");
 	if (index < 0) {
+		return false;
+	}
+	
+	for (int i = 0; i < index; i++) {
+		if (!is_ascii_protocol_name_char(p_path[i])) {
+			return false;
+		}
+	}
+
+	if (r_protocol_name_end) {
+		*r_protocol_name_end = index;
+	}
+	if (r_file_path_start) {
+		*r_file_path_start = index + 3;
+	}
+	return true;
+}
+
+String FileSystem::fix_path(const String& p_path){
+	String r_path = p_path.replace("\\", "/");
+	
+	return r_path;
+}
+
+bool FileSystem::split_path(const String &p_path, String *r_protocol_name, String *r_file_path) {
+	int protocol_name_end;
+	int file_path_start;
+	if (!try_find_protocol_in_path(p_path, &protocol_name_end, &file_path_start)) {
 		*r_protocol_name = "";
 		*r_file_path = p_path;
 		return false;
 	}
 
-	*r_protocol_name = p_path.substr(0, index);
-	*r_file_path = p_path.substr(index + 3);
+	*r_protocol_name = p_path.substr(0, protocol_name_end);
+	*r_file_path = p_path.substr(file_path_start);
 	return true;
 }
 
@@ -95,6 +127,15 @@ void FileSystem::process_path(const String &p_path, String *r_protocol_name, Ref
 	return;
 }
 
+String FileSystem::globalize_path(const String &p_path) const {
+	String protocol_name = String();
+	Ref<FileSystemProtocol> protocol = Ref<FileSystemProtocol>();
+	String file_path = String();
+	process_path(p_path, &protocol_name, &protocol, &file_path);
+	ERR_FAIL_COND_V_MSG(protocol.is_null(), String(), "Unknown filesystem protocol " + protocol_name);
+
+	return protocol->globalize_path(file_path);
+}
 Ref<FileAccess> FileSystem::open_file(const String &p_path, int p_mode_flags, Error *r_error) const {
 	String protocol_name = String();
 	Ref<FileSystemProtocol> protocol = Ref<FileSystemProtocol>();
@@ -102,7 +143,12 @@ Ref<FileAccess> FileSystem::open_file(const String &p_path, int p_mode_flags, Er
 	process_path(p_path, &protocol_name, &protocol, &file_path);
 	ERR_FAIL_COND_V_MSG(protocol.is_null(), Ref<FileAccess>(), "Unknown filesystem protocol " + protocol_name);
 
-	return protocol->open_file(file_path, p_mode_flags, r_error);
+	Error err;
+	Ref<FileAccess> file=protocol->open_file(file_path, p_mode_flags, err);
+	if(r_error){
+		*r_error=err;
+	}
+	return file;
 }
 bool FileSystem::file_exists(const String &p_path) const {
 	String protocol_name = String();
@@ -121,14 +167,101 @@ Ref<FileAccess> FileSystem::_open_file(const String &p_path, int p_mode_flags) {
 	return open_file(p_path, p_mode_flags, &open_error);
 }
 
+void FileSystem::register_protocols() {
+	Ref<FileSystemProtocol> protocol_os=get_protocol_or_null(protocol_name_os);
+	ERR_FAIL_COND_MSG(protocol_os.is_null(),"Cannot get os:// protocol handler! Make sure you have registered the platform os filesystem protocol in OS_XXX::initialize_filesystem()!");
+
+	Ref<FileSystemProtocolUser> protocol_user = Ref<FileSystemProtocolUser>();
+	protocol_user.instantiate(protocol_os);
+	add_protocol(protocol_name_user, protocol_user);
+
+	Ref<FileSystemProtocolResources> protocol_resources = Ref<FileSystemProtocolResources>();
+	protocol_resources.instantiate(protocol_os);
+	add_protocol(protocol_name_resources, protocol_resources);
+}
+
+uint64_t FileSystem::get_modified_time(const String &p_path) const{
+	String protocol_name = String();
+	Ref<FileSystemProtocol> protocol = Ref<FileSystemProtocol>();
+	String file_path = String();
+	process_path(p_path, &protocol_name, &protocol, &file_path);
+	ERR_FAIL_COND_V_MSG(protocol.is_null(), false, "Unknown filesystem protocol " + protocol_name);
+
+	return protocol->get_modified_time(p_path);	
+}
+BitField<FileAccess::UnixPermissionFlags> FileSystem::get_unix_permissions(const String &p_path) const{
+String protocol_name = String();
+	Ref<FileSystemProtocol> protocol = Ref<FileSystemProtocol>();
+	String file_path = String();
+	process_path(p_path, &protocol_name, &protocol, &file_path);
+	ERR_FAIL_COND_V_MSG(protocol.is_null(), false, "Unknown filesystem protocol " + protocol_name);
+
+	return protocol->get_unix_permissions(p_path);	
+}
+Error FileSystem::set_unix_permissions(const String &p_path, BitField<FileAccess::UnixPermissionFlags> p_permissions) const{
+String protocol_name = String();
+	Ref<FileSystemProtocol> protocol = Ref<FileSystemProtocol>();
+	String file_path = String();
+	process_path(p_path, &protocol_name, &protocol, &file_path);
+	ERR_FAIL_COND_V_MSG(protocol.is_null(), false, "Unknown filesystem protocol " + protocol_name);
+
+	return protocol->set_unix_permissions(p_path,p_permissions);	
+}
+bool FileSystem::get_hidden_attribute(const String &p_path) const{
+String protocol_name = String();
+	Ref<FileSystemProtocol> protocol = Ref<FileSystemProtocol>();
+	String file_path = String();
+	process_path(p_path, &protocol_name, &protocol, &file_path);
+	ERR_FAIL_COND_V_MSG(protocol.is_null(), false, "Unknown filesystem protocol " + protocol_name);
+
+	return protocol->get_hidden_attribute(p_path);	
+}
+Error FileSystem::set_hidden_attribute(const String &p_path, bool p_hidden) const{
+String protocol_name = String();
+	Ref<FileSystemProtocol> protocol = Ref<FileSystemProtocol>();
+	String file_path = String();
+	process_path(p_path, &protocol_name, &protocol, &file_path);
+	ERR_FAIL_COND_V_MSG(protocol.is_null(), false, "Unknown filesystem protocol " + protocol_name);
+
+	return protocol->set_hidden_attribute(p_path,p_hidden);	
+}
+bool FileSystem::get_read_only_attribute(const String &p_path) const{
+String protocol_name = String();
+	Ref<FileSystemProtocol> protocol = Ref<FileSystemProtocol>();
+	String file_path = String();
+	process_path(p_path, &protocol_name, &protocol, &file_path);
+	ERR_FAIL_COND_V_MSG(protocol.is_null(), false, "Unknown filesystem protocol " + protocol_name);
+
+	return protocol->get_read_only_attribute(p_path);	
+}
+Error FileSystem::set_read_only_attribute(const String &p_path, bool p_ro) const{
+String protocol_name = String();
+	Ref<FileSystemProtocol> protocol = Ref<FileSystemProtocol>();
+	String file_path = String();
+	process_path(p_path, &protocol_name, &protocol, &file_path);
+	ERR_FAIL_COND_V_MSG(protocol.is_null(), false, "Unknown filesystem protocol " + protocol_name);
+
+	return protocol->set_read_only_attribute(p_path,p_ro);
+}
+
 void FileSystem::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("protocol_exists", "name"), &FileSystem::protocol_exists);
+	ClassDB::bind_method(D_METHOD("has_protocol", "name"), &FileSystem::has_protocol);
 	ClassDB::bind_method(D_METHOD("remove_protocol", "name"), &FileSystem::remove_protocol);
 	ClassDB::bind_method(D_METHOD("add_protocol", "name", "protocol"), &FileSystem::add_protocol);
 	ClassDB::bind_method(D_METHOD("get_protocol_or_null", "name"), &FileSystem::get_protocol_or_null);
 	ClassDB::bind_method(D_METHOD("get_protocol", "name"), &FileSystem::get_protocol);
 
+	ClassDB::bind_method(D_METHOD("globalize_path", "path"), &FileSystem::globalize_path);
+
 	ClassDB::bind_method(D_METHOD("get_open_error"), &FileSystem::get_open_error);
 	ClassDB::bind_method(D_METHOD("open_file", "path", "mode_flags"), &FileSystem::_open_file);
 	ClassDB::bind_method(D_METHOD("file_exists", "name"), &FileSystem::file_exists);
+
+	ClassDB::bind_method(D_METHOD("get_modified_time", "path"), &FileSystem::get_modified_time);
+	ClassDB::bind_method(D_METHOD("get_unix_permissions", "path"), &FileSystem::get_unix_permissions);
+	ClassDB::bind_method(D_METHOD("set_unix_permissions", "path","permissions"), &FileSystem::set_unix_permissions);
+	ClassDB::bind_method(D_METHOD("get_hidden_attribute", "path"), &FileSystem::get_hidden_attribute);
+	ClassDB::bind_method(D_METHOD("set_hidden_attribute", "path","hidden"), &FileSystem::set_hidden_attribute);
+	ClassDB::bind_method(D_METHOD("get_read_only_attribute", "path"), &FileSystem::get_read_only_attribute);
+	ClassDB::bind_method(D_METHOD("set_read_only_attribute", "path","ro"), &FileSystem::set_read_only_attribute);
 }

@@ -34,6 +34,7 @@
 #include "core/math/color.h"
 #include "core/math/math_funcs.h"
 #include "core/os/memory.h"
+#include "core/io/filesystem.h"
 #include "core/string/print_string.h"
 #include "core/string/string_name.h"
 #include "core/string/translation_server.h"
@@ -4507,23 +4508,12 @@ String String::simplify_path() const {
 	String drive;
 
 	// Check if we have a special path (like res://) or a protocol identifier.
-	int p = s.find("://");
-	bool found = false;
-	if (p > 0) {
-		bool only_chars = true;
-		for (int i = 0; i < p; i++) {
-			if (!is_ascii_alphanumeric_char(s[i])) {
-				only_chars = false;
-				break;
-			}
-		}
-		if (only_chars) {
-			found = true;
-			drive = s.substr(0, p + 3);
-			s = s.substr(p + 3);
-		}
-	}
-	if (!found) {
+	int file_path_start=0;
+	bool found=FileSystem::try_find_protocol_in_path(s,nullptr,&file_path_start);
+	if(found){
+		drive=s.substr(0,file_path_start);
+		s=s.substr(file_path_start);
+	}else{
 		if (is_network_share_path()) {
 			// Network path, beginning with // or \\.
 			drive = s.substr(0, 2);
@@ -4534,7 +4524,7 @@ String String::simplify_path() const {
 			s = s.substr(1);
 		} else {
 			// Windows-style drive path, like C:/ or C:\.
-			p = s.find(":/");
+			int p = s.find(":/");
 			if (p == -1) {
 				p = s.find(":\\");
 			}

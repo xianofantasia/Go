@@ -104,6 +104,10 @@ static _FORCE_INLINE_ bool is_ascii_alphanumeric_char(char32_t c) {
 	return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9');
 }
 
+static _FORCE_INLINE_ bool is_ascii_protocol_name_char(char32_t c) {
+	return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_' || c == '-';
+}
+
 static _FORCE_INLINE_ bool is_ascii_identifier_char(char32_t c) {
 	return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_';
 }

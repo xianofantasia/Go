@@ -46,9 +46,24 @@ public:
 	static String fix_path(const String &p_path);
 	static bool is_path_invalid(const String &p_path);
 	static bool file_exists_static(const String &p_path);
+	static uint64_t get_modified_time_static(const String& p_path);
+	static BitField<FileAccess::UnixPermissionFlags> get_unix_permissions_static(const String &p_path);
+	static Error set_unix_permissions_static(const String &p_path, BitField<FileAccess::UnixPermissionFlags> p_permissions);
+	static bool get_hidden_attribute_static(const String& p_path);
+	static Error set_hidden_attribute_static(const String& p_path,bool p_hidden);
+	static bool get_read_only_attribute_static(const String& p_path);
+	static Error set_read_only_attribute_static(const String& p_path,bool p_ro);
 
-	virtual Ref<FileAccess> open_file(const String &p_path, int p_mode_flags, Error *r_error) const override;
+	virtual Ref<FileAccess> open_file(const String &p_path, int p_mode_flags, Error &r_error) const override;
 	virtual bool file_exists(const String &p_path) const override;
+
+	virtual uint64_t get_modified_time(const String &p_path) const override;
+	virtual BitField<FileAccess::UnixPermissionFlags> get_unix_permissions(const String &p_path) const override;
+	virtual Error set_unix_permissions(const String &p_path, BitField<FileAccess::UnixPermissionFlags> p_permissions) const override;
+	virtual bool get_hidden_attribute(const String &p_path) const override;
+	virtual Error set_hidden_attribute(const String &p_path, bool p_hidden) const override;
+	virtual bool get_read_only_attribute(const String &p_path) const override;
+	virtual Error set_read_only_attribute(const String &p_path, bool p_ro) const override;
 };
 #endif // WINDOWS_ENABLED
 
