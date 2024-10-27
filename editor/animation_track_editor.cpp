@@ -3099,9 +3099,29 @@ void AnimationTrackEdit::gui_input(const Ref<InputEvent> &p_event) {
 				insert_at_pos = offset + timeline->get_value();
 				accept_event();
 			}
+		} else if (pos.x < timeline->get_name_limit()) {
+			// User right-clicks on path/name
+			if (!path_menu) {
+				path_menu = memnew(PopupMenu);
+				add_child(path_menu);
+				path_menu->connect(SceneStringName(id_pressed), callable_mp(this, &AnimationTrackEdit::_menu_selected));
+			}
+			path_menu->clear();
+			path_menu->add_item(TTR("Change Target Node..."), MENU_CHANGE_TARGET_NODE);
+			path_menu->add_item(TTR("Change Target Property..."), MENU_CHANGE_TARGET_PROPERTY);
+			path_menu->reset_size();
+
+			moving_selection_attempt = false;
+			moving_selection = false;
+
+			path_menu->set_position(get_screen_position() + get_local_mouse_position());
+			path_menu->popup();
+
+			accept_event();
 		}
 	}
 
+	// User Left Clicks on the path label
 	if (mb.is_valid() && !mb->is_pressed() && mb->get_button_index() == MouseButton::LEFT && clicking_on_name) {
 		if (!path) {
 			path_popup = memnew(Popup);
@@ -3468,6 +3488,12 @@ void AnimationTrackEdit::_menu_selected(int p_index) {
 			undo_redo->commit_action();
 			queue_redraw();
 		} break;
+		case MENU_CHANGE_TARGET_NODE: {
+			emit_signal(SNAME("change_track_target_node"));
+		} break;
+		case MENU_CHANGE_TARGET_PROPERTY: {
+			emit_signal(SNAME("change_track_target_property"));
+		} break;
 	}
 }
 
@@ -3528,6 +3554,9 @@ void AnimationTrackEdit::_bind_methods() {
 	ADD_SIGNAL(MethodInfo("cut_request"));
 	ADD_SIGNAL(MethodInfo("paste_request", PropertyInfo(Variant::FLOAT, "offset"), PropertyInfo(Variant::BOOL, "is_offset_valid")));
 	ADD_SIGNAL(MethodInfo("delete_request"));
+
+	ADD_SIGNAL(MethodInfo("change_track_target_node"));
+	ADD_SIGNAL(MethodInfo("change_track_target_property"));
 }
 
 AnimationTrackEdit::AnimationTrackEdit() {
@@ -4980,6 +5009,8 @@ void AnimationTrackEditor::_update_tracks() {
 		track_edit->connect("paste_request", callable_mp(this, &AnimationTrackEditor::_anim_paste_keys).bind(i), CONNECT_DEFERRED);
 		track_edit->connect("create_reset_request", callable_mp(this, &AnimationTrackEditor::_edit_menu_pressed).bind(EDIT_ADD_RESET_KEY), CONNECT_DEFERRED);
 		track_edit->connect("delete_request", callable_mp(this, &AnimationTrackEditor::_edit_menu_pressed).bind(EDIT_DELETE_SELECTION), CONNECT_DEFERRED);
+		track_edit->connect("change_track_target_node", callable_mp(this, &AnimationTrackEditor::_change_track_target_node_pressed).bind(i), CONNECT_DEFERRED);
+		track_edit->connect("change_track_target_property", callable_mp(this, &AnimationTrackEditor::_change_track_target_property_pressed).bind(i), CONNECT_DEFERRED);
 	}
 }
 
@@ -5300,9 +5331,93 @@ void AnimationTrackEditor::_new_track_node_selected(NodePath p_path) {
 			undo_redo->add_do_method(animation.ptr(), "track_set_path", animation->get_track_count(), path_to);
 			undo_redo->add_undo_method(animation.ptr(), "remove_track", animation->get_track_count());
 			undo_redo->commit_action();
-
 		} break;
 	}
+}
+
+void AnimationTrackEditor::_change_track_target_node_pressed(int p_track) {
+	NodePath current_path = animation->track_get_path(p_track);
+	AnimationPlayer *ap = AnimationPlayerEditor::get_singleton()->get_player();
+	if (!ap) {
+		ERR_FAIL_EDMSG("No AnimationPlayer is currently being edited.");
+	}
+	Node *root_node = ap->get_node_or_null(ap->get_root_node());
+
+	pick_move_track->popup_scenetree_dialog(nullptr, root_node);
+	pick_move_track->get_filter_line_edit()->clear();
+	pick_move_track->get_filter_line_edit()->grab_focus();
+	if (pick_move_track->is_connected("selected", callable_mp(this, &AnimationTrackEditor::_move_track_to_node))) {
+		pick_move_track->disconnect("selected", callable_mp(this, &AnimationTrackEditor::_move_track_to_node));
+	}
+	pick_move_track->connect("selected", callable_mp(this, &AnimationTrackEditor::_move_track_to_node).bind(p_track));
+}
+
+/*
+	Takes p_path - a NodePath to a new target node (NOT with the property)
+	and p_track - The AnimationTrack
+	Changes the Animation's path to match that node.
+*/
+void AnimationTrackEditor::_move_track_to_node(NodePath p_path, int p_track) {
+	// Get new_node
+	Node *tree_root = EditorNode::get_singleton()->get_tree()->get_root();
+	Node *new_node = tree_root->get_node_or_null(p_path);
+	ERR_FAIL_NULL(new_node);
+
+	// Get AnimationPlayer's root_node
+	AnimationPlayer *ap = AnimationPlayerEditor::get_singleton()->get_player();
+	if (!ap) {
+		ERR_FAIL_EDMSG("No AnimationPlayer is currently being edited.");
+	}
+	Node *root_node = ap->get_node_or_null(ap->get_root_node());
+	if (!root_node) {
+		EditorNode::get_singleton()->show_warning(TTR("Not possible to change node path without a root"));
+		return;
+	}
+
+	// Get New Path, in respect to AP's root_node
+	String current_track_path = animation->track_get_path(p_track);
+	String property_path = current_track_path.get_slice(":", 1);
+	String new_path = root_node->get_path_to(new_node);
+	new_path = new_path + ":" + property_path;
+
+	EditorUndoRedoManager *undo_redo = EditorUndoRedoManager::get_singleton();
+	undo_redo->create_action(TTR("Change Track Path"));
+	undo_redo->add_do_method(animation.ptr(), "track_set_path", p_track, new_path);
+	undo_redo->add_undo_method(animation.ptr(), "track_set_path", p_track, current_track_path);
+	undo_redo->commit_action();
+}
+
+void AnimationTrackEditor::_change_track_property_selected(const String &p_name, int p_track) {
+	String current_track_path = animation->track_get_path(p_track);
+	String base_path = current_track_path.get_slice(":", 0);
+	String new_path = base_path + ":" + p_name;
+
+	EditorUndoRedoManager *undo_redo = EditorUndoRedoManager::get_singleton();
+	undo_redo->create_action(TTR("Change Track Path"));
+	undo_redo->add_do_method(animation.ptr(), "track_set_path", p_track, new_path);
+	undo_redo->add_undo_method(animation.ptr(), "track_set_path", p_track, current_track_path);
+	undo_redo->commit_action();
+}
+
+void AnimationTrackEditor::_change_track_target_property_pressed(int p_track) {
+	AnimationPlayer *ap = AnimationPlayerEditor::get_singleton()->get_player();
+	if (!ap) {
+		ERR_FAIL_EDMSG("No AnimationPlayer is currently being edited.");
+	}
+	NodePath current_path = animation->track_get_path(p_track);
+	Node *root_node = ap->get_node_or_null(ap->get_root_node());
+	Node *current_node = root_node->get_node_or_null(animation->track_get_path(p_track));
+	if (!current_node) {
+		EditorNode::get_singleton()->show_warning(TTR("Not possible to change property without a valid target node"));
+		return;
+	}
+	// Reconnect here to bind track index
+	if (change_prop_selector->is_connected("selected", callable_mp(this, &AnimationTrackEditor::_change_track_property_selected))) {
+		change_prop_selector->disconnect("selected", callable_mp(this, &AnimationTrackEditor::_change_track_property_selected));
+	}
+	change_prop_selector->connect("selected", callable_mp(this, &AnimationTrackEditor::_change_track_property_selected).bind(p_track));
+
+	change_prop_selector->select_property_from_instance(current_node);
 }
 
 void AnimationTrackEditor::_add_track(int p_type) {
@@ -7758,11 +7873,18 @@ AnimationTrackEditor::AnimationTrackEditor() {
 	edit->get_popup()->connect(SceneStringName(id_pressed), callable_mp(this, &AnimationTrackEditor::_edit_menu_pressed));
 	edit->get_popup()->connect("about_to_popup", callable_mp(this, &AnimationTrackEditor::_edit_menu_about_to_popup));
 
+	// SceneTreeDialog to add a new track
 	pick_track = memnew(SceneTreeDialog);
 	add_child(pick_track);
 	pick_track->set_title(TTR("Pick a node to animate:"));
 	pick_track->connect("selected", callable_mp(this, &AnimationTrackEditor::_new_track_node_selected));
 	pick_track->get_filter_line_edit()->connect(SceneStringName(text_changed), callable_mp(this, &AnimationTrackEditor::_pick_track_filter_text_changed));
+
+	// SceneTreeDialog to move a track
+	pick_move_track = memnew(SceneTreeDialog);
+	add_child(pick_move_track);
+	pick_move_track->set_title(TTR("Pick a node to animate:"));
+	pick_move_track->get_filter_line_edit()->connect(SceneStringName(text_changed), callable_mp(this, &AnimationTrackEditor::_pick_track_filter_text_changed));
 
 	prop_selector = memnew(PropertySelector);
 	add_child(prop_selector);
@@ -7771,6 +7893,9 @@ AnimationTrackEditor::AnimationTrackEditor() {
 	method_selector = memnew(PropertySelector);
 	add_child(method_selector);
 	method_selector->connect("selected", callable_mp(this, &AnimationTrackEditor::_add_method_key));
+
+	change_prop_selector = memnew(PropertySelector);
+	add_child(change_prop_selector);
 
 	insert_confirm = memnew(ConfirmationDialog);
 	add_child(insert_confirm);

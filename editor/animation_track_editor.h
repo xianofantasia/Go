@@ -431,6 +431,8 @@ class AnimationTrackEdit : public Control {
 		MENU_KEY_DELETE,
 		MENU_USE_BLEND_ENABLED,
 		MENU_USE_BLEND_DISABLED,
+		MENU_CHANGE_TARGET_NODE,
+		MENU_CHANGE_TARGET_PROPERTY,
 	};
 
 	AnimationTimelineEdit *timeline = nullptr;
@@ -456,7 +458,8 @@ class AnimationTrackEdit : public Control {
 	Ref<Texture2D> type_icon;
 	Ref<Texture2D> selected_icon;
 
-	PopupMenu *menu = nullptr;
+	PopupMenu *menu = nullptr; // Right click on timeline / keys
+	PopupMenu *path_menu = nullptr; // Right click on path
 
 	bool hovered = false;
 	bool clicking_on_name = false;
@@ -648,12 +651,17 @@ class AnimationTrackEditor : public VBoxContainer {
 	void _add_track(int p_type);
 	void _new_track_node_selected(NodePath p_path);
 	void _new_track_property_selected(const String &p_name);
-
+	void _move_track_to_node(NodePath p_path, int p_track);
+	void _change_track_property_selected(const String &p_name, int p_track);
+	void _change_track_target_node_pressed(int p_track);
+	void _change_track_target_property_pressed(int p_track);
 	void _update_step_spinbox();
 
 	PropertySelector *prop_selector = nullptr;
 	PropertySelector *method_selector = nullptr;
+	PropertySelector *change_prop_selector = nullptr; // Change Property
 	SceneTreeDialog *pick_track = nullptr;
+	SceneTreeDialog *pick_move_track = nullptr; // Move track
 	int adding_track_type = 0;
 	NodePath adding_track_path;
 
