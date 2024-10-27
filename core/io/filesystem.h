@@ -44,13 +44,15 @@ protected:
 private:
 	static FileSystem *singleton;
 
+	_THREAD_SAFE_CLASS_
+
 	HashMap<String, Ref<FileSystemProtocol>> protocols;
 
 	// for paths that doesn't have the protocol part, it fallsback to host://
 	// if r_protocol returns null, the protocol of the path targeted is invalid.
 	void process_path(const String &p_path, String *r_protocol_name, Ref<FileSystemProtocol> *r_protocol, String *r_file_path) const;
 
-	Error open_error;
+	Error open_error = OK;
 	Ref<FileAccess> _open_file(const String &p_path, int p_mode_flags);
 
 	friend class Main;

@@ -52,19 +52,27 @@ String FileSystem::protocol_name_user = "user";
 String FileSystem::protocol_name_memory = "mem";
 
 bool FileSystem::has_protocol(const String &p_name) const {
+	_THREAD_SAFE_METHOD_
+
 	return protocols.has(p_name);
 }
 bool FileSystem::remove_protocol(const String &p_name) {
+	_THREAD_SAFE_METHOD_
+
 	bool erased = protocols.erase(p_name);
 	ERR_FAIL_COND_V_MSG(!erased, false, "No FileSystemProtocol with the name " + p_name + " is registered.");
 	return erased;
 }
 bool FileSystem::add_protocol(const String &p_name, const Ref<FileSystemProtocol> &p_protocol) {
+	_THREAD_SAFE_METHOD_
+
 	ERR_FAIL_COND_V_MSG(protocols.has(p_name), false, "FileSystemProtocol with the name " + p_name + " is already registered.");
 	protocols[p_name] = p_protocol;
 	return true;
 }
 Ref<FileSystemProtocol> FileSystem::get_protocol_or_null(const String &p_name) const {
+	_THREAD_SAFE_METHOD_
+
 	HashMap<String, Ref<FileSystemProtocol>>::ConstIterator iter = protocols.find(p_name);
 	if (!iter) {
 		return Ref<FileSystemProtocol>();
