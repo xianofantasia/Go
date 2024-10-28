@@ -29,6 +29,7 @@
 /**************************************************************************/
 
 #include "filesystem.h"
+#include "filesystem_protocol_placeholder.h"
 #include "filesystem_protocol_resources.h"
 #include "filesystem_protocol_user.h"
 
@@ -49,6 +50,7 @@ String FileSystem::protocol_name_os = "os";
 String FileSystem::protocol_name_pipe = "pipe";
 String FileSystem::protocol_name_resources = "res";
 String FileSystem::protocol_name_user = "user";
+String FileSystem::protocol_name_gdscript = "gdscript";
 String FileSystem::protocol_name_memory = "mem";
 
 bool FileSystem::has_protocol(const String &p_name) const {
@@ -189,6 +191,13 @@ void FileSystem::register_protocols() {
 	Ref<FileSystemProtocolResources> protocol_resources = Ref<FileSystemProtocolResources>();
 	protocol_resources.instantiate(protocol_os);
 	add_protocol(protocol_name_resources, protocol_resources);
+
+	// gdscript:// represents a script instance in memory.
+	// We reserve it and make it a placeholder which fails all accesses silently
+	// to prevent stepping in the old code.
+	Ref<FileSystemProtocolPlaceholder> protocol_gdscript = Ref<FileSystemProtocolPlaceholder>();
+	protocol_gdscript.instantiate();
+	add_protocol(protocol_name_gdscript, protocol_gdscript);
 }
 
 uint64_t FileSystem::get_modified_time(const String &p_path) const {

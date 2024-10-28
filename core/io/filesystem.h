@@ -69,6 +69,7 @@ public:
 	static String protocol_name_pipe;
 	static String protocol_name_resources;
 	static String protocol_name_user;
+	static String protocol_name_gdscript;
 	static String protocol_name_memory;
 
 	FileSystem();
