@@ -154,6 +154,14 @@ Ref<MethodTweener> Tween::tween_method(const Callable &p_callback, const Variant
 	return tweener;
 }
 
+Ref<SubtweenTweener> Tween::tween_subtween(const Ref<Tween> &p_subtween) {
+	CHECK_VALID();
+
+	Ref<SubtweenTweener> tweener = memnew(SubtweenTweener(p_subtween));
+	append(tweener);
+	return tweener;
+}
+
 void Tween::append(Ref<Tweener> p_tweener) {
 	p_tweener->set_tween(this);
 
@@ -438,6 +446,7 @@ void Tween::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("tween_interval", "time"), &Tween::tween_interval);
 	ClassDB::bind_method(D_METHOD("tween_callback", "callback"), &Tween::tween_callback);
 	ClassDB::bind_method(D_METHOD("tween_method", "method", "from", "to", "duration"), &Tween::tween_method);
+	ClassDB::bind_method(D_METHOD("tween_subtween", "subtween"), &Tween::tween_subtween);
 
 	ClassDB::bind_method(D_METHOD("custom_step", "delta"), &Tween::custom_step);
 	ClassDB::bind_method(D_METHOD("stop"), &Tween::stop);
@@ -840,4 +849,40 @@ MethodTweener::MethodTweener(const Callable &p_callback, const Variant &p_from, 
 
 MethodTweener::MethodTweener() {
 	ERR_FAIL_MSG("MethodTweener can't be created directly. Use the tween_method() method in Tween.");
+}
+
+void SubtweenTweener::start() {
+	finished = false;
+	// TODO: remove it from execution in scene tree
+}
+
+bool SubtweenTweener::step(double &r_delta) {
+	if (finished) {
+		return false;
+	}
+
+	// TODO: run the subtween in here?
+	// If it's done, return false?
+	elapsed_time += r_delta;
+
+	// if (elapsed_time < duration) {
+	// 	r_delta = 0;
+	// 	return true;
+	// } else {
+	// 	r_delta = elapsed_time - duration;
+	// 	_finish();
+	// 	return false;
+	// }
+
+	// For now, just to give it a return value
+	_finish();
+	return false;
+}
+
+SubtweenTweener::SubtweenTweener(const Ref<Tween> &p_subtween) {
+	subtween = p_subtween;
+}
+
+SubtweenTweener::SubtweenTweener() {
+	ERR_FAIL_MSG("SubtweenTweener can't be created directly. Use the tween_subtween() method in Tween.");
 }
