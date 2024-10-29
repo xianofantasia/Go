@@ -32,6 +32,7 @@
 #define TWEEN_H
 
 #include "core/object/ref_counted.h"
+#include "scene/main/scene_tree.h"
 
 class Tween;
 class Node;
@@ -66,6 +67,7 @@ class Tween : public RefCounted {
 	GDCLASS(Tween, RefCounted);
 
 	friend class PropertyTweener;
+	friend class SceneTree;
 
 public:
 	enum TweenProcessMode {
@@ -110,6 +112,7 @@ private:
 	EaseType default_ease = EaseType::EASE_IN_OUT;
 	ObjectID bound_node;
 
+	SceneTree *parent_tree;
 	Vector<List<Ref<Tweener>>> tweeners;
 	double total_time = 0;
 	int current_step = -1;
@@ -306,6 +309,8 @@ private:
 
 class SubtweenTweener : public Tweener {
 	GDCLASS(SubtweenTweener, Tweener);
+
+	friend class Tween;
 
 public:
 	void start() override;

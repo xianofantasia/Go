@@ -1545,8 +1545,14 @@ Ref<SceneTreeTimer> SceneTree::create_timer(double p_delay_sec, bool p_process_a
 Ref<Tween> SceneTree::create_tween() {
 	_THREAD_SAFE_METHOD_
 	Ref<Tween> tween = memnew(Tween(true));
+	tween->parent_tree = this;
 	tweens.push_back(tween);
 	return tween;
+}
+
+bool SceneTree::remove_tween(Ref<Tween> &p_tween) {
+	_THREAD_SAFE_METHOD_
+	return tweens.erase(p_tween);
 }
 
 TypedArray<Tween> SceneTree::get_processed_tweens() {

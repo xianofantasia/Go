@@ -158,6 +158,12 @@ Ref<SubtweenTweener> Tween::tween_subtween(const Ref<Tween> &p_subtween) {
 	CHECK_VALID();
 
 	Ref<SubtweenTweener> tweener = memnew(SubtweenTweener(p_subtween));
+
+	// NOTE: Feels a bit hacky. Is there a better way to accomplish this?
+	// (We want to remove this tween from the SceneTree's list of tweens, so
+	// that it doesn't process it, since the processing will be handled by
+	// the SubtweenTweener instead.)
+	tweener->subtween->parent_tree->remove_tween(tweener->subtween);
 	append(tweener);
 	return tweener;
 }
@@ -853,7 +859,6 @@ MethodTweener::MethodTweener() {
 
 void SubtweenTweener::start() {
 	finished = false;
-	// TODO: remove it from execution in scene tree
 }
 
 bool SubtweenTweener::step(double &r_delta) {
@@ -861,22 +866,20 @@ bool SubtweenTweener::step(double &r_delta) {
 		return false;
 	}
 
-	// TODO: run the subtween in here?
-	// If it's done, return false?
 	elapsed_time += r_delta;
 
-	// if (elapsed_time < duration) {
-	// 	r_delta = 0;
-	// 	return true;
-	// } else {
-	// 	r_delta = elapsed_time - duration;
-	// 	_finish();
-	// 	return false;
-	// }
-
-	// For now, just to give it a return value
-	_finish();
-	return false;
+	// NOTE: this doesn't do the paused or physics checks that
+	// `SceneTree::process_tweens` does. I think this behavior makes sense,
+	// because it is now a child of this parent tween where those things *are*
+	// checked. But this should still be noted in the documentation.
+	if (!subtween->step(r_delta)) {
+		subtween->clear();
+		_finish();
+		return false;
+	} else {
+		r_delta = 0;
+		return true;
+	}
 }
 
 SubtweenTweener::SubtweenTweener(const Ref<Tween> &p_subtween) {
