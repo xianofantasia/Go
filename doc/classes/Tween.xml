@@ -440,6 +440,14 @@
 				[/codeblocks]
 			</description>
 		</method>
+		<method name="tween_subtween">
+			<return type="SubtweenTweener" />
+			<param index="0" name="subtween" type="Tween" />
+			<description>
+				Creates and appends a [SubtweenTweener]. This method can be used to nest [param subtween] within this tween, allowing for the creation of more complex and composable sequences.
+				[b]Note:[/b] The pause and process modes set by [method Tween.set_pause_mode] and [method Tween.set_process_mode] on [param subtween] will be overridden by the parent tween's settings.
+			</description>
+		</method>
 	</methods>
 	<signals>
 		<signal name="finished">
