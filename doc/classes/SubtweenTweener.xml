@@ -10,5 +10,12 @@
 	<tutorials>
 	</tutorials>
 	<methods>
+		<method name="set_delay">
+			<return type="PropertyTweener" />
+			<param index="0" name="delay" type="float" />
+			<description>
+				Sets the time in seconds after which the [SubtweenTweener] will start running the subtween. By default there's no delay.
+			</description>
+		</method>
 	</methods>
 </class>

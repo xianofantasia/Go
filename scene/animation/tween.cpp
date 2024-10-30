@@ -868,6 +868,11 @@ bool SubtweenTweener::step(double &r_delta) {
 
 	elapsed_time += r_delta;
 
+	if (elapsed_time < delay) {
+		r_delta = 0;
+		return true;
+	}
+
 	// NOTE: this doesn't do the paused or physics checks that
 	// `SceneTree::process_tweens` does. I think this behavior makes sense,
 	// because it is now a child of this parent tween where those things *are*
@@ -880,6 +885,27 @@ bool SubtweenTweener::step(double &r_delta) {
 		r_delta = 0;
 		return true;
 	}
+}
+
+Ref<SubtweenTweener> SubtweenTweener::set_trans(Tween::TransitionType p_trans) {
+	subtween->set_trans(p_trans);
+	return this;
+}
+
+Ref<SubtweenTweener> SubtweenTweener::set_ease(Tween::EaseType p_ease) {
+	subtween->set_ease(p_ease);
+	return this;
+}
+
+Ref<SubtweenTweener> SubtweenTweener::set_delay(double p_delay) {
+	delay = p_delay;
+	return this;
+}
+
+void SubtweenTweener::_bind_methods() {
+	ClassDB::bind_method(D_METHOD("set_delay", "delay"), &SubtweenTweener::set_delay);
+	ClassDB::bind_method(D_METHOD("set_trans", "trans"), &SubtweenTweener::set_trans);
+	ClassDB::bind_method(D_METHOD("set_ease", "ease"), &SubtweenTweener::set_ease);
 }
 
 SubtweenTweener::SubtweenTweener(const Ref<Tween> &p_subtween) {

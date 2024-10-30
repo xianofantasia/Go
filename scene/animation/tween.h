@@ -316,11 +316,19 @@ public:
 	void start() override;
 	bool step(double &r_delta) override;
 
+	Ref<SubtweenTweener> set_trans(Tween::TransitionType p_trans);
+	Ref<SubtweenTweener> set_ease(Tween::EaseType p_ease);
+	Ref<SubtweenTweener> set_delay(double p_delay);
+
 	SubtweenTweener(const Ref<Tween> &p_subtween);
 	SubtweenTweener();
 
+protected:
+	static void _bind_methods();
+
 private:
 	Ref<Tween> subtween;
+	double delay = 0;
 };
 
 #endif // TWEEN_H
