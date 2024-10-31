@@ -4,8 +4,8 @@
 		Runs a [Tween] nested within another [Tween].
 	</brief_description>
 	<description>
-        [SubtweenTweener] is used to execute a [Tween] as one step in a sequence defined by another [Tween]. See [method Tween.tween_subtween] for more usage information.
-        [b]Note:[/b] [method Tween.tween_subtween] is the only correct way to create [SubtweenTweener]. Any [SubtweenTweener] created manually will not function correctly.
+		[SubtweenTweener] is used to execute a [Tween] as one step in a sequence defined by another [Tween]. See [method Tween.tween_subtween] for more usage information.
+		[b]Note:[/b] [method Tween.tween_subtween] is the only correct way to create [SubtweenTweener]. Any [SubtweenTweener] created manually will not function correctly.
 	</description>
 	<tutorials>
 	</tutorials>
