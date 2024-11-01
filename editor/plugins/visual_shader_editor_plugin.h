@@ -204,9 +204,9 @@ class VisualShaderEditor : public ShaderEditor {
 	GDCLASS(VisualShaderEditor, ShaderEditor);
 	friend class VisualShaderGraphPlugin;
 
-	Ref<VisualShader> visual_shader;
-	ShaderGraph* editing_shader_graph;
-	Ref<VisualShaderGroup> editing_visual_shader_group; // Might be null.
+	ShaderGraph *editing_shader_graph = nullptr;
+	Ref<VisualShader> visual_shader; // Could be null (editing just a VisualShaderGroup).
+	Ref<VisualShaderGroup> editing_visual_shader_group; // Could be null.
 
 	Ref<ShaderMaterial> preview_material;
 	Ref<Environment> env;
@@ -394,6 +394,7 @@ class VisualShaderEditor : public ShaderEditor {
 
 	void _restore_editor_state();
 
+	// TODO: This needs a big refactor, but probably later.
 	struct AddOption {
 		String name;
 		String category;
@@ -455,6 +456,7 @@ class VisualShaderEditor : public ShaderEditor {
 	void _preview_size_changed();
 	void _update_preview();
 	void _update_next_previews(int p_node_id);
+	// TODO: Move to ShaderGraph!
 	void _get_next_nodes_recursively(VisualShader::Type p_type, int p_node_id, LocalVector<int> &r_nodes) const;
 	String _get_description(int p_idx);
 
@@ -674,7 +676,7 @@ public:
 	virtual Size2 get_minimum_size() const override;
 
 	Ref<VisualShader> get_visual_shader() const { return visual_shader; }
-	ShaderGraph* get_shader_graph() const { return editing_shader_graph; }
+	ShaderGraph *get_shader_graph() const { return editing_shader_graph; }
 
 	VisualShaderEditor();
 };

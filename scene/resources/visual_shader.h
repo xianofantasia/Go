@@ -42,6 +42,9 @@ class VisualShaderNode;
 class ShaderGraph : public RefCounted {
 	GDCLASS(ShaderGraph, RefCounted);
 
+protected:
+	static void _bind_methods();
+
 public:
 	struct Node {
 		// TODO: Rename to vsnode;

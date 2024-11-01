@@ -43,6 +43,32 @@ String make_unique_id(VisualShader::Type p_type, int p_id, const String &p_name)
 	return p_name + "_" + String(typepf[p_type]) + "_" + itos(p_id);
 }
 
+void ShaderGraph::_bind_methods() {
+	ClassDB::bind_method(D_METHOD("add_node", "node", "position", "id"), &ShaderGraph::add_node);
+	ClassDB::bind_method(D_METHOD("get_node", "id"), &ShaderGraph::get_node);
+
+	ClassDB::bind_method(D_METHOD("set_node_position", "id", "position"), &ShaderGraph::set_node_position);
+	ClassDB::bind_method(D_METHOD("get_node_position", "id"), &ShaderGraph::get_node_position);
+
+	ClassDB::bind_method(D_METHOD("get_node_list"), &ShaderGraph::get_node_ids);
+	ClassDB::bind_method(D_METHOD("get_valid_node_id"), &ShaderGraph::get_valid_node_id);
+
+	ClassDB::bind_method(D_METHOD("remove_node", "id"), &ShaderGraph::remove_node);
+	ClassDB::bind_method(D_METHOD("replace_node", "id", "new_class"), &ShaderGraph::replace_node);
+
+	ClassDB::bind_method(D_METHOD("is_node_connection", "from_node", "from_port", "to_node", "to_port"), &ShaderGraph::are_nodes_connected);
+	ClassDB::bind_method(D_METHOD("can_connect_nodes", "from_node", "from_port", "to_node", "to_port"), &ShaderGraph::can_connect_nodes);
+
+	ClassDB::bind_method(D_METHOD("connect_nodes", "from_node", "from_port", "to_node", "to_port"), &ShaderGraph::connect_nodes);
+	ClassDB::bind_method(D_METHOD("disconnect_nodes", "from_node", "from_port", "to_node", "to_port"), &ShaderGraph::disconnect_nodes);
+	ClassDB::bind_method(D_METHOD("connect_nodes_forced", "from_node", "from_port", "to_node", "to_port"), &ShaderGraph::connect_nodes_forced);
+
+	ClassDB::bind_method(D_METHOD("get_node_connections", "type"), &ShaderGraph::get_node_connections);
+
+	ClassDB::bind_method(D_METHOD("attach_node_to_frame", "id", "frame"), &ShaderGraph::attach_node_to_frame);
+	ClassDB::bind_method(D_METHOD("detach_node_from_frame", "id"), &ShaderGraph::detach_node_from_frame);
+}
+
 bool ShaderGraph::_check_reroute_subgraph(int p_target_port_type, int p_reroute_node, List<int> *r_visited_reroute_nodes) const {
 	// BFS to check whether connecting to the given subgraph (rooted at p_reroute_node) is valid.
 	List<int> queue;
@@ -1457,7 +1483,7 @@ bool VisualShader::is_node_connection(Type p_type, int p_from_node, int p_from_p
 }
 
 bool VisualShader::is_nodes_connected_relatively(const ShaderGraph *p_graph, int p_node, int p_target) const {
-	p_graph->is_nodes_connected_relatively(p_node, p_target);
+	return p_graph->is_nodes_connected_relatively(p_node, p_target);
 }
 
 bool VisualShader::can_connect_nodes(Type p_type, int p_from_node, int p_from_port, int p_to_node, int p_to_port) const {
@@ -1699,7 +1725,7 @@ String VisualShader::generate_preview_shader(Type p_type, int p_node, int p_port
 
 String VisualShader::validate_port_name(const String &p_port_name, VisualShaderNode *p_node, int p_port_id, bool p_output) const {
 	const ShaderGraph *g = &graph[0];
-	g->validate_port_name(p_port_name, p_node, p_port_id, p_output);
+	return g->validate_port_name(p_port_name, p_node, p_port_id, p_output);
 }
 
 String VisualShader::validate_parameter_name(const String &p_name, const Ref<VisualShaderNodeParameter> &p_parameter) const {
@@ -5548,6 +5574,29 @@ VisualShaderNodeVaryingGetter::VisualShaderNodeVaryingGetter() {
 }
 
 void VisualShaderGroup::_bind_methods() {
+	ClassDB::bind_method(D_METHOD("add_node", "node", "position", "id"), &VisualShaderGroup::add_node);
+	ClassDB::bind_method(D_METHOD("get_node", "id"), &VisualShaderGroup::get_node);
+
+	ClassDB::bind_method(D_METHOD("set_node_position", "id", "position"), &VisualShaderGroup::set_node_position);
+	ClassDB::bind_method(D_METHOD("get_node_position", "id"), &VisualShaderGroup::get_node_position);
+
+	ClassDB::bind_method(D_METHOD("get_node_list"), &VisualShaderGroup::get_node_ids);
+	ClassDB::bind_method(D_METHOD("get_valid_node_id"), &VisualShaderGroup::get_valid_node_id);
+
+	ClassDB::bind_method(D_METHOD("remove_node", "id"), &VisualShaderGroup::remove_node);
+	ClassDB::bind_method(D_METHOD("replace_node", "id", "new_class"), &VisualShaderGroup::replace_node);
+
+	ClassDB::bind_method(D_METHOD("is_node_connection", "from_node", "from_port", "to_node", "to_port"), &VisualShaderGroup::are_nodes_connected);
+	ClassDB::bind_method(D_METHOD("can_connect_nodes", "from_node", "from_port", "to_node", "to_port"), &VisualShaderGroup::can_connect_nodes);
+
+	ClassDB::bind_method(D_METHOD("connect_nodes", "from_node", "from_port", "to_node", "to_port"), &VisualShaderGroup::connect_nodes);
+	ClassDB::bind_method(D_METHOD("disconnect_nodes", "from_node", "from_port", "to_node", "to_port"), &VisualShaderGroup::disconnect_nodes);
+	ClassDB::bind_method(D_METHOD("connect_nodes_forced", "from_node", "from_port", "to_node", "to_port"), &VisualShaderGroup::connect_nodes_forced);
+
+	// ClassDB::bind_method(D_METHOD("get_node_connections", "type"), &VisualShaderGroup::get_node_connections);
+
+	ClassDB::bind_method(D_METHOD("attach_node_to_frame", "id", "frame"), &VisualShaderGroup::attach_node_to_frame);
+	ClassDB::bind_method(D_METHOD("detach_node_from_frame", "id"), &VisualShaderGroup::detach_node_from_frame);
 }
 
 Ref<ShaderGraph> VisualShaderGroup::get_graph() const {
@@ -5635,4 +5684,5 @@ void VisualShaderGroup::get_node_connections(List<ShaderGraph::Connection> *r_co
 }
 
 VisualShaderGroup::VisualShaderGroup() {
+	// TODO: Add group input and output nodes
 }
