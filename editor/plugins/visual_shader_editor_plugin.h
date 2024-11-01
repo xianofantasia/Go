@@ -125,8 +125,9 @@ private:
 		CurveEditor *curve_editors[3] = { nullptr, nullptr, nullptr };
 	};
 
-	// TODO: Maybe use ShaderGraph here?
 	Ref<VisualShader> visual_shader;
+	Ref<VisualShaderGroup> editing_visual_shader_group; // TODO: Do we need this here?
+
 	HashMap<int, Link> links;
 	List<ShaderGraph::Connection> connections;
 
@@ -203,6 +204,13 @@ class VisualShaderEditor : public ShaderEditor {
 	GDCLASS(VisualShaderEditor, ShaderEditor);
 	friend class VisualShaderGraphPlugin;
 
+	Ref<VisualShader> visual_shader;
+	ShaderGraph* editing_shader_graph;
+	Ref<VisualShaderGroup> editing_visual_shader_group; // Might be null.
+
+	Ref<ShaderMaterial> preview_material;
+	Ref<Environment> env;
+
 	PopupPanel *property_editor_popup = nullptr;
 	EditorProperty *property_editor = nullptr;
 	int editing_node = -1;
@@ -210,9 +218,6 @@ class VisualShaderEditor : public ShaderEditor {
 	Ref<VisualShaderEditedProperty> edited_property_holder;
 
 	MaterialEditor *material_editor = nullptr;
-	Ref<VisualShader> visual_shader;
-	Ref<ShaderMaterial> preview_material;
-	Ref<Environment> env;
 	String param_filter_name;
 	EditorProperty *current_prop = nullptr;
 	VBoxContainer *shader_preview_vbox = nullptr;
@@ -669,6 +674,7 @@ public:
 	virtual Size2 get_minimum_size() const override;
 
 	Ref<VisualShader> get_visual_shader() const { return visual_shader; }
+	ShaderGraph* get_shader_graph() const { return editing_shader_graph; }
 
 	VisualShaderEditor();
 };
