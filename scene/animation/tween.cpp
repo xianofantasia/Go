@@ -859,6 +859,10 @@ MethodTweener::MethodTweener() {
 
 void SubtweenTweener::start() {
 	finished = false;
+
+	// Reset the subtween
+	subtween->stop();
+	subtween->play();
 }
 
 bool SubtweenTweener::step(double &r_delta) {
@@ -878,7 +882,6 @@ bool SubtweenTweener::step(double &r_delta) {
 	// because it is now a child of this parent tween where those things *are*
 	// checked. But this should still be noted in the documentation.
 	if (!subtween->step(r_delta)) {
-		subtween->clear();
 		_finish();
 		return false;
 	} else {
