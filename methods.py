@@ -127,7 +127,7 @@ def add_source_files(self, sources, files, allow_gen=False):
 
 def disable_warnings(self):
     # 'self' is the environment
-    if self.msvc and not using_clang(self):
+    if self.msvc and not self.using_clang:
         # We have to remove existing warning level defines before appending /w,
         # otherwise we get: "warning D9025 : overriding '/W3' with '/w'"
         self["CCFLAGS"] = [x for x in self["CCFLAGS"] if not (x.startswith("/W") or x.startswith("/w"))]
@@ -658,7 +658,7 @@ def detect_darwin_sdk_path(platform, env):
 def is_apple_clang(env):
     if env["platform"] not in ["macos", "ios"]:
         return False
-    if not using_clang(env):
+    if not env.using_clang:
         return False
     try:
         version = subprocess.check_output([env.subst(env["CXX"]), "--version"]).strip().decode("utf-8")
@@ -690,7 +690,7 @@ def get_compiler_version(env):
         "apple_patch3": -1,
     }
 
-    if env.msvc and not using_clang(env):
+    if env.msvc and not env.using_clang:
         try:
             # FIXME: `-latest` works for most cases, but there are edge-cases where this would
             # benefit from a more nuanced search.
