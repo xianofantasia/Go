@@ -159,6 +159,9 @@ public:
 	static void (*_image_compress_etc2_func)(Image *, UsedChannels p_channels);
 	static void (*_image_compress_astc_func)(Image *, ASTCFormat p_format);
 
+	static Error (*_image_compress_bptc_rd_func)(Image *, UsedChannels p_channels);
+	static Error (*_image_compress_bc_rd_func)(Image *, UsedChannels p_channels);
+
 	static void (*_image_decompress_bc)(Image *);
 	static void (*_image_decompress_bptc)(Image *);
 	static void (*_image_decompress_etc1)(Image *);
@@ -353,7 +356,7 @@ public:
 	static int get_format_block_size(Format p_format);
 	static void get_format_min_pixel_size(Format p_format, int &r_w, int &r_h);
 
-	static int get_image_data_size(int p_width, int p_height, Format p_format, bool p_mipmaps = false);
+	static int64_t get_image_data_size(int p_width, int p_height, Format p_format, bool p_mipmaps = false);
 	static int get_image_required_mipmaps(int p_width, int p_height, Format p_format);
 	static Size2i get_image_mipmap_size(int p_width, int p_height, Format p_format, int p_mipmap);
 	static int64_t get_image_mipmap_offset(int p_width, int p_height, Format p_format, int p_mipmap);
@@ -383,10 +386,13 @@ public:
 	void fix_alpha_edges();
 	void premultiply_alpha();
 	void srgb_to_linear();
+	void linear_to_srgb();
 	void normal_map_to_xy();
 	Ref<Image> rgbe_to_srgb();
 	Ref<Image> get_image_from_mipmap(int p_mipmap) const;
 	void bump_map_to_normal_map(float bump_scale = 1.0);
+
+	bool detect_signed(bool p_include_mips = true) const;
 
 	void blit_rect(const Ref<Image> &p_src, const Rect2i &p_src_rect, const Point2i &p_dest);
 	void blit_rect_mask(const Ref<Image> &p_src, const Ref<Image> &p_mask, const Rect2i &p_src_rect, const Point2i &p_dest);

@@ -243,7 +243,7 @@ void GLManagerNative_Windows::_nvapi_setup_profile() {
 		}
 	}
 
-	NVDRS_SETTING ogl_thread_control_setting = { 0 };
+	NVDRS_SETTING ogl_thread_control_setting = {};
 	ogl_thread_control_setting.version = NVDRS_SETTING_VER;
 	ogl_thread_control_setting.settingId = OGL_THREAD_CONTROL_ID;
 	ogl_thread_control_setting.settingType = NVDRS_DWORD_TYPE;
@@ -259,7 +259,7 @@ void GLManagerNative_Windows::_nvapi_setup_profile() {
 		return;
 	}
 
-	NVDRS_SETTING vrr_mode_setting = { 0 };
+	NVDRS_SETTING vrr_mode_setting = {};
 	vrr_mode_setting.version = NVDRS_SETTING_VER;
 	vrr_mode_setting.settingId = VRR_MODE_ID;
 	vrr_mode_setting.settingType = NVDRS_DWORD_TYPE;
@@ -452,8 +452,8 @@ Error GLManagerNative_Windows::window_create(DisplayServer::WindowID p_window_id
 		return FAILED;
 	}
 
-	// WARNING: p_window_id is an eternally growing integer since popup windows keep coming and going
-	// and each of them has a higher id than the previous, so it must be used in a map not a vector
+	// WARNING: `p_window_id` is an eternally growing integer since popup windows keep coming and going
+	// and each of them has a higher id than the previous, so it must be used in a map not a vector.
 	_windows[p_window_id] = win;
 
 	// make current

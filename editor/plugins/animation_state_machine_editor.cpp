@@ -618,7 +618,7 @@ bool AnimationNodeStateMachineEditor::_create_submenu(PopupMenu *p_menu, Ref<Ani
 
 			if (ansm == state_machine) {
 				end_menu->add_item(E, nodes_to_connect.size());
-				nodes_to_connect.push_back(state_machine->end_node);
+				nodes_to_connect.push_back(AnimationNodeStateMachine::END_NODE);
 				continue;
 			}
 
@@ -1111,10 +1111,10 @@ void AnimationNodeStateMachineEditor::_state_machine_draw() {
 		Ref<StyleBox> node_frame_style = is_selected ? theme_cache.node_frame_selected : theme_cache.node_frame;
 		state_machine_draw->draw_style_box(node_frame_style, nr.node);
 
-		if (!is_selected && state_machine->start_node == name) {
+		if (!is_selected && AnimationNodeStateMachine::START_NODE == name) {
 			state_machine_draw->draw_style_box(theme_cache.node_frame_start, nr.node);
 		}
-		if (!is_selected && state_machine->end_node == name) {
+		if (!is_selected && AnimationNodeStateMachine::END_NODE == name) {
 			state_machine_draw->draw_style_box(theme_cache.node_frame_end, nr.node);
 		}
 		if (playing && (blend_from == name || current == name || travel_path.has(name))) {
@@ -1188,7 +1188,7 @@ void AnimationNodeStateMachineEditor::_state_machine_pos_draw_individual(const S
 		return;
 	}
 
-	if (p_name == state_machine->start_node || p_name == state_machine->end_node || p_name.is_empty()) {
+	if (p_name == AnimationNodeStateMachine::START_NODE || p_name == AnimationNodeStateMachine::END_NODE || p_name.is_empty()) {
 		return;
 	}
 
@@ -1271,18 +1271,18 @@ void AnimationNodeStateMachineEditor::_notification(int p_what) {
 			error_panel->add_theme_style_override(SceneStringName(panel), theme_cache.error_panel_style);
 			error_label->add_theme_color_override(SceneStringName(font_color), theme_cache.error_color);
 
-			tool_select->set_icon(theme_cache.tool_icon_select);
-			tool_create->set_icon(theme_cache.tool_icon_create);
-			tool_connect->set_icon(theme_cache.tool_icon_connect);
+			tool_select->set_button_icon(theme_cache.tool_icon_select);
+			tool_create->set_button_icon(theme_cache.tool_icon_create);
+			tool_connect->set_button_icon(theme_cache.tool_icon_connect);
 
 			switch_mode->clear();
 			switch_mode->add_icon_item(theme_cache.transition_icon_immediate, TTR("Immediate"));
 			switch_mode->add_icon_item(theme_cache.transition_icon_sync, TTR("Sync"));
 			switch_mode->add_icon_item(theme_cache.transition_icon_end, TTR("At End"));
 
-			auto_advance->set_icon(theme_cache.play_icon_auto);
+			auto_advance->set_button_icon(theme_cache.play_icon_auto);
 
-			tool_erase->set_icon(theme_cache.tool_icon_erase);
+			tool_erase->set_button_icon(theme_cache.tool_icon_erase);
 
 			play_mode->clear();
 			play_mode->add_icon_item(theme_cache.play_icon_travel, TTR("Travel"));
@@ -1523,7 +1523,7 @@ void AnimationNodeStateMachineEditor::_erase_selected(const bool p_nested_action
 		undo_redo->create_action(TTR("Node Removed"));
 
 		for (int i = 0; i < node_rects.size(); i++) {
-			if (node_rects[i].node_name == state_machine->start_node || node_rects[i].node_name == state_machine->end_node) {
+			if (node_rects[i].node_name == AnimationNodeStateMachine::START_NODE || node_rects[i].node_name == AnimationNodeStateMachine::END_NODE) {
 				continue;
 			}
 
@@ -1583,7 +1583,7 @@ void AnimationNodeStateMachineEditor::_update_mode() {
 	if (tool_select->is_pressed()) {
 		selection_tools_hb->show();
 		bool nothing_selected = selected_nodes.is_empty() && selected_transition_from == StringName() && selected_transition_to == StringName();
-		bool start_end_selected = selected_nodes.size() == 1 && (*selected_nodes.begin() == state_machine->start_node || *selected_nodes.begin() == state_machine->end_node);
+		bool start_end_selected = selected_nodes.size() == 1 && (*selected_nodes.begin() == AnimationNodeStateMachine::START_NODE || *selected_nodes.begin() == AnimationNodeStateMachine::END_NODE);
 		tool_erase->set_disabled(nothing_selected || start_end_selected || read_only);
 	} else {
 		selection_tools_hb->hide();

@@ -350,7 +350,7 @@ bool GI::voxel_gi_is_using_two_bounces(RID p_voxel_gi) const {
 
 bool GI::voxel_gi_is_interior(RID p_voxel_gi) const {
 	VoxelGI *voxel_gi = voxel_gi_owner.get_or_null(p_voxel_gi);
-	ERR_FAIL_NULL_V(voxel_gi, 0);
+	ERR_FAIL_NULL_V(voxel_gi, false);
 	return voxel_gi->interior;
 }
 
@@ -1790,6 +1790,10 @@ void GI::SDFGI::debug_probes(RID p_framebuffer, const uint32_t p_view_count, con
 }
 
 void GI::SDFGI::pre_process_gi(const Transform3D &p_transform, RenderDataRD *p_render_data) {
+	if (p_render_data->sdfgi_update_data == nullptr) {
+		return;
+	}
+
 	RendererRD::LightStorage *light_storage = RendererRD::LightStorage::get_singleton();
 	/* Update general SDFGI Buffer */
 
