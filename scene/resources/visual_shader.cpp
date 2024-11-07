@@ -93,18 +93,29 @@ bool ShaderGraph::_set(const StringName &p_name, const Variant &p_value) {
 		} else if (node_info == "position") {
 			set_node_position(id, p_value);
 			return true;
-		} else if (node_info == "size") {
-			((VisualShaderNodeResizableBase *)get_node(id).ptr())->set_size(p_value);
-			return true;
+			VisualShaderNodeResizableBase *resizable_vn = Object::cast_to<VisualShaderNodeResizableBase>(get_node(id).ptr());
+			if (resizable_vn) {
+				resizable_vn->set_size(p_value);
+				return true;
+			}
 		} else if (node_info == "input_ports") {
-			((VisualShaderNodeGroupBase *)get_node(id).ptr())->set_inputs(p_value);
-			return true;
+			VisualShaderNodeGroupBase *group_vn = Object::cast_to<VisualShaderNodeGroupBase>(get_node(id).ptr());
+			if (group_vn) {
+				group_vn->set_inputs(p_value);
+				return true;
+			}
 		} else if (node_info == "output_ports") {
-			((VisualShaderNodeGroupBase *)get_node(id).ptr())->set_outputs(p_value);
-			return true;
+			VisualShaderNodeGroupBase *group_vn = Object::cast_to<VisualShaderNodeGroupBase>(get_node(id).ptr());
+			if (group_vn) {
+				group_vn->set_outputs(p_value);
+				return true;
+			}
 		} else if (node_info == "expression") {
-			((VisualShaderNodeExpression *)get_node(id).ptr())->set_expression(p_value);
-			return true;
+			VisualShaderNodeExpression *expression_vn = Object::cast_to<VisualShaderNodeExpression>(get_node(id).ptr());
+			if (expression_vn) {
+				expression_vn->set_expression(p_value);
+				return true;
+			}
 		}
 	}
 	return false;
@@ -137,17 +148,29 @@ bool ShaderGraph::_get(const StringName &p_name, Variant &r_ret) const {
 			r_ret = get_node_position(id);
 			return true;
 		} else if (what == "size") {
-			r_ret = ((VisualShaderNodeResizableBase *)get_node(id).ptr())->get_size();
-			return true;
+			VisualShaderNodeResizableBase *resizable_vn = Object::cast_to<VisualShaderNodeResizableBase>(get_node(id).ptr());
+			if (resizable_vn) {
+				r_ret = resizable_vn->get_size();
+				return true;
+			}
 		} else if (what == "input_ports") {
-			r_ret = ((VisualShaderNodeGroupBase *)get_node(id).ptr())->get_inputs();
-			return true;
+			VisualShaderNodeGroupBase *group_vn = Object::cast_to<VisualShaderNodeGroupBase>(get_node(id).ptr());
+			if (group_vn) {
+				r_ret = group_vn->get_inputs();
+				return true;
+			}
 		} else if (what == "output_ports") {
-			r_ret = ((VisualShaderNodeGroupBase *)get_node(id).ptr())->get_outputs();
-			return true;
+			VisualShaderNodeGroupBase *group_vn = Object::cast_to<VisualShaderNodeGroupBase>(get_node(id).ptr());
+			if (group_vn) {
+				r_ret = group_vn->get_outputs();
+				return true;
+			}
 		} else if (what == "expression") {
-			r_ret = ((VisualShaderNodeExpression *)get_node(id).ptr())->get_expression();
-			return true;
+			VisualShaderNodeExpression *expression_vn = Object::cast_to<VisualShaderNodeExpression>(get_node(id).ptr());
+			if (expression_vn) {
+				r_ret = expression_vn->get_expression();
+				return true;
+			}
 		}
 	}
 	return false;
@@ -1981,17 +2004,29 @@ bool VisualShader::_set(const StringName &p_name, const Variant &p_value) {
 			set_node_position(type, id, p_value);
 			return true;
 		} else if (what == "size") {
-			((VisualShaderNodeResizableBase *)get_node(type, id).ptr())->set_size(p_value);
-			return true;
+			VisualShaderNodeResizableBase *resizable_vn = Object::cast_to<VisualShaderNodeResizableBase>(get_node(type, id).ptr());
+			if (resizable_vn) {
+				resizable_vn->set_size(p_value);
+				return true;
+			}
 		} else if (what == "input_ports") {
-			((VisualShaderNodeGroupBase *)get_node(type, id).ptr())->set_inputs(p_value);
-			return true;
+			VisualShaderNodeGroupBase *group_vn = Object::cast_to<VisualShaderNodeGroupBase>(get_node(type, id).ptr());
+			if (group_vn) {
+				group_vn->set_inputs(p_value);
+				return true;
+			}
 		} else if (what == "output_ports") {
-			((VisualShaderNodeGroupBase *)get_node(type, id).ptr())->set_outputs(p_value);
-			return true;
+			VisualShaderNodeGroupBase *group_vn = Object::cast_to<VisualShaderNodeGroupBase>(get_node(type, id).ptr());
+			if (group_vn) {
+				group_vn->set_outputs(p_value);
+				return true;
+			}
 		} else if (what == "expression") {
-			((VisualShaderNodeExpression *)get_node(type, id).ptr())->set_expression(p_value);
-			return true;
+			VisualShaderNodeExpression *expression_vn = Object::cast_to<VisualShaderNodeExpression>(get_node(type, id).ptr());
+			if (expression_vn) {
+				expression_vn->set_expression(p_value);
+				return true;
+			}
 		}
 	}
 	return false;
@@ -2068,17 +2103,29 @@ bool VisualShader::_get(const StringName &p_name, Variant &r_ret) const {
 			r_ret = get_node_position(type, id);
 			return true;
 		} else if (what == "size") {
-			r_ret = ((VisualShaderNodeResizableBase *)get_node(type, id).ptr())->get_size();
-			return true;
+			VisualShaderNodeResizableBase *resizable_vn = Object::cast_to<VisualShaderNodeResizableBase>(get_node(type, id).ptr());
+			if (resizable_vn) {
+				r_ret = resizable_vn->get_size();
+				return true;
+			}
 		} else if (what == "input_ports") {
-			r_ret = ((VisualShaderNodeGroupBase *)get_node(type, id).ptr())->get_inputs();
-			return true;
+			VisualShaderNodeGroupBase *group_vn = Object::cast_to<VisualShaderNodeGroupBase>(get_node(type, id).ptr());
+			if (group_vn) {
+				r_ret = group_vn->get_inputs();
+				return true;
+			}
 		} else if (what == "output_ports") {
-			r_ret = ((VisualShaderNodeGroupBase *)get_node(type, id).ptr())->get_outputs();
-			return true;
+			VisualShaderNodeGroupBase *group_vn = Object::cast_to<VisualShaderNodeGroupBase>(get_node(type, id).ptr());
+			if (group_vn) {
+				r_ret = group_vn->get_outputs();
+				return true;
+			}
 		} else if (what == "expression") {
-			r_ret = ((VisualShaderNodeExpression *)get_node(type, id).ptr())->get_expression();
-			return true;
+			VisualShaderNodeExpression *expression_vn = Object::cast_to<VisualShaderNodeExpression>(get_node(type, id).ptr());
+			if (expression_vn) {
+				r_ret = expression_vn->get_expression();
+				return true;
+			}
 		}
 	}
 	return false;
@@ -5190,6 +5237,10 @@ VisualShaderNodeGroupBase::VisualShaderNodeGroupBase() {
 
 ////////////// Group
 
+void VisualShaderNodeGroup::_emit_changed() {
+	emit_changed();
+}
+
 void VisualShaderNodeGroup::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_group", "group"), &VisualShaderNodeGroup::set_group);
 	ClassDB::bind_method(D_METHOD("get_group"), &VisualShaderNodeGroup::get_group);
@@ -5198,7 +5249,10 @@ void VisualShaderNodeGroup::_bind_methods() {
 }
 
 String VisualShaderNodeGroup::get_caption() const {
-	return "Node group";
+	if (group.is_null()) {
+		return TTR("Node group");
+	}
+	return group->get_group_name();
 }
 
 int VisualShaderNodeGroup::get_input_port_count() const {
@@ -5258,6 +5312,9 @@ bool VisualShaderNodeGroup::is_use_prop_slots() const {
 }
 
 void VisualShaderNodeGroup::set_group(const Ref<VisualShaderGroup> &p_group) {
+	if (group == p_group) {
+		return;
+	}
 	group = p_group;
 	emit_changed();
 }
@@ -5702,6 +5759,9 @@ VisualShaderNodeVaryingGetter::VisualShaderNodeVaryingGetter() {
 }
 
 void VisualShaderGroup::_bind_methods() {
+	ClassDB::bind_method(D_METHOD("set_group_name", "name"), &VisualShaderGroup::set_group_name);
+	ClassDB::bind_method(D_METHOD("get_group_name"), &VisualShaderGroup::get_group_name);
+
 	ClassDB::bind_method(D_METHOD("add_node", "node", "position", "id"), &VisualShaderGroup::add_node);
 	ClassDB::bind_method(D_METHOD("get_node", "id"), &VisualShaderGroup::get_node);
 
@@ -5725,6 +5785,9 @@ void VisualShaderGroup::_bind_methods() {
 
 	ClassDB::bind_method(D_METHOD("attach_node_to_frame", "id", "frame"), &VisualShaderGroup::attach_node_to_frame);
 	ClassDB::bind_method(D_METHOD("detach_node_from_frame", "id"), &VisualShaderGroup::detach_node_from_frame);
+
+	ADD_PROPERTY(PropertyInfo(Variant::STRING, "group_name"), "set_group_name", "get_group_name");
+	ADD_PROPERTY_DEFAULT("group_name", "Node group");
 }
 
 bool VisualShaderGroup::_set(const StringName &p_name, const Variant &p_value) {
@@ -5743,8 +5806,22 @@ Ref<ShaderGraph> VisualShaderGroup::get_graph() const {
 	return graph;
 }
 
+void VisualShaderGroup::set_group_name(const String &p_name) {
+	if (group_name == p_name) {
+		return;
+	}
+
+	group_name = p_name;
+	emit_changed();
+}
+
+String VisualShaderGroup::get_group_name() const {
+	return group_name;
+}
+
 void VisualShaderGroup::add_input_port(int p_id, VisualShaderNode::PortType p_type, const String &p_name) {
 	input_ports[p_id] = Port{ p_type, p_name };
+	emit_changed();
 }
 
 VisualShaderGroup::Port VisualShaderGroup::get_input_port(int p_id) const {
@@ -5761,10 +5838,12 @@ Vector<VisualShaderGroup::Port> VisualShaderGroup::get_input_ports() const {
 
 void VisualShaderGroup::remove_input_port(int p_id) {
 	input_ports.erase(p_id);
+	emit_changed();
 }
 
 void VisualShaderGroup::add_output_port(int p_id, VisualShaderNode::PortType p_type, const String &p_name) {
 	output_ports[p_id] = Port{ p_type, p_name };
+	emit_changed();
 }
 
 VisualShaderGroup::Port VisualShaderGroup::get_output_port(int p_id) const {
@@ -5781,6 +5860,7 @@ Vector<VisualShaderGroup::Port> VisualShaderGroup::get_output_ports() const {
 
 void VisualShaderGroup::remove_output_port(int p_id) {
 	output_ports.erase(p_id);
+	emit_changed();
 }
 
 void VisualShaderGroup::add_node(const Ref<VisualShaderNode> &p_node, const Vector2 &p_position, int p_id) {
@@ -5878,6 +5958,7 @@ VisualShaderGroup::VisualShaderGroup() {
 	graph->nodes[NODE_ID_GROUP_OUTPUT].node = output_node;
 	graph->nodes[NODE_ID_GROUP_OUTPUT].position = Vector2(400, 150);
 
+	group_name == TTR("Node group");
 	add_input_port(0, VisualShaderNode::PORT_TYPE_SCALAR, "hardcoded_test in");
 	add_output_port(0, VisualShaderNode::PORT_TYPE_SCALAR, "hardcoded_test out");
 }
