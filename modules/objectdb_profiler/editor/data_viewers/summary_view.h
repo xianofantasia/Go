@@ -41,7 +41,7 @@ class SummaryBlurb : public MarginContainer {
 	GDCLASS(SummaryBlurb, MarginContainer);
 
 public:
-	RichTextLabel *label;
+	RichTextLabel *label = nullptr;
 
 	SummaryBlurb(const String &p_title, const String &p_rtl_content);
 };
@@ -50,8 +50,8 @@ class SnapshotSummaryView : public SnapshotView {
 	GDCLASS(SnapshotSummaryView, SnapshotView);
 
 protected:
-	VBoxContainer *blurb_list;
-	CenterContainer *explainer_text;
+	VBoxContainer *blurb_list = nullptr;
+	CenterContainer *explainer_text = nullptr;
 
 	void _push_overview_blurb(const String &p_title, GameStateSnapshot *p_snapshot);
 	void _push_node_blurb(const String &p_title, GameStateSnapshot *p_snapshot);

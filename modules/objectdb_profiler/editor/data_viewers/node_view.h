@@ -37,16 +37,16 @@
 #include "snapshot_view.h"
 
 // When diffing in split view, we have two trees/filters
-// so this struct is used to group their properties together
+// so this struct is used to group their properties together.
 struct NodeTreeElements {
 	NodeTreeElements() {
 		tree = nullptr;
 		filter_bar = nullptr;
 		root = nullptr;
 	}
-	Tree *tree;
-	TreeSortAndFilterBar *filter_bar;
-	VBoxContainer *root;
+	Tree *tree = nullptr;
+	TreeSortAndFilterBar *filter_bar = nullptr;
+	VBoxContainer *root = nullptr;
 };
 
 class SnapshotNodeView : public SnapshotView {
@@ -56,7 +56,7 @@ protected:
 	NodeTreeElements main_tree;
 	NodeTreeElements diff_tree;
 	Tree *active_tree = nullptr;
-	PopupMenu *choose_object_menu;
+	PopupMenu *choose_object_menu = nullptr;
 	bool combined_diff_view = true;
 	HashMap<TreeItem *, List<SnapshotDataObject *>> tree_item_owners;
 
@@ -69,10 +69,10 @@ protected:
 	void _choose_object_pressed(int p_object_idx, bool p_confirm_override);
 	void _show_choose_object_menu();
 
-	// _add_snapshot_to_tree, _add_object_to_tree, and _add_child_named work together to add items to the node tree
+	// `_add_snapshot_to_tree`, `_add_object_to_tree`, and `_add_child_named` work together to add items to the node tree.
 	// They support adding two snapshots to the same tree, and will highlight rows to show additions and removals.
-	// _add_snapshot_to_tree walks the root items in the tree and adds them first, then _add_object_to_tree recursively
-	// adds all the child items. _add_child_named is used by both to add each individual items.
+	// `_add_snapshot_to_tree` walks the root items in the tree and adds them first, then `_add_object_to_tree` recursively
+	// adds all the child items. `_add_child_named` is used by both to add each individual items.
 	void _add_snapshot_to_tree(Tree *p_tree, GameStateSnapshot *p_snapshot, const String &p_diff_group_name = "");
 	void _add_object_to_tree(TreeItem *p_parent_item, SnapshotDataObject *p_data, const String &p_diff_group_name = "");
 	TreeItem *_add_child_named(Tree *p_tree, TreeItem *p_item, SnapshotDataObject *p_item_owner, const String &p_diff_group_name = "");

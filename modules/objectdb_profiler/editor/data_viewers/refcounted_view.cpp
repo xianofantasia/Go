@@ -30,12 +30,9 @@
 
 #include "refcounted_view.h"
 
-#include "core/object/object.h"
 #include "editor/editor_node.h"
 #include "editor/themes/editor_scale.h"
 #include "scene/gui/rich_text_label.h"
-
-#include "../snapshot_data.h"
 
 SnapshotRefCountedView::SnapshotRefCountedView() {
 	set_name(TTR("RefCounted"));
@@ -58,7 +55,7 @@ void SnapshotRefCountedView::show_snapshot(GameStateSnapshot *p_data, GameStateS
 	refs_column->set_anchors_preset(LayoutPreset::PRESET_FULL_RECT);
 	refs_view->add_child(refs_column);
 
-	// Tree of Refs
+	// Tree of Refs.
 	refs_list = memnew(Tree);
 
 	filter_bar = memnew(TreeSortAndFilterBar(refs_list, TTR("Filter RefCounteds")));
@@ -112,7 +109,7 @@ void SnapshotRefCountedView::show_snapshot(GameStateSnapshot *p_data, GameStateS
 	refs_list->set_h_size_flags(SizeFlags::SIZE_EXPAND_FILL);
 	refs_list->set_v_size_flags(SizeFlags::SIZE_EXPAND_FILL);
 
-	// View of the selected refcounted
+	// View of the selected refcounted.
 	ref_details = memnew(VBoxContainer);
 	ref_details->set_custom_minimum_size(Size2(200, 0) * EDSCALE);
 	refs_view->add_child(ref_details);
@@ -125,7 +122,7 @@ void SnapshotRefCountedView::show_snapshot(GameStateSnapshot *p_data, GameStateS
 		_insert_data(diff_data, TTR("B"));
 	}
 
-	// push the split as far right as possible
+	// Push the split as far right as possible.
 	filter_bar->select_sort(default_sort.descending);
 	filter_bar->apply();
 	refs_list->set_selected(refs_list->get_root()->get_first_child());
@@ -164,12 +161,12 @@ void SnapshotRefCountedView::_insert_data(GameStateSnapshot *p_snapshot, const S
 		item->set_text(offset + 2, String::num_uint64(native_refs));
 		item->set_text(offset + 3, String::num_uint64(objectdb_refs));
 		item->set_text(offset + 4, String::num_uint64(total_refs));
-		item->set_text(offset + 5, String::num_uint64(ref_cycles.size())); // compute cycles and attach it to refcounted object
+		item->set_text(offset + 5, String::num_uint64(ref_cycles.size())); // Compute cycles and attach it to refcounted object.
 
 		if (total_refs == ref_cycles.size()) {
-			// often, references are held by the engine so we can't know if we're stuck in a cycle or not
+			// Often, references are held by the engine so we can't know if we're stuck in a cycle or not
 			// But if the full cycle is visible in the ObjectDB,
-			// tell the user by highlighting the cells in red
+			// tell the user by highlighting the cells in red.
 			item->set_custom_bg_color(offset + 5, Color(1, 0, 0, 0.1));
 		}
 	}
@@ -252,7 +249,7 @@ void SnapshotRefCountedView::_refcounted_selected() {
 		inbound_tree->set_v_scroll_enabled(false);
 		inbound_tree->connect("item_selected", callable_mp(this, &SnapshotRefCountedView::_ref_selected).bind(inbound_tree));
 
-		// The same reference can exist as multiple properties of an object (for example, gdscript @export properties exist twice)
+		// The same reference can exist as multiple properties of an object (for example, gdscript `@export` properties exist twice).
 		// We flag for the user if a property is exposed multiple times so it's clearer why there are more references in the list
 		// than the ObjectDB References count would suggest.
 		HashMap<ObjectID, int> property_repeat_count;
@@ -302,7 +299,7 @@ void SnapshotRefCountedView::_ref_selected(Tree *p_source_tree) {
 	TreeItem *target = reference_item_map[p_source_tree->get_selected()];
 	if (target) {
 		if (!target->is_visible()) {
-			// clear the filter if we can't see the node we just chose
+			// Clear the filter if we can't see the node we just chose.
 			filter_bar->clear_filter();
 		}
 		target->get_tree()->deselect_all();

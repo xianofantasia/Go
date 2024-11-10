@@ -30,7 +30,6 @@
 
 #include "node_view.h"
 
-#include "core/object/object.h"
 #include "editor/editor_node.h"
 #include "editor/themes/editor_scale.h"
 #include "scene/gui/check_button.h"
@@ -58,15 +57,15 @@ void SnapshotNodeView::show_snapshot(GameStateSnapshot *p_data, GameStateSnapsho
 	if (diff_data) {
 		CheckButton *diff_mode_toggle = memnew(CheckButton(TTR("Combine Diff")));
 		diff_mode_toggle->set_pressed(combined_diff_view);
-		diff_mode_toggle->connect("toggled", callable_mp(this, &SnapshotNodeView::_toggle_diff_mode));
+		diff_mode_toggle->connect(SceneStringName(toggled), callable_mp(this, &SnapshotNodeView::_toggle_diff_mode));
 		main_tree.filter_bar->add_child(diff_mode_toggle);
 		main_tree.filter_bar->move_child(diff_mode_toggle, 0);
 
 		if (combined_diff_view) {
-			// merge the snapshots together and add a diff
+			// Merge the snapshots together and add a diff.
 			_add_snapshot_to_tree(main_tree.tree, diff_data, "+");
 		} else {
-			// add a second column with the diff snapshot
+			// Add a second column with the diff snapshot.
 			diff_tree = _make_node_tree(TTR("B Nodes"), diff_data);
 			diff_sides->add_child(diff_tree.root);
 			_add_snapshot_to_tree(diff_tree.tree, diff_data, "");
@@ -117,7 +116,7 @@ NodeTreeElements SnapshotNodeView::_make_node_tree(const String &p_tree_name, Ga
 void SnapshotNodeView::_node_selected(Tree *p_tree_selected_from) {
 	active_tree = p_tree_selected_from;
 	if (diff_tree.tree) {
-		// deselect nodes in non-active tree, if needed
+		// Deselect nodes in non-active tree, if needed.
 		if (active_tree == main_tree.tree) {
 			diff_tree.tree->deselect_all();
 		}
@@ -135,14 +134,14 @@ void SnapshotNodeView::_node_selected(Tree *p_tree_selected_from) {
 	}
 	if (objects.size() == 2) {
 		// This happens if we're in the combined diff view and the node exists in both trees
-		// The user has to specify which version of the node they want to see in the inspector
+		// The user has to specify which version of the node they want to see in the inspector.
 		_show_choose_object_menu();
 	}
 }
 
 void SnapshotNodeView::_toggle_diff_mode(bool p_state) {
 	combined_diff_view = p_state;
-	show_snapshot(snapshot_data, diff_data); // redraw everything when we toggle views
+	show_snapshot(snapshot_data, diff_data); // Redraw everything when we toggle views.
 }
 
 void SnapshotNodeView::_notification(int p_what) {
@@ -176,7 +175,7 @@ void SnapshotNodeView::_add_object_to_tree(TreeItem *p_parent_item, SnapshotData
 TreeItem *SnapshotNodeView::_add_child_named(Tree *p_tree, TreeItem *p_item, SnapshotDataObject *p_item_owner, const String &p_diff_group_name) {
 	bool has_group = !p_diff_group_name.is_empty();
 	const String &item_name = p_item_owner->extra_debug_data["node_name"];
-	// Find out if this node already exists
+	// Find out if this node already exists.
 	TreeItem *child_item = nullptr;
 	if (has_group) {
 		for (int idx = 0; idx < p_item->get_child_count(); idx++) {
@@ -189,10 +188,10 @@ TreeItem *SnapshotNodeView::_add_child_named(Tree *p_tree, TreeItem *p_item, Sna
 	}
 
 	if (child_item) {
-		// if it exists, clear the background color because we now know it exists in both trees
+		// If it exists, clear the background color because we now know it exists in both trees.
 		child_item->clear_custom_bg_color(0);
 	} else {
-		// Add the new node and set it's background color to green or red depending on which snapshot it's a part of
+		// Add the new node and set it's background color to green or red depending on which snapshot it's a part of.
 		if (p_item_owner->extra_debug_data["node_is_scene_root"]) {
 			child_item = p_tree->get_root() ? p_tree->get_root() : p_tree->create_item();
 		} else {
@@ -214,7 +213,7 @@ TreeItem *SnapshotNodeView::_add_child_named(Tree *p_tree, TreeItem *p_item, Sna
 }
 
 // Each node in the tree may be part of one or two snapshots. This tracks that relationship
-// so we can display the correct data in the inspector if a node is clicked
+// so we can display the correct data in the inspector if a node is clicked.
 void SnapshotNodeView::_add_tree_item_owner(TreeItem *p_item, SnapshotDataObject *p_owner) {
 	if (!tree_item_owners.has(p_item)) {
 		tree_item_owners.insert(p_item, List<SnapshotDataObject *>());

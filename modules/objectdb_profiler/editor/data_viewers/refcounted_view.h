@@ -41,10 +41,10 @@ class SnapshotRefCountedView : public SnapshotView {
 	GDCLASS(SnapshotRefCountedView, SnapshotView);
 
 protected:
-	Tree *refs_list;
-	VBoxContainer *ref_details;
-	TreeSortAndFilterBar *filter_bar;
-	HSplitContainer *refs_view;
+	Tree *refs_list = nullptr;
+	VBoxContainer *ref_details = nullptr;
+	TreeSortAndFilterBar *filter_bar = nullptr;
+	HSplitContainer *refs_view = nullptr;
 
 	HashMap<TreeItem *, SnapshotDataObject *> item_data_map;
 	HashMap<SnapshotDataObject *, TreeItem *> data_item_map;

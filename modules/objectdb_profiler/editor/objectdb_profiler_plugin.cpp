@@ -37,7 +37,7 @@ bool ObjectDBProfilerDebuggerPlugin::has_capture(const String &p_capture) const 
 }
 
 bool ObjectDBProfilerDebuggerPlugin::capture(const String &p_message, const Array &p_data, int p_index) {
-	ERR_FAIL_COND_V(debugger_panel == nullptr, false);
+	ERR_FAIL_NULL_V(debugger_panel, false);
 	return debugger_panel->handle_debug_message(p_message, p_data, p_index);
 }
 

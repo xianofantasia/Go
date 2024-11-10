@@ -5595,9 +5595,9 @@ String Tree::get_tooltip(const Point2 &p_pos) const {
 	Point2 pos = p_pos - theme_cache.panel_style->get_offset();
 	pos.y -= _get_title_button_height();
 
-	// we're in the header
+	// `pos.y` less than 0 indicates we're in the header.
 	if (pos.y < 0) {
-		// get the x position of the cursor
+		// Get the x position of the cursor.
 		real_t pos_x = p_pos.x;
 		if (is_layout_rtl()) {
 			pos_x = get_size().width - pos_x;
@@ -5607,7 +5607,7 @@ String Tree::get_tooltip(const Point2 &p_pos) const {
 			pos_x += h_scroll->get_value();
 		}
 
-		// then walk forwards until we know which column we're in
+		// Walk forwards until we know which column we're in.
 		int next_edge = 0;
 		int i = 0;
 		for (; i < columns.size(); i++) {
@@ -5620,7 +5620,7 @@ String Tree::get_tooltip(const Point2 &p_pos) const {
 			return columns[i - 1].title_tooltip;
 		}
 
-		// if the column has no tooltip, use the default
+		// If the column has no tooltip, use the default.
 		return Control::get_tooltip(p_pos);
 	}
 

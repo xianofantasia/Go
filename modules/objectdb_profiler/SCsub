@@ -7,11 +7,11 @@ env_mp = env_modules.Clone()
 
 module_obj = []
 
-# Only include in editor and debug builds
+# Only include in editor and debug builds.
 if env_mp.debug_features:
     env_mp.add_source_files(module_obj, "*.cpp")
 
-    # Only the editor needs these files, don't include them in the game
+    # Only the editor needs these files, don't include them in the game.
     if env.editor_build:
         env_mp.add_source_files(module_obj, "editor/*.cpp")
         env_mp.add_source_files(module_obj, "editor/data_viewers/*.cpp")

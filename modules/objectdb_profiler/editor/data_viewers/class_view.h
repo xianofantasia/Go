@@ -43,21 +43,20 @@ struct ClassData {
 	String parent_class_name;
 	HashSet<String> child_classes;
 	List<SnapshotDataObject *> instances;
-	TreeItem *tree_node;
+	TreeItem *tree_node = nullptr;
 	HashMap<GameStateSnapshot *, int> recursive_instance_count_cache;
 
 	int instance_count(GameStateSnapshot *p_snapshot = nullptr);
 	int get_recursive_instance_count(HashMap<String, ClassData> &p_all_classes, GameStateSnapshot *p_snapshot = nullptr);
 };
 
-// Bootstrapped by the plugin
 class SnapshotClassView : public SnapshotView {
 	GDCLASS(SnapshotClassView, SnapshotView);
 
 protected:
-	Tree *class_tree;
-	Tree *object_list;
-	Tree *diff_object_list;
+	Tree *class_tree = nullptr;
+	Tree *object_list = nullptr;
+	Tree *diff_object_list = nullptr;
 
 	void _object_selected(Tree *p_tree);
 	void _class_selected();

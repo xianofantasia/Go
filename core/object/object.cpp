@@ -799,7 +799,7 @@ Variant Object::callp(const StringName &p_method, const Variant **p_args, int p_
 
 	if (script_instance) {
 		ret = script_instance->callp(p_method, p_args, p_argcount, r_error);
-		//force jumptable
+		// Force jump table.
 		switch (r_error.error) {
 			case Callable::CallError::CALL_OK:
 				return ret;
@@ -2196,13 +2196,13 @@ void postinitialize_handler(Object *p_object) {
 	p_object->_postinitialize();
 }
 
-void ObjectDB::debug_objects(DebugFunc p_func, void *user_data) {
+void ObjectDB::debug_objects(DebugFunc p_func, void *p_user_data) {
 #ifdef DEBUG_ENABLED
 	ObjectDB::waiting_to_debug = true;
 	writes_blocked.wait();
 	for (uint32_t i = 0, count = slot_count; i < slot_max && count != 0; i++) {
 		if (object_slots[i].validator) {
-			p_func(object_slots[i].object, user_data);
+			p_func(object_slots[i].object, p_user_data);
 		}
 	}
 	ObjectDB::waiting_to_debug = false;

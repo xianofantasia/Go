@@ -30,7 +30,6 @@
 
 #include "class_view.h"
 
-#include "core/object/object.h"
 #include "editor/editor_node.h"
 #include "editor/themes/editor_scale.h"
 #include "scene/gui/panel_container.h"
@@ -119,7 +118,7 @@ void SnapshotClassView::show_snapshot(GameStateSnapshot *p_data, GameStateSnapsh
 		class_tree->set_column_title_tooltip_text(1, TTR("A: ") + snapshot_data->name);
 		class_tree->set_column_title_tooltip_text(2, TTR("B: ") + diff_data->name);
 	}
-	class_tree->connect("item_selected", callable_mp(this, &SnapshotClassView::_class_selected));
+	class_tree->connect(SceneStringName(item_selected), callable_mp(this, &SnapshotClassView::_class_selected));
 	class_tree->set_h_size_flags(SizeFlags::SIZE_EXPAND_FILL);
 	class_tree->set_v_size_flags(SizeFlags::SIZE_EXPAND_FILL);
 	class_tree->set_anchors_preset(LayoutPreset::PRESET_FULL_RECT);
@@ -168,10 +167,10 @@ void SnapshotClassView::show_snapshot(GameStateSnapshot *p_data, GameStateSnapsh
 		}
 	}
 
-	// Icons won't load until the frame after show_snapshot is called. Not sure why, but just defer the load
+	// Icons won't load until the frame after show_snapshot is called. Not sure why, but just defer the load.
 	callable_mp(this, &SnapshotClassView::_notification).call_deferred(NOTIFICATION_THEME_CHANGED);
 
-	// default to sort by descending count. Putting the biggest groups at the top is generally pretty interesting
+	// Default to sort by descending count. Putting the biggest groups at the top is generally pretty interesting.
 	filter_bar->select_sort(default_sort.descending);
 	filter_bar->apply();
 }
@@ -194,25 +193,25 @@ Tree *SnapshotClassView::_make_object_list_tree(const String &p_column_name) {
 void SnapshotClassView::_add_objects_to_class_map(HashMap<String, ClassData> &p_class_map, GameStateSnapshot *p_objects) {
 	for (const KeyValue<ObjectID, SnapshotDataObject *> &pair : p_objects->objects) {
 		StringName class_name = StringName(pair.value->type_name);
-		StringName parent_class_name = class_name != "" ? ClassDB::get_parent_class(class_name) : "";
+		StringName parent_class_name = class_name != StringName() ? ClassDB::get_parent_class(class_name) : "";
 
 		p_class_map[class_name].instances.push_back(pair.value);
 
-		// go up the tree and insert all parents/grandparents
-		while (class_name != "") {
+		// Go up the tree and insert all parents/grandparents.
+		while (class_name != StringName()) {
 			if (!p_class_map.has(class_name)) {
 				p_class_map[class_name] = ClassData(class_name, parent_class_name);
 			}
 
 			if (!p_class_map.has(parent_class_name)) {
-				// leave our grandparent blank for now. Next iteration of the while loop will fill it in
+				// Leave our grandparent blank for now. Next iteration of the while loop will fill it in.
 				p_class_map[parent_class_name] = ClassData(parent_class_name, "");
 			}
 			p_class_map[class_name].parent_class_name = parent_class_name;
 			p_class_map[parent_class_name].child_classes.insert(class_name);
 
 			class_name = parent_class_name;
-			parent_class_name = class_name != "" ? ClassDB::get_parent_class(class_name) : "";
+			parent_class_name = class_name != StringName() ? ClassDB::get_parent_class(class_name) : "";
 		}
 	}
 }

@@ -39,7 +39,7 @@
 SpanningHeader::SpanningHeader(const String &p_text) {
 	StyleBoxFlat *title_sbf = memnew(StyleBoxFlat);
 	title_sbf->set_bg_color(EditorNode::get_singleton()->get_editor_theme()->get_color("dark_color_3", "Editor"));
-	add_theme_style_override("panel", title_sbf);
+	add_theme_style_override(SceneStringName(panel), title_sbf);
 	set_h_size_flags(SizeFlags::SIZE_EXPAND_FILL);
 	Label *title = memnew(Label(p_text));
 	add_child(title);
@@ -64,11 +64,11 @@ void TreeSortAndFilterBar::_apply_filter(TreeItem *p_current_node) {
 		return;
 	}
 
-	// reset ourself to default state
+	// Reset ourself to default state.
 	p_current_node->set_visible(true);
 	p_current_node->clear_custom_color(0);
 
-	// go through each child and filter them
+	// Go through each child and filter them.
 	bool any_child_visible = false;
 	for (TreeItem *child = p_current_node->get_first_child(); child; child = child->get_next()) {
 		_apply_filter(child);
@@ -77,10 +77,10 @@ void TreeSortAndFilterBar::_apply_filter(TreeItem *p_current_node) {
 		}
 	}
 
-	// check if we match the filter
+	// Check if we match the filter.
 	String filter_str = filter_edit->get_text().strip_edges(true, true).to_lower();
 
-	// we are visible
+	// We are visible.
 	bool matches_filter = false;
 	for (int i = 0; i < managed_tree->get_columns(); i++) {
 		if (p_current_node->get_text(i).to_lower().contains(filter_str)) {
@@ -91,10 +91,10 @@ void TreeSortAndFilterBar::_apply_filter(TreeItem *p_current_node) {
 	if (matches_filter || filter_str.is_empty()) {
 		p_current_node->set_visible(true);
 	} else if (any_child_visible) {
-		// we have a visible child
+		// We have a visible child.
 		p_current_node->set_custom_color(0, get_theme_color(SNAME("font_disabled_color"), EditorStringName(Editor)));
 	} else {
-		// we and out children aren't visible
+		// We and out children aren't visible.
 		p_current_node->set_visible(false);
 	}
 }
@@ -104,7 +104,7 @@ void TreeSortAndFilterBar::_apply_sort() {
 		return;
 	}
 	for (int i = 0; i != sort_button->get_popup()->get_item_count(); i++) {
-		// update the popup buttons to be checked/unchecked
+		// Update the popup buttons to be checked/unchecked.
 		sort_button->get_popup()->set_item_checked(i, (i == (int)current_sort));
 	}
 

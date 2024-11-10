@@ -33,13 +33,16 @@
 
 #include "editor/debugger/editor_debugger_inspector.h"
 
+class GameStateSnapshot;
+class GameStateSnapshotRef;
+
 class SnapshotDataObject : public EditorDebuggerRemoteObject {
 	GDCLASS(SnapshotDataObject, EditorDebuggerRemoteObject);
 
-	HashSet<ObjectID> _unique_references(const HashMap<String, ObjectID> &refs);
+	HashSet<ObjectID> _unique_references(const HashMap<String, ObjectID> &p_refs);
 
 public:
-	class GameStateSnapshot *snapshot;
+	GameStateSnapshot *snapshot = nullptr;
 	Dictionary extra_debug_data;
 	HashMap<String, ObjectID> outbound_references;
 	HashMap<String, ObjectID> inbound_references;
@@ -60,8 +63,8 @@ public:
 class GameStateSnapshot : public Object {
 	GDCLASS(GameStateSnapshot, Object);
 
-	void _get_outbound_references(Variant &p_var, HashMap<String, ObjectID> &r_ret_val, String p_current_path = "");
-	void _get_rc_cycles(SnapshotDataObject *p_obj, SnapshotDataObject *p_source_obj, HashSet<SnapshotDataObject *> p_traversed_objs, List<String> &r_ret_val, String p_current_path = "");
+	void _get_outbound_references(Variant &p_var, HashMap<String, ObjectID> &r_ret_val, const String &p_current_path = "");
+	void _get_rc_cycles(SnapshotDataObject *p_obj, SnapshotDataObject *p_source_obj, HashSet<SnapshotDataObject *> p_traversed_objs, List<String> &r_ret_val, const String &p_current_path = "");
 
 public:
 	String name;
@@ -69,18 +72,18 @@ public:
 	Dictionary snapshot_context;
 
 	// Ideally, this would extend EditorDebuggerRemoteObject and be refcounted, but we can't have it both ways.
-	// so, instead we have this static 'constructor' that returns a RefCounted wrapper around a GameStateSnapshot
-	static Ref<class GameStateSnapshotRef> create_ref(const String &p_snapshot_name, const Vector<uint8_t> &p_snapshot_buffer);
+	// So, instead we have this static 'constructor' that returns a RefCounted wrapper around a GameStateSnapshot.
+	static Ref<GameStateSnapshotRef> create_ref(const String &p_snapshot_name, const Vector<uint8_t> &p_snapshot_buffer);
 	~GameStateSnapshot();
 
 	void recompute_references();
 };
 
-// Thin RefCounted wrapper around a GameStateSnapshot
+// Thin RefCounted wrapper around a GameStateSnapshot.
 class GameStateSnapshotRef : public RefCounted {
 	GDCLASS(GameStateSnapshotRef, RefCounted);
 
-	GameStateSnapshot *gamestate_snapshot;
+	GameStateSnapshot *gamestate_snapshot = nullptr;
 
 public:
 	GameStateSnapshotRef(GameStateSnapshot *p_gss) :

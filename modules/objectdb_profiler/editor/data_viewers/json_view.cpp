@@ -41,8 +41,8 @@ SnapshotJsonView::SnapshotJsonView() {
 }
 
 void SnapshotJsonView::show_snapshot(GameStateSnapshot *p_data, GameStateSnapshot *p_diff_data) {
-	// lock isn't released until the data processing background thread has finished running
-	// and the json has been passed back to the main thread and displayed
+	// Lock isn't released until the data processing background thread has finished running
+	// and the json has been passed back to the main thread and displayed.
 	SnapshotView::show_snapshot(p_data, p_diff_data);
 
 	HSplitContainer *box = memnew(HSplitContainer);
@@ -130,31 +130,31 @@ String SnapshotJsonView::_snapshot_to_json(GameStateSnapshot *p_snapshot) {
 }
 
 void SnapshotJsonView::_serialization_worker(void *p_ud) {
-	// ~0.3s to serialize snapshots in a small game
+	// About 0.3s to serialize snapshots in a small game.
 	SnapshotJsonView *self = static_cast<SnapshotJsonView *>(p_ud);
 	GameStateSnapshot *snapshot_data = self->snapshot_data;
 	GameStateSnapshot *diff_data = self->diff_data;
-	// let the message queue figure out if self is still a valid object or if it's been destroyed
+	// let the message queue figure out if self is still a valid object or if it's been destroyed.
 	MessageQueue::get_singleton()->push_call(self, "_update_text",
 			snapshot_data, diff_data,
 			_snapshot_to_json(snapshot_data),
 			_snapshot_to_json(diff_data));
 }
 
-void SnapshotJsonView::_update_text(GameStateSnapshot *p_data_ptr, GameStateSnapshot *p_diff_ptr, String p_data_str, String p_diff_data_str) {
+void SnapshotJsonView::_update_text(GameStateSnapshot *p_data_ptr, GameStateSnapshot *p_diff_ptr, const String &p_data_str, const String &p_diff_data_str) {
 	if (p_data_ptr != snapshot_data || p_diff_ptr != diff_data) {
 		// If the GameStateSnapshots we generated strings for no longer match the snapshots we asked for,
 		// throw these results away. We'll get more from a different worker process.
 		return;
 	}
 
-	// ~5s to insert the string into the editor
+	// About 5s to insert the string into the editor.
 	json_content->set_text(p_data_str);
 	if (diff_data) {
 		diff_json_content->set_text(p_diff_data_str);
 	}
 	loading_panel->queue_free();
-	// loading json done, release the lock
+	// Loading json done, release the lock.
 }
 
 void SnapshotJsonView::_bind_methods() {

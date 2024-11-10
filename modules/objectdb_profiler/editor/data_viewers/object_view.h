@@ -41,12 +41,12 @@ class SnapshotObjectView : public SnapshotView {
 	GDCLASS(SnapshotObjectView, SnapshotView);
 
 protected:
-	Tree *object_list;
-	Tree *inbound_tree;
-	Tree *outbound_tree;
-	VBoxContainer *object_details;
-	TreeSortAndFilterBar *filter_bar;
-	HSplitContainer *objects_view;
+	Tree *object_list = nullptr;
+	Tree *inbound_tree = nullptr;
+	Tree *outbound_tree = nullptr;
+	VBoxContainer *object_details = nullptr;
+	TreeSortAndFilterBar *filter_bar = nullptr;
+	HSplitContainer *objects_view = nullptr;
 
 	HashMap<TreeItem *, SnapshotDataObject *> item_data_map;
 	HashMap<SnapshotDataObject *, TreeItem *> data_item_map;

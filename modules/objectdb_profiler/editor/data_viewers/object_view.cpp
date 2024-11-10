@@ -30,11 +30,8 @@
 
 #include "object_view.h"
 
-#include "../snapshot_data.h"
-#include "core/object/object.h"
 #include "editor/editor_node.h"
 #include "editor/themes/editor_scale.h"
-#include "scene/gui/control.h"
 #include "scene/gui/rich_text_label.h"
 
 SnapshotObjectView::SnapshotObjectView() {
@@ -74,7 +71,7 @@ void SnapshotObjectView::show_snapshot(GameStateSnapshot *p_data, GameStateSnaps
 	TreeSortAndFilterBar::SortOptionIndexes default_sort = filter_bar->add_sort_option(
 			TTR("Outbound References"), TreeSortAndFilterBar::SortType::NUMERIC_SORT, sort_idx++);
 
-	// Tree of objects
+	// Tree of objects.
 	object_list->set_select_mode(Tree::SelectMode::SELECT_ROW);
 	object_list->set_custom_minimum_size(Size2(200, 0) * EDSCALE);
 	object_list->set_hide_folding(false);
@@ -125,9 +122,9 @@ void SnapshotObjectView::show_snapshot(GameStateSnapshot *p_data, GameStateSnaps
 	filter_bar->select_sort(default_sort.descending);
 	filter_bar->apply();
 	object_list->set_selected(object_list->get_root()->get_first_child());
-	// expand the left panel as wide as we can. Passing INT_MAX or any very large int will have the opposite effect
+	// Expand the left panel as wide as we can. Passing `INT_MAX` or any very large int will have the opposite effect
 	// and shrink the left panel as small as it can go. So, pass an int we know is larger than the current panel, but not
-	// 'very' large (whatever that exact number is)
+	// 'very' large (whatever that exact number is).
 	objects_view->set_split_offset(get_viewport_rect().size.x);
 }
 
@@ -209,7 +206,7 @@ void SnapshotObjectView::_reference_selected(Tree *p_source_tree) {
 	TreeItem *other = reference_item_map[ref_item];
 	if (other) {
 		if (!other->is_visible()) {
-			// clear the filter if we can't see the node we just chose
+			// Clear the filter if we can't see the node we just chose.
 			filter_bar->clear_filter();
 		}
 		other->get_tree()->deselect_all();

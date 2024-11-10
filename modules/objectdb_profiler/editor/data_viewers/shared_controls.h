@@ -51,13 +51,13 @@ public:
 	DarkPanelContainer();
 };
 
-// Utility class that creates a filter text box and a sort menu
-// Takes a reference to a tree and applies the sort and filter to the tree
+// Utility class that creates a filter text box and a sort menu.
+// Takes a reference to a tree and applies the sort and filter to the tree.
 class TreeSortAndFilterBar : public HBoxContainer {
 	GDCLASS(TreeSortAndFilterBar, HBoxContainer);
 
 public:
-	// The ways a column can be sorted, either alphabetically or numerically
+	// The ways a column can be sorted, either alphabetically or numerically.
 	enum SortType {
 		NUMERIC_SORT = 0,
 		ALPHA_SORT,
@@ -65,31 +65,31 @@ public:
 	};
 
 	// Returned when a new sort is added. Each new sort can be either ascending or descending,
-	// so we return the index of each sort option
+	// so we return the index of each sort option.
 	struct SortOptionIndexes {
 		int ascending;
 		int descending;
 	};
 
 protected:
-	// Context needed to sort the tree in a certain way
-	// combines a sort type, the column to apply it, and if it's ascending or descending
+	// Context needed to sort the tree in a certain way.
+	// Combines a sort type, the column to apply it, and if it's ascending or descending.
 	struct SortItem {
 		SortItem() {}
-		SortItem(int p_id, String p_label, SortType p_type, bool p_ascending, int p_column) :
+		SortItem(int p_id, const String &p_label, SortType p_type, bool p_ascending, int p_column) :
 				id(p_id), label(p_label), type(p_type), ascending(p_ascending), column(p_column) {}
-		int id;
+		int id = 0;
 		String label;
-		SortType type;
-		bool ascending;
-		int column;
+		SortType type = SortType::NUMERIC_SORT;
+		bool ascending = false;
+		int column = 0;
 	};
 
 	struct TreeItemColumn {
 		TreeItemColumn() {}
 		TreeItemColumn(TreeItem *p_item, int p_column) :
 				item(p_item), column(p_column) {}
-		TreeItem *item;
+		TreeItem *item = nullptr;
 		int column;
 	};
 
@@ -105,9 +105,9 @@ protected:
 		}
 	};
 
-	LineEdit *filter_edit;
-	MenuButton *sort_button;
-	Tree *managed_tree;
+	LineEdit *filter_edit = nullptr;
+	MenuButton *sort_button = nullptr;
+	Tree *managed_tree = nullptr;
 	HashMap<int, SortItem> sort_items;
 	int current_sort = 0;
 

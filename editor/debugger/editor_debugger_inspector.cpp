@@ -35,22 +35,23 @@
 #include "editor/editor_node.h"
 #include "scene/debugger/scene_debugger.h"
 
-EditorDebuggerRemoteObject::EditorDebuggerRemoteObject(SceneDebuggerObject &obj) {
-	remote_object_id = obj.id;
-	type_name = obj.class_name;
-	update_props(obj, nullptr, nullptr);
+EditorDebuggerRemoteObject::EditorDebuggerRemoteObject(SceneDebuggerObject &p_obj) {
+	remote_object_id = p_obj.id;
+	type_name = p_obj.class_name;
+	update_props(p_obj, nullptr, nullptr);
 	update();
 }
 
 bool EditorDebuggerRemoteObject::_is_read_only() {
-	return readonly;
+	return read_only;
 }
 
-void EditorDebuggerRemoteObject::set_readonly(bool p_readonly) {
-	readonly = p_readonly;
+void EditorDebuggerRemoteObject::set_read_only(bool p_read_only) {
+	read_only = p_read_only;
 }
-bool EditorDebuggerRemoteObject::get_readonly() {
-	return readonly;
+
+bool EditorDebuggerRemoteObject::is_read_only() {
+	return _is_read_only();
 }
 
 bool EditorDebuggerRemoteObject::_set(const StringName &p_name, const Variant &p_value) {
@@ -92,9 +93,9 @@ String EditorDebuggerRemoteObject::get_title() {
 	}
 }
 
-int EditorDebuggerRemoteObject::update_props(SceneDebuggerObject &obj, HashSet<String> *changed, HashSet<Ref<Resource>> *remote_dependencies) {
+int EditorDebuggerRemoteObject::update_props(SceneDebuggerObject &p_obj, HashSet<String> *p_changed, HashSet<Ref<Resource>> *p_remote_dependencies) {
 	int new_props_added = 0;
-	for (SceneDebuggerObject::SceneDebuggerProperty &property : obj.properties) {
+	for (SceneDebuggerObject::SceneDebuggerProperty &property : p_obj.properties) {
 		PropertyInfo &pinfo = property.first;
 		Variant &var = property.second;
 
@@ -105,8 +106,8 @@ int EditorDebuggerRemoteObject::update_props(SceneDebuggerObject &obj, HashSet<S
 					// built-in resource
 					String base_path = path.get_slice("::", 0);
 					Ref<Resource> dependency = ResourceLoader::load(base_path);
-					if (dependency.is_valid() && remote_dependencies) {
-						remote_dependencies->insert(dependency);
+					if (dependency.is_valid() && p_remote_dependencies) {
+						p_remote_dependencies->insert(dependency);
 					}
 				}
 				var = ResourceLoader::load(path);
@@ -115,7 +116,7 @@ int EditorDebuggerRemoteObject::update_props(SceneDebuggerObject &obj, HashSet<S
 					if (get_script() != var) {
 						set_script(Ref<RefCounted>());
 						Ref<Script> scr(var);
-						if (!scr.is_null()) {
+						if (scr.is_valid()) {
 							ScriptInstance *scr_instance = scr->placeholder_instance_create(this);
 							if (scr_instance) {
 								set_script_and_instance(var, scr_instance);
@@ -135,8 +136,8 @@ int EditorDebuggerRemoteObject::update_props(SceneDebuggerObject &obj, HashSet<S
 		} else {
 			if (bool(Variant::evaluate(Variant::OP_NOT_EQUAL, prop_values[pinfo.name], var))) {
 				prop_values[pinfo.name] = var;
-				if (changed) {
-					changed->insert(pinfo.name);
+				if (p_changed) {
+					p_changed->insert(pinfo.name);
 				}
 			}
 		}
@@ -157,8 +158,8 @@ void EditorDebuggerRemoteObject::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_remote_object_id"), &EditorDebuggerRemoteObject::get_remote_object_id);
 
 	ClassDB::bind_method(D_METHOD("_is_read_only"), &EditorDebuggerRemoteObject::_is_read_only);
-	ClassDB::bind_method(D_METHOD("set_readonly", "p_readonly"), &EditorDebuggerRemoteObject::set_readonly);
-	ClassDB::bind_method(D_METHOD("get_readonly"), &EditorDebuggerRemoteObject::get_readonly);
+	ClassDB::bind_method(D_METHOD("set_read_only", "p_read_only"), &EditorDebuggerRemoteObject::set_read_only);
+	ClassDB::bind_method(D_METHOD("is_read_only"), &EditorDebuggerRemoteObject::is_read_only);
 
 	ADD_SIGNAL(MethodInfo("value_edited", PropertyInfo(Variant::INT, "object_id"), PropertyInfo(Variant::STRING, "property"), PropertyInfo("value")));
 }

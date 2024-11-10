@@ -31,18 +31,17 @@
 #include "snapshot_data.h"
 
 #include "core/core_bind.h"
-#include "core/object/object.h"
-#include "core/object/ref_counted.h"
 #include "core/version.h"
 #include "modules/gdscript/gdscript.h"
 #include "scene/debugger/scene_debugger.h"
 #include "zlib.h"
 
 String SnapshotDataObject::get_node_path() {
-	if (!is_node())
+	if (!is_node()) {
 		return "";
+	}
 	SnapshotDataObject *current = this;
-	String path = "";
+	String path;
 
 	while (true) {
 		String current_node_name = current->extra_debug_data["node_name"];
@@ -64,7 +63,7 @@ String SnapshotDataObject::get_node_path() {
 String SnapshotDataObject::get_name() {
 	String found_type_name = type_name;
 
-	// Ideally, we will name it after the script attached to it
+	// Ideally, we will name it after the script attached to it.
 	if (!get_script().is_null()) {
 		Object *maybe_script_obj = get_script().get_validated_object();
 
@@ -103,10 +102,10 @@ bool SnapshotDataObject::is_class(const String &p_base_class) {
 	return ClassDB::is_parent_class(type_name, p_base_class);
 }
 
-HashSet<ObjectID> SnapshotDataObject::_unique_references(const HashMap<String, ObjectID> &refs) {
+HashSet<ObjectID> SnapshotDataObject::_unique_references(const HashMap<String, ObjectID> &p_refs) {
 	HashSet<ObjectID> obj_set;
 
-	for (const KeyValue<String, ObjectID> &pair : refs) {
+	for (const KeyValue<String, ObjectID> &pair : p_refs) {
 		obj_set.insert(pair.value);
 	}
 
@@ -121,7 +120,7 @@ HashSet<ObjectID> SnapshotDataObject::get_unique_inbound_references() {
 	return _unique_references(inbound_references);
 }
 
-void GameStateSnapshot::_get_outbound_references(Variant &p_var, HashMap<String, ObjectID> &r_ret_val, String p_current_path) {
+void GameStateSnapshot::_get_outbound_references(Variant &p_var, HashMap<String, ObjectID> &r_ret_val, const String &p_current_path) {
 	String path_divider = p_current_path.size() > 0 ? "/" : ""; // make sure we don't start with a /
 	switch (p_var.get_type()) {
 		case Variant::Type::INT:
@@ -138,7 +137,7 @@ void GameStateSnapshot::_get_outbound_references(Variant &p_var, HashMap<String,
 			List<Variant> keys;
 			dict.get_key_list(&keys);
 			for (Variant &k : keys) {
-				// The dictionary key _could be_ an object. If it is, we name the key property with the same name as the value, but with _key appended to it
+				// The dictionary key _could be_ an object. If it is, we name the key property with the same name as the value, but with _key appended to it.
 				_get_outbound_references(k, r_ret_val, p_current_path + path_divider + (String)k + "_key");
 				Variant v = dict.get(k, Variant());
 				_get_outbound_references(v, r_ret_val, p_current_path + path_divider + (String)k);
@@ -165,14 +164,14 @@ void GameStateSnapshot::_get_rc_cycles(
 		SnapshotDataObject *p_source_obj,
 		HashSet<SnapshotDataObject *> p_traversed_objs,
 		List<String> &r_ret_val,
-		String p_current_path) {
-	// we're at the end of this branch and it was a cycle
+		const String &p_current_path) {
+	// We're at the end of this branch and it was a cycle.
 	if (p_obj == p_source_obj && p_current_path != "") {
 		r_ret_val.push_back(p_current_path);
 		return;
 	}
 
-	// go through each of our children and try traversing them
+	// Go through each of our children and try traversing them.
 	for (const KeyValue<String, ObjectID> &next_child : p_obj->outbound_references) {
 		SnapshotDataObject *next_obj = p_obj->snapshot->objects[next_child.value];
 		String next_name = next_obj == p_source_obj ? "self" : next_obj->get_name();
@@ -207,7 +206,7 @@ void GameStateSnapshot::recompute_references() {
 		obj.value->outbound_references = refs;
 
 		for (const KeyValue<String, ObjectID> &kv : refs) {
-			// get the guy we are pointing to, and indicate the name of _our_ property that is pointing to them
+			// Get the guy we are pointing to, and indicate the name of _our_ property that is pointing to them.
 			if (objects.has(kv.value)) {
 				objects[kv.value]->inbound_references[kv.key] = obj.key;
 			}
@@ -215,8 +214,9 @@ void GameStateSnapshot::recompute_references() {
 	}
 
 	for (const KeyValue<ObjectID, SnapshotDataObject *> &obj : objects) {
-		if (!obj.value->is_class(RefCounted::get_class_static()) || obj.value->is_class(WeakRef::get_class_static()))
+		if (!obj.value->is_class(RefCounted::get_class_static()) || obj.value->is_class(WeakRef::get_class_static())) {
 			continue;
+		}
 		HashSet<SnapshotDataObject *> traversed_objs;
 		List<String> cycles;
 
@@ -270,7 +270,7 @@ Ref<GameStateSnapshotRef> GameStateSnapshot::create_ref(const String &p_snapshot
 
 		sn->ptr()->objects[obj.id] = memnew(SnapshotDataObject(obj, sn.ptr()->ptr()));
 		sn->ptr()->objects[obj.id]->extra_debug_data = (Dictionary)sliced[3];
-		sn->ptr()->objects[obj.id]->set_readonly(true);
+		sn->ptr()->objects[obj.id]->set_read_only(true);
 	}
 
 	sn->ptr()->recompute_references();

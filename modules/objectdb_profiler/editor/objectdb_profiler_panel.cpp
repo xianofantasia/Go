@@ -32,8 +32,6 @@
 
 #include "../snapshot_collector.h"
 #include "core/config/project_settings.h"
-#include "core/object/object.h"
-#include "core/object/ref_counted.h"
 #include "core/os/memory.h"
 #include "core/os/time.h"
 #include "data_viewers/class_view.h"
@@ -47,7 +45,6 @@
 #include "editor/editor_node.h"
 #include "editor/themes/editor_scale.h"
 #include "scene/gui/button.h"
-#include "scene/gui/control.h"
 #include "scene/gui/label.h"
 #include "scene/gui/option_button.h"
 #include "scene/gui/split_container.h"
@@ -95,7 +92,7 @@ bool ObjectDBProfilerPanel::handle_debug_message(const String &p_message, const 
 		}
 
 		take_snapshot->set_text(TTR("Visualizing Snapshot"));
-		// Wait a frame just so the button has a chance to update it's text so the user knows what's going on
+		// Wait a frame just so the button has a chance to update it's text so the user knows what's going on.
 		get_tree()->connect("process_frame", callable_mp(this, &ObjectDBProfilerPanel::receive_snapshot).bind(request_id), CONNECT_ONE_SHOT);
 		return true;
 	}
@@ -106,7 +103,7 @@ void ObjectDBProfilerPanel::receive_snapshot(int request_id) {
 	const Vector<uint8_t> &in_data = partial_snapshots[request_id].data;
 	String snapshot_file_name = Time::get_singleton()->get_datetime_string_from_system(false).replace("T", "_").replace(":", "-");
 	Ref<DirAccess> snapshot_dir = _get_and_create_snapshot_storage_dir();
-	if (!snapshot_dir.is_null()) {
+	if (snapshot_dir.is_valid()) {
 		Error err;
 		String current_dir = snapshot_dir->get_current_dir();
 		String joined_dir = current_dir.path_join(snapshot_file_name) + ".odb_snapshot";
@@ -114,7 +111,7 @@ void ObjectDBProfilerPanel::receive_snapshot(int request_id) {
 		Ref<FileAccess> file = FileAccess::open(joined_dir, FileAccess::WRITE, &err);
 		if (err == OK) {
 			file->store_buffer(in_data);
-			file->close(); // RAII could do this typically, but we want to read the file in _show_selected_snapshot, so we have to finalize the write before that
+			file->close(); // RAII could do this typically, but we want to read the file in _show_selected_snapshot, so we have to finalize the write before that.
 
 			_add_snapshot_button(snapshot_file_name, joined_dir);
 			snapshot_list->deselect_all();
@@ -190,7 +187,7 @@ Ref<GameStateSnapshotRef> ObjectDBProfilerPanel::get_snapshot(const String &p_sn
 			return nullptr;
 		}
 
-		Vector<uint8_t> content = snapshot_file->get_buffer(snapshot_file->get_length()); // we want to split on newlines, so normalize them
+		Vector<uint8_t> content = snapshot_file->get_buffer(snapshot_file->get_length()); // We want to split on newlines, so normalize them.
 		if (content.is_empty()) {
 			ERR_PRINT("ObjectDB Snapshot file is empty: " + full_file_path);
 			return nullptr;
@@ -219,8 +216,8 @@ void ObjectDBProfilerPanel::show_snapshot(const String &p_snapshot_file_name, co
 }
 
 void ObjectDBProfilerPanel::_view_tab_changed(int p_tab_idx) {
-	// populating tabs only on tab changed because we're handling a lot of data,
-	// and the editor freezes for while if we try to populate every tab at once
+	// Populating tabs only on tab changed because we're handling a lot of data,
+	// and the editor freezes for while if we try to populate every tab at once.
 	SnapshotView *view = cast_to<SnapshotView>(view_tabs->get_current_tab_control());
 	GameStateSnapshot *snapshot = current_snapshot.is_null() ? nullptr : current_snapshot->ptr();
 	GameStateSnapshot *diff = diff_snapshot.is_null() ? nullptr : diff_snapshot->ptr();
@@ -247,9 +244,9 @@ void ObjectDBProfilerPanel::_snapshot_rmb(const Vector2 &p_pos, MouseButton p_bu
 	}
 	rmb_menu->clear(false);
 
-	rmb_menu->add_icon_item(get_editor_theme_icon(SNAME("Rename")), TTR("Rename Snapshot"), RC_MENU_OPERATIONS::RENAME);
-	rmb_menu->add_icon_item(get_editor_theme_icon(SNAME("Folder")), TTR("Show in Folder"), RC_MENU_OPERATIONS::SHOW_IN_FOLDER);
-	rmb_menu->add_icon_item(get_editor_theme_icon(SNAME("Remove")), TTR("Delete Snapshot"), RC_MENU_OPERATIONS::DELETE);
+	rmb_menu->add_icon_item(get_editor_theme_icon(SNAME("Rename")), TTR("Rename Snapshot"), OdbProfilerMenuOptions::ODB_MENU_RENAME);
+	rmb_menu->add_icon_item(get_editor_theme_icon(SNAME("Folder")), TTR("Show in Folder"), OdbProfilerMenuOptions::ODB_MENU_SHOW_IN_FOLDER);
+	rmb_menu->add_icon_item(get_editor_theme_icon(SNAME("Remove")), TTR("Delete Snapshot"), OdbProfilerMenuOptions::ODB_MENU_DELETE);
 
 	rmb_menu->reset_size();
 	rmb_menu->set_position(get_screen_position() + p_pos);
@@ -260,24 +257,24 @@ void ObjectDBProfilerPanel::_rmb_menu_pressed(int p_tool, bool p_confirm_overrid
 	String file_path = snapshot_list->get_selected()->get_metadata(0);
 	String global_path = ProjectSettings::get_singleton()->globalize_path(file_path);
 	switch (rmb_menu->get_item_id(p_tool)) {
-		case RC_MENU_OPERATIONS::SHOW_IN_FOLDER: {
+		case OdbProfilerMenuOptions::ODB_MENU_SHOW_IN_FOLDER: {
 			OS::get_singleton()->shell_show_in_file_manager(global_path, true);
 			break;
 		}
-		case RC_MENU_OPERATIONS::DELETE: {
+		case OdbProfilerMenuOptions::ODB_MENU_DELETE: {
 			DirAccess::remove_file_or_error(global_path);
 			snapshot_list->get_root()->remove_child(snapshot_list->get_selected());
 			if (snapshot_list->get_root()->get_child_count() > 0) {
 				snapshot_list->set_selected(snapshot_list->get_root()->get_first_child());
 			} else {
-				// If we deleted the last snapshot, jump back to the summary tab and clear everything out
+				// If we deleted the last snapshot, jump back to the summary tab and clear everything out.
 				view_tabs->set_current_tab(0);
 				clear_snapshot();
 			}
 			_update_diff_items();
 			break;
 		}
-		case RC_MENU_OPERATIONS::RENAME: {
+		case OdbProfilerMenuOptions::ODB_MENU_RENAME: {
 			snapshot_list->edit_selected(true);
 			break;
 		}
@@ -377,7 +374,7 @@ ObjectDBProfilerPanel::ObjectDBProfilerPanel() {
 	diff_button->connect("item_selected", callable_mp(this, &ObjectDBProfilerPanel::_apply_diff));
 	diff_button_and_label->add_child(diff_button);
 
-	// tabs of various views right for each snapshot
+	// Tabs of various views right for each snapshot.
 	view_tabs = memnew(TabContainer);
 	root_container->add_child(view_tabs);
 	view_tabs->set_custom_minimum_size(Size2(300 * EDSCALE, 0));
@@ -393,7 +390,7 @@ ObjectDBProfilerPanel::ObjectDBProfilerPanel() {
 
 	set_enabled(false);
 
-	// load all the snapshot names from disk
+	// Load all the snapshot names from disk.
 	Ref<DirAccess> snapshot_dir = _get_and_create_snapshot_storage_dir();
 	TreeItem *last_snapshot_button = nullptr;
 	if (!snapshot_dir.is_null()) {
@@ -406,7 +403,7 @@ ObjectDBProfilerPanel::ObjectDBProfilerPanel() {
 
 			last_snapshot_button = _add_snapshot_button(name_parts[0], snapshot_dir->get_current_dir().path_join(file_name));
 		}
-		// simulate clicking on the last snapshot we loaded from disk
+		// Simulate clicking on the last snapshot we loaded from disk.
 		if (last_snapshot_button != nullptr) {
 			snapshot_list->set_selected(last_snapshot_button);
 			snapshot_list->ensure_cursor_is_visible();
@@ -427,7 +424,7 @@ void ObjectDBProfilerPanel::_update_diff_items() {
 	for (int i = 0; i < snapshot_list->get_root()->get_child_count(); i++) {
 		const String &name = snapshot_list->get_root()->get_child(i)->get_text(0);
 		diff_button->add_item(name);
-		diff_options[i + 1] = name; // 0 = none, so i + 1
+		diff_options[i + 1] = name; // 0 = none, so i + 1.
 	}
 }
 

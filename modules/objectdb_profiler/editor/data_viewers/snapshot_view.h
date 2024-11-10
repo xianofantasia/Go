@@ -38,8 +38,8 @@ class SnapshotView : public Control {
 	GDCLASS(SnapshotView, Control);
 
 protected:
-	GameStateSnapshot *snapshot_data;
-	GameStateSnapshot *diff_data;
+	GameStateSnapshot *snapshot_data = nullptr;
+	GameStateSnapshot *diff_data = nullptr;
 
 	List<TreeItem *> _get_children_recursive(Tree *p_tree);
 

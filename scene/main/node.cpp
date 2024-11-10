@@ -3259,7 +3259,7 @@ void Node::_set_tree(SceneTree *p_tree) {
 #ifdef DEBUG_ENABLED
 static HashMap<ObjectID, List<String>> _print_orphan_nodes_map;
 
-static void _print_orphan_nodes_routine(Object *p_obj, void *user_data) {
+static void _print_orphan_nodes_routine(Object *p_obj, void *p_user_data) {
 	Node *n = Object::cast_to<Node>(p_obj);
 	if (!n) {
 		return;

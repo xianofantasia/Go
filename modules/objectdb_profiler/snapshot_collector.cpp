@@ -32,10 +32,8 @@
 
 #include "core/core_bind.h"
 #include "core/debugger/engine_debugger.h"
-#include "core/object/object.h"
 #include "core/os/time.h"
 #include "core/version.h"
-#include "scene/main/node.h"
 #include "scene/main/window.h"
 
 HashMap<int, Vector<uint8_t>> SnapshotCollector::pending_snapshots;
@@ -50,17 +48,17 @@ void SnapshotCollector::deinitialize() {
 	pending_snapshots.clear();
 }
 
-void SnapshotCollector::snapshot_objects(Array *p_arr, Dictionary snapshot_context) {
+void SnapshotCollector::snapshot_objects(Array *p_arr, Dictionary &p_snapshot_context) {
 	print_verbose("Starting to snapshot");
 	List<SnapshotDataTransportObject> debugger_objects;
 	p_arr->clear();
-	ObjectDB::debug_objects([](Object *p_obj, void *user_data) {
-		List<SnapshotDataTransportObject> *debugger_objects_ptr = (List<SnapshotDataTransportObject> *)user_data;
+	ObjectDB::debug_objects([](Object *p_obj, void *p_user_data) {
+		List<SnapshotDataTransportObject> *debugger_objects_ptr = (List<SnapshotDataTransportObject> *)p_user_data;
 		// This is the same way objects in the remote scene tree are seialized,
-		// but here we add a few extra properties via the extra_debug_data dictionary
+		// but here we add a few extra properties via the extra_debug_data dictionary.
 		SnapshotDataTransportObject debug_data(p_obj);
 
-		// If we're RefCounted, send over our RefCount too. Could add code here to add a few other interesting properties
+		// If we're RefCounted, send over our RefCount too. Could add code here to add a few other interesting properties.
 		if (ClassDB::is_parent_class(p_obj->get_class_name(), RefCounted::get_class_static())) {
 			RefCounted *ref = (RefCounted *)p_obj;
 			debug_data.extra_debug_data["ref_count"] = ref->get_reference_count();
@@ -86,13 +84,13 @@ void SnapshotCollector::snapshot_objects(Array *p_arr, Dictionary snapshot_conte
 	},
 			(void *)&debugger_objects);
 
-	// Add a header to the snapshot with general data about the state of the game, not tied to any particular object
-	snapshot_context["mem_available"] = Memory::get_mem_available();
-	snapshot_context["mem_usage"] = Memory::get_mem_usage();
-	snapshot_context["mem_max_usage"] = Memory::get_mem_max_usage();
-	snapshot_context["timestamp"] = Time::get_singleton()->get_unix_time_from_system();
-	snapshot_context["game_version"] = get_godot_version_string();
-	p_arr->push_back(snapshot_context);
+	// Add a header to the snapshot with general data about the state of the game, not tied to any particular object.
+	p_snapshot_context["mem_available"] = Memory::get_mem_available();
+	p_snapshot_context["mem_usage"] = Memory::get_mem_usage();
+	p_snapshot_context["mem_max_usage"] = Memory::get_mem_max_usage();
+	p_snapshot_context["timestamp"] = Time::get_singleton()->get_unix_time_from_system();
+	p_snapshot_context["game_version"] = get_godot_version_string();
+	p_arr->push_back(p_snapshot_context);
 	for (SnapshotDataTransportObject &debug_data : debugger_objects) {
 		debug_data.serialize(*p_arr);
 		p_arr->push_back(debug_data.extra_debug_data);
@@ -112,7 +110,7 @@ Error SnapshotCollector::parse_message(void *p_user, const String &p_msg, const 
 		// Debugger networking has a limit on both how many objects can be queued to send and how
 		// many bytes can be queued to send. Serializing to a string means we never hit the object
 		// limit, and only have to deal with the byte limit.
-		// Compress the snapshot in the game client to make sending the snapshot from game to editor a little faster
+		// Compress the snapshot in the game client to make sending the snapshot from game to editor a little faster.
 		core_bind::Marshalls *m = core_bind::Marshalls::get_singleton();
 		Vector<uint8_t> objs_buffer = m->base64_to_raw(m->variant_to_base64(objects));
 		Vector<uint8_t> objs_buffer_compressed;
@@ -121,7 +119,7 @@ Error SnapshotCollector::parse_message(void *p_user, const String &p_msg, const 
 		objs_buffer_compressed.resize(new_size);
 		pending_snapshots[request_id] = objs_buffer_compressed;
 
-		// tell the editor how long the snapshot is
+		// Tell the editor how long the snapshot is.
 		Array resp;
 		resp.push_back(request_id);
 		resp.push_back(pending_snapshots[request_id].size());
@@ -137,7 +135,7 @@ Error SnapshotCollector::parse_message(void *p_user, const String &p_msg, const 
 		resp.push_back(pending_snapshots[request_id].slice(begin, end));
 		EngineDebugger::get_singleton()->send_message("snapshot:snapshot_chunk", resp);
 
-		// If we sent the last part of the string, delete it locally
+		// If we sent the last part of the string, delete it locally.
 		if (end >= pending_snapshots[request_id].size()) {
 			pending_snapshots.erase(request_id);
 		}

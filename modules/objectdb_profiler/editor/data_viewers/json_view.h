@@ -42,14 +42,14 @@ class SnapshotJsonView : public SnapshotView {
 
 protected:
 	static void _serialization_worker(void *p_ud);
-	void _update_text(GameStateSnapshot *p_data_ptr, GameStateSnapshot *p_diff_ptr, String p_data_str, String p_diff_data_str);
+	void _update_text(GameStateSnapshot *p_data_ptr, GameStateSnapshot *p_diff_ptr, const String &p_data_str, const String &p_diff_data_str);
 
 	static void _bind_methods();
 
-	EditorJsonVisualizer *json_content;
-	EditorJsonVisualizer *diff_json_content;
+	EditorJsonVisualizer *json_content = nullptr;
+	EditorJsonVisualizer *diff_json_content = nullptr;
 
-	Control *loading_panel;
+	Control *loading_panel = nullptr;
 
 	void _load_theme_settings();
 	static String _snapshot_to_json(GameStateSnapshot *p_snapshot);

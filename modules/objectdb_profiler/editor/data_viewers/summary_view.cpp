@@ -30,7 +30,6 @@
 
 #include "summary_view.h"
 
-#include "core/object/object.h"
 #include "core/os/time.h"
 #include "editor/editor_node.h"
 #include "scene/gui/label.h"
@@ -53,7 +52,7 @@ SnapshotSummaryView::SnapshotSummaryView() {
 	content_wrapper->set_anchors_preset(LayoutPreset::PRESET_FULL_RECT);
 	StyleBoxFlat *content_wrapper_sbf = memnew(StyleBoxFlat);
 	content_wrapper_sbf->set_bg_color(EditorNode::get_singleton()->get_editor_theme()->get_color("dark_color_2", "Editor"));
-	content_wrapper->add_theme_style_override("panel", content_wrapper_sbf);
+	content_wrapper->add_theme_style_override(SceneStringName(panel), content_wrapper_sbf);
 	content_wrapper->add_child(mc);
 	add_child(content_wrapper);
 
@@ -129,7 +128,7 @@ void SnapshotSummaryView::show_snapshot(GameStateSnapshot *p_data, GameStateSnap
 }
 
 void SnapshotSummaryView::clear_snapshot() {
-	// just clear out the blurbs and leave the explainer
+	// Just clear out the blurbs and leave the explainer.
 	for (int i = 0; i < blurb_list->get_child_count(); i++) {
 		blurb_list->get_child(i)->queue_free();
 	}
@@ -145,7 +144,7 @@ SummaryBlurb::SummaryBlurb(const String &p_title, const String &p_rtl_content) {
 	add_theme_constant_override("margin_bottom", 2);
 
 	label = memnew(RichTextLabel);
-	label->add_theme_constant_override("line_separation", 6);
+	label->add_theme_constant_override(SceneStringName(line_separation), 6);
 	label->set_fit_content(true);
 	label->set_use_bbcode(true);
 	label->add_newline();
@@ -256,7 +255,7 @@ void SnapshotSummaryView::_push_object_blurb(const String &p_title, GameStateSna
 		if (pair.value->inbound_references.size() == 0 && pair.value->outbound_references.size() == 0) {
 			if (!pair.value->get_script().is_null()) {
 				// This blurb will have a lot of false positives, but we can at least suppress false positives
-				// from unreferenced nodes that are part of the scene tree
+				// from unreferenced nodes that are part of the scene tree.
 				if (pair.value->is_node() && (bool)pair.value->extra_debug_data["node_is_scene_root"]) {
 					objects.push_back(pair.value->get_name());
 				}

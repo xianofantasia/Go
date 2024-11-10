@@ -40,29 +40,29 @@
 
 const int SNAPSHOT_CACHE_MAX_SIZE = 10;
 
-enum RC_MENU_OPERATIONS {
-	RENAME,
-	SHOW_IN_FOLDER,
-	DELETE,
-};
-
-struct PartialSnapshot {
-	int total_size;
-	Vector<uint8_t> data;
-};
-
-// UI loaded by the debugger
+// UI loaded by the debugger.
 class ObjectDBProfilerPanel : public Control {
 	GDCLASS(ObjectDBProfilerPanel, Control);
 
 protected:
+	enum OdbProfilerMenuOptions {
+		ODB_MENU_RENAME,
+		ODB_MENU_SHOW_IN_FOLDER,
+		ODB_MENU_DELETE,
+	};
+
+	struct PartialSnapshot {
+		int total_size;
+		Vector<uint8_t> data;
+	};
+
 	int next_request_id = 0;
 
-	Tree *snapshot_list;
-	Button *take_snapshot;
-	TabContainer *view_tabs;
-	PopupMenu *rmb_menu;
-	OptionButton *diff_button;
+	Tree *snapshot_list = nullptr;
+	Button *take_snapshot = nullptr;
+	TabContainer *view_tabs = nullptr;
+	PopupMenu *rmb_menu = nullptr;
+	OptionButton *diff_button = nullptr;
 	HashMap<int, String> diff_options;
 	HashMap<int, PartialSnapshot> partial_snapshots;
 
@@ -82,16 +82,16 @@ protected:
 	void _update_enabled_diff_items();
 	void _edit_snapshot_name();
 	void _view_tab_changed(int p_tab_idx);
-	String _to_mb(int x);
+	String _to_mb(int p_x);
 
 public:
 	ObjectDBProfilerPanel();
 
-	void receive_snapshot(int request_id);
+	void receive_snapshot(int p_request_id);
 	void show_snapshot(const String &p_snapshot_file_name, const String &p_snapshot_diff_file_name);
 	void clear_snapshot();
 	Ref<GameStateSnapshotRef> get_snapshot(const String &p_snapshot_file_name);
-	void set_enabled(bool enabled);
+	void set_enabled(bool p_enabled);
 	void add_view(SnapshotView *p_to_add);
 
 	bool handle_debug_message(const String &p_message, const Array &p_data, int p_index);

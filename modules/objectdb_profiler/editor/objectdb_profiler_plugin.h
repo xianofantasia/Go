@@ -34,12 +34,15 @@
 #include "editor/plugins/editor_debugger_plugin.h"
 #include "editor/plugins/editor_plugin.h"
 
+class ObjectDBProfilerPanel;
+class ObjectDBProfilerDebuggerPlugin;
+
 // First, ObjectDBProfilerPlugin is loaded. Then it loads ObjectDBProfilerDebuggerPlugin.
 class ObjectDBProfilerPlugin : public EditorPlugin {
 	GDCLASS(ObjectDBProfilerPlugin, EditorPlugin);
 
 protected:
-	Ref<class ObjectDBProfilerDebuggerPlugin> debugger;
+	Ref<ObjectDBProfilerDebuggerPlugin> debugger;
 	void _notification(int p_what);
 
 public:
@@ -50,7 +53,7 @@ class ObjectDBProfilerDebuggerPlugin : public EditorDebuggerPlugin {
 	GDCLASS(ObjectDBProfilerDebuggerPlugin, EditorDebuggerPlugin);
 
 protected:
-	class ObjectDBProfilerPanel *debugger_panel;
+	ObjectDBProfilerPanel *debugger_panel = nullptr;
 
 	void _request_object_snapshot(int p_request_id);
 
