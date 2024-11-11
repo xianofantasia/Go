@@ -261,3 +261,10 @@ Validate extension JSON: Error: Field 'classes/PointLight2D/properties/texture':
 
 Property hints modified to disallow resource types that don't work. The types allowed are now more restricted, but this change only impacts the editor and not the actual exposed API. No adjustments should be necessary.
 Decal properties were previously changed from Texture to Texture2D in 4.2, so we need to silence those warnings too.
+
+
+GH-97755
+--------
+Validate extension JSON: Error: Field 'classes/RenderingServer/methods/instance_geometry_set_lightmap/arguments': size changed value in new API, from 4 to 5.
+
+Optional argument added to allow specifying lightmap slice and scale for multimesh instances.
