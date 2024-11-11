@@ -205,7 +205,7 @@ class VisualShaderEditor : public ShaderEditor {
 	GDCLASS(VisualShaderEditor, ShaderEditor);
 	friend class VisualShaderGraphPlugin;
 
-	ShaderGraph *editing_shader_graph = nullptr;
+	Ref<ShaderGraph> editing_shader_graph;
 	Ref<VisualShader> visual_shader; // Could be null (editing just a VisualShaderGroup).
 	Ref<VisualShaderGroup> visual_shader_group; // Could be null.
 
@@ -685,7 +685,7 @@ public:
 	virtual Size2 get_minimum_size() const override;
 
 	Ref<VisualShader> get_visual_shader() const { return visual_shader; }
-	ShaderGraph *get_shader_graph() const { return editing_shader_graph; }
+	Ref<ShaderGraph> get_shader_graph() const { return editing_shader_graph; }
 
 	VisualShaderEditor();
 };
