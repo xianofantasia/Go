@@ -1800,7 +1800,13 @@ static String _quote_drop_data(const String &str) {
 }
 
 static String _get_dropped_resource_line(const Ref<Resource> &p_resource, bool p_create_field) {
-	const String &path = p_resource->get_path();
+	String path = p_resource->get_path();
+	{
+		ResourceUID::ID id = ResourceLoader::get_resource_uid(path);
+		if (id != ResourceUID::INVALID_ID) {
+			path = ResourceUID::get_singleton()->id_to_text(id);
+		}
+	}
 	const bool is_script = ClassDB::is_parent_class(p_resource->get_class(), "Script");
 
 	if (!p_create_field) {
@@ -1809,7 +1815,7 @@ static String _get_dropped_resource_line(const Ref<Resource> &p_resource, bool p
 
 	String variable_name = p_resource->get_name();
 	if (variable_name.is_empty()) {
-		variable_name = path.get_file().get_basename();
+		variable_name = p_resource->get_path().get_file().get_basename();
 	}
 
 	if (is_script) {
