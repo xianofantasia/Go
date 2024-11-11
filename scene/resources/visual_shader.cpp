@@ -43,6 +43,10 @@ String make_unique_id(VisualShader::Type p_type, int p_id, const String &p_name)
 	return p_name + "_" + String(typepf[p_type]) + "_" + itos(p_id);
 }
 
+void ShaderGraph::_node_changed() {
+	emit_signal("graph_changed");
+}
+
 void ShaderGraph::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("add_node", "node", "position", "id"), &ShaderGraph::add_node);
 	ClassDB::bind_method(D_METHOD("get_node", "id"), &ShaderGraph::get_node);
@@ -67,6 +71,8 @@ void ShaderGraph::_bind_methods() {
 
 	ClassDB::bind_method(D_METHOD("attach_node_to_frame", "id", "frame"), &ShaderGraph::attach_node_to_frame);
 	ClassDB::bind_method(D_METHOD("detach_node_from_frame", "id"), &ShaderGraph::detach_node_from_frame);
+
+	ADD_SIGNAL(MethodInfo("graph_changed"));
 }
 
 bool ShaderGraph::_set(const StringName &p_name, const Variant &p_value) {
@@ -254,6 +260,9 @@ void ShaderGraph::add_node(const Ref<VisualShaderNode> &p_node, const Vector2 &p
 	}
 
 	nodes[p_id] = n;
+
+	n.node->connect_changed(callable_mp(this, &ShaderGraph::_node_changed));
+	emit_signal("graph_changed");
 }
 
 void ShaderGraph::set_node_position(int p_id, const Vector2 &p_position) {
@@ -317,6 +326,8 @@ void ShaderGraph::remove_node(int p_id) {
 		}
 		E = N;
 	}
+
+	emit_signal("graph_changed");
 }
 
 void ShaderGraph::replace_node(int p_id, const StringName &p_new_class) {
@@ -369,6 +380,8 @@ void ShaderGraph::replace_node(int p_id, const StringName &p_new_class) {
 	}
 
 	nodes[p_id].node = Ref<VisualShaderNode>(vsn);
+
+	emit_signal("graph_changed");
 }
 
 bool ShaderGraph::are_nodes_connected(int p_from_node, int p_from_port, int p_to_node, int p_to_port) const {
@@ -492,6 +505,8 @@ Error ShaderGraph::connect_nodes(int p_from_node, int p_from_port, int p_to_node
 	nodes[p_from_node].node->set_output_port_connected(p_from_port, true);
 	nodes[p_to_node].node->set_input_port_connected(p_to_port, true);
 
+	emit_signal("graph_changed");
+
 	return OK;
 }
 
@@ -506,6 +521,7 @@ void ShaderGraph::disconnect_nodes(int p_from_node, int p_from_port, int p_to_no
 			return;
 		}
 	}
+	emit_signal("graph_changed");
 }
 
 void ShaderGraph::connect_nodes_forced(int p_from_node, int p_from_port, int p_to_node, int p_to_port) {
@@ -530,6 +546,8 @@ void ShaderGraph::connect_nodes_forced(int p_from_node, int p_from_port, int p_t
 	nodes[p_to_node].prev_connected_nodes.push_back(p_from_node);
 	nodes[p_from_node].node->set_output_port_connected(p_from_port, true);
 	nodes[p_to_node].node->set_input_port_connected(p_to_port, true);
+
+	emit_signal("graph_changed");
 }
 
 bool ShaderGraph::is_port_types_compatible(int p_a, int p_b) const {
@@ -1545,8 +1563,6 @@ void VisualShader::add_node(Type p_type, const Ref<VisualShaderNode> &p_vsnode, 
 		input->shader_mode = shader_mode;
 		input->shader_type = p_type;
 	}
-
-	node.node->connect_changed(callable_mp(this, &VisualShader::_queue_update));
 
 	_queue_update();
 }
@@ -3309,6 +3325,7 @@ VisualShader::VisualShader() {
 	dirty.set();
 	for (int i = 0; i < TYPE_MAX; i++) {
 		graph[i].instantiate();
+		graph[i]->connect("graph_changed",callable_mp(this, &VisualShader::_queue_update));
 		if (i > (int)TYPE_LIGHT && i < (int)TYPE_SKY) {
 			Ref<VisualShaderNodeParticleOutput> output;
 			output.instantiate();
