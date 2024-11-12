@@ -129,6 +129,7 @@ class Node3DEditorViewport : public Control {
 		VIEW_GRID,
 		VIEW_INFORMATION,
 		VIEW_FRAME_TIME,
+		VIEW_CREATE_CAM,
 
 		// < Keep in sync with menu.
 		VIEW_DISPLAY_NORMAL,
@@ -504,6 +505,7 @@ private:
 	void shortcut_changed_callback(const Ref<Shortcut> p_shortcut, const String &p_shortcut_path);
 
 	void _set_lock_view_rotation(bool p_lock_rotation);
+	void _create_cam_from_view();
 
 protected:
 	void _notification(int p_what);
