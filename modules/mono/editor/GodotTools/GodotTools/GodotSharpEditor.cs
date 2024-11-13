@@ -741,6 +741,8 @@ namespace GodotTools
 
             populateConstructorMethod.Invoke(null, null);
 
+            Internal.EditorPlugin_AddTranslationParserPlugin(new CsTranslationParserPlugin());
+
             return new GodotSharpEditor().NativeInstance;
         }
     }
