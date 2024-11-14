@@ -233,6 +233,9 @@ void TextParagraph::_shape_lines() {
 					break;
 			}
 		}
+		if (alignment == HORIZONTAL_ALIGNMENT_RIGHT) {
+			overrun_flags.set_flag(TextServer::OVERRUN_ELLIPSIS_AT_START);
+		}
 
 		bool autowrap_enabled = brk_flags.has_flag(TextServer::BREAK_WORD_BOUND) || brk_flags.has_flag(TextServer::BREAK_GRAPHEME_BOUND);
 
@@ -459,7 +462,7 @@ void TextParagraph::set_alignment(HorizontalAlignment p_alignment) {
 	_THREAD_SAFE_METHOD_
 
 	if (alignment != p_alignment) {
-		if (alignment == HORIZONTAL_ALIGNMENT_FILL || p_alignment == HORIZONTAL_ALIGNMENT_FILL) {
+		if (alignment == HORIZONTAL_ALIGNMENT_FILL || p_alignment == HORIZONTAL_ALIGNMENT_FILL || overrun_behavior != TextServer::OVERRUN_NO_TRIMMING) {
 			alignment = p_alignment;
 			lines_dirty = true;
 		} else {

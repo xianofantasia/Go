@@ -4143,19 +4143,26 @@ void TextServerFallback::_shaped_text_overrun_trim_to_width(const RID &p_shaped_
 	int ell_min_characters = 6;
 	double width = sd->width;
 
-	int trim_pos = 0;
+	bool from_left = p_trim_flags.has_flag(OVERRUN_ELLIPSIS_AT_START);
+
+	int trim_pos = (from_left) ? sd_size : 0;
 	int ellipsis_pos = (enforce_ellipsis) ? 0 : -1;
 
 	int last_valid_cut = 0;
 	bool found = false;
 
+	int glyphs_from = (from_left) ? 0 : sd_size - 1;
+	int glyphs_to = (from_left) ? sd_size - 1 : -1;
+	int glyphs_delta = (from_left) ? +1 : -1;
+
 	if (enforce_ellipsis && (width + ellipsis_width <= p_width)) {
 		trim_pos = -1;
-		ellipsis_pos = sd_size;
+		ellipsis_pos = (from_left) ? 0 : sd_size;
 	} else {
-		for (int i = sd_size - 1; i != -1; i--) {
-			width -= sd_glyphs[i].advance * sd_glyphs[i].repeat;
-
+		for (int i = glyphs_from; i != glyphs_to; i += glyphs_delta) {
+			if (!from_left) {
+				width -= sd_glyphs[i].advance * sd_glyphs[i].repeat;
+			}
 			if (sd_glyphs[i].count > 0) {
 				bool above_min_char_threshold = (i >= ell_min_characters);
 
@@ -4179,9 +4186,13 @@ void TextServerFallback::_shaped_text_overrun_trim_to_width(const RID &p_shaped_
 					}
 				}
 			}
+			if (from_left) {
+				width -= sd_glyphs[i].advance * sd_glyphs[i].repeat;
+			}
 		}
 	}
 
+	sd->overrun_trim_data.left = from_left;
 	sd->overrun_trim_data.trim_pos = trim_pos;
 	sd->overrun_trim_data.ellipsis_pos = ellipsis_pos;
 	if (trim_pos == 0 && enforce_ellipsis && add_ellipsis) {
@@ -4252,6 +4263,14 @@ int64_t TextServerFallback::_shaped_text_get_ellipsis_glyph_count(const RID &p_s
 
 	MutexLock lock(sd->mutex);
 	return sd->overrun_trim_data.ellipsis_glyph_buf.size();
+}
+
+bool TextServerFallback::_shaped_text_get_ellipsis_from_left(const RID &p_shaped) const {
+	ShapedTextDataFallback *sd = shaped_owner.get_or_null(p_shaped);
+	ERR_FAIL_NULL_V_MSG(sd, false, "ShapedTextDataFallback invalid.");
+
+	MutexLock lock(sd->mutex);
+	return sd->overrun_trim_data.left;
 }
 
 bool TextServerFallback::_shaped_text_shape(const RID &p_shaped) {

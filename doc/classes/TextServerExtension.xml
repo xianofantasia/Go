@@ -1460,6 +1460,14 @@
 				Returns dominant direction of in the range of text.
 			</description>
 		</method>
+		<method name="_shaped_text_get_ellipsis_from_left" qualifiers="virtual const">
+			<return type="bool" />
+			<param index="0" name="shaped" type="RID" />
+			<description>
+				[b]Optional.[/b]
+				Returns [code]true[/code] if ellipsis is on the left side (end of RTL or beginning of LTR) of the text.
+			</description>
+		</method>
 		<method name="_shaped_text_get_ellipsis_glyph_count" qualifiers="virtual const">
 			<return type="int" />
 			<param index="0" name="shaped" type="RID" />

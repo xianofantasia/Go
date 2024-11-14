@@ -112,6 +112,7 @@ public:
 	virtual int64_t shaped_text_get_ellipsis_pos(const RID &p_shaped) const override { return -1; }
 	virtual const Glyph *shaped_text_get_ellipsis_glyphs(const RID &p_shaped) const override { return nullptr; }
 	virtual int64_t shaped_text_get_ellipsis_glyph_count(const RID &p_shaped) const override { return -1; }
+	virtual bool shaped_text_get_ellipsis_from_left(const RID &p_shaped) const override { return false; }
 	virtual Array shaped_text_get_objects(const RID &p_shaped) const override { return Array(); }
 	virtual Rect2 shaped_text_get_object_rect(const RID &p_shaped, const Variant &p_key) const override { return Rect2(); }
 	virtual Vector2i shaped_text_get_object_range(const RID &p_shaped, const Variant &p_key) const override { return Vector2i(); }
