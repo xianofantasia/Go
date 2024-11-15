@@ -135,7 +135,7 @@ public partial class CsTranslationParserPlugin : EditorTranslationParserPlugin
                 if (msgValue.HasValue && msgValue.Value is string message &&
                     ctxValue.HasValue && ctxValue.Value is string context)
                 {
-                    msgidsContextPlural.Add(new Array { message, context, ""  });
+                    msgidsContextPlural.Add(new Array { message, context, "" });
                 }
 
                 break;
