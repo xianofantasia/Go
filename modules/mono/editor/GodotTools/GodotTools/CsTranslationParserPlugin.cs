@@ -1,4 +1,12 @@
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using Godot;
+using Godot.Collections;
+using GodotTools.Internals;
+using Microsoft.Build.Evaluation;
+using Microsoft.Build.Execution;
+using Microsoft.Build.Locator;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -8,95 +16,204 @@ namespace GodotTools;
 public partial class CsTranslationParserPlugin : EditorTranslationParserPlugin
 {
 
-    private Godot.Collections.Array<string> _msgids;
-    private Godot.Collections.Array<Godot.Collections.Array> _msgidsContextPlural;
+    private List<MetadataReference> _projectReferences;
 
     public override string[] _GetRecognizedExtensions()
     {
         return new[] { "cs" };
     }
 
-    public override void _ParseFile(string path, Godot.Collections.Array<string> msgids, Godot.Collections.Array<Godot.Collections.Array> msgidsContextPlural)
+    public override void _ParseFile(string path, Array<string> msgids, Array<Array> msgidsContextPlural)
     {
-        _msgids = msgids;
-        _msgidsContextPlural = msgidsContextPlural;
-        var res = ResourceLoader.Load<CSharpScript>(path, "Script");
-        string text = res.SourceCode;
-        SyntaxTree tree = CSharpSyntaxTree.ParseText(text);
-        ParseNode(tree.GetRoot());
-    }
-
-    private void ParseNode(SyntaxNode node)
-    {
-        if (node is InvocationExpressionSyntax invocationExpressionSyntax)
+        if (_projectReferences == null)
         {
-            if (invocationExpressionSyntax.Expression is MemberAccessExpressionSyntax memberAccessExpressionSyntax)
+            _projectReferences = GetProjectReferences(GodotSharpDirs.ProjectCsProjPath);
+            var references = System.AppDomain.CurrentDomain.GetAssemblies()
+                .Where(a => !a.IsDynamic)
+                .Where(a => a.Location != "")
+                .Select(a => MetadataReference.CreateFromFile(a.Location))
+                .Cast<MetadataReference>();
+            _projectReferences.AddRange(references);
+        }
+        var res = ResourceLoader.Load<CSharpScript>(path, "Script");
+        var text = res.SourceCode;
+        var tree = CSharpSyntaxTree.ParseText(text);
+
+        var compilation = CSharpCompilation.Create("TranslationParser", options: new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary))
+            .AddReferences(_projectReferences)
+            .AddSyntaxTrees(tree);
+
+        var semanticModel = compilation.GetSemanticModel(tree);
+        foreach (var syntaxNode in tree.GetRoot().DescendantNodes().Where(node => node is InvocationExpressionSyntax))
+        {
+
+            var invocation = (InvocationExpressionSyntax)syntaxNode;
+            SymbolInfo? symbolInfo = null;
+            if (invocation.Expression is IdentifierNameSyntax identifierNameSyntax)
             {
-                if (memberAccessExpressionSyntax.Expression is IdentifierNameSyntax identifierNameSyntax)
+                symbolInfo = semanticModel.GetSymbolInfo(identifierNameSyntax);
+
+            }
+            if (invocation.Expression is MemberAccessExpressionSyntax memberAccessExpressionSyntax && memberAccessExpressionSyntax.Name is IdentifierNameSyntax nameSyntax)
+            {
+                symbolInfo = semanticModel.GetSymbolInfo(nameSyntax);
+            }
+
+            var methodSymbol = symbolInfo?.Symbol as IMethodSymbol;
+            if (methodSymbol == null)
+                continue;
+
+            if (methodSymbol.Name == "Translate" &&
+                methodSymbol.ContainingType.ToDisplayString() == "Godot.TranslationServer")
+            {
+                AddMsg(invocation.ArgumentList.Arguments, semanticModel, msgids, msgidsContextPlural);
+            }
+
+            if (methodSymbol.Name == "TranslatePlural" &&
+                methodSymbol.ContainingType.ToDisplayString() == "Godot.TranslationServer")
+            {
+                AddPluralMsg(invocation.ArgumentList.Arguments, semanticModel, msgidsContextPlural);
+            }
+
+            if ((methodSymbol.Name == "Tr" || methodSymbol.Name == "TrN")
+                && methodSymbol.MethodKind == MethodKind.Ordinary)
+            {
+                var receiverType = methodSymbol.ReceiverType ?? methodSymbol.ContainingType;
+
+                if (receiverType != null && InheritsFromGodotObject(receiverType))
                 {
-                    if (identifierNameSyntax.Identifier.Text == "TranslationServer" && memberAccessExpressionSyntax.Name.Identifier.Text == "Translate")
+                    if (methodSymbol.Name == "Tr")
                     {
-                        var arguments = invocationExpressionSyntax.ArgumentList.Arguments;
-                        if (arguments.Count == 1 && arguments[0].Expression is LiteralExpressionSyntax literalExpression && literalExpression.Token.Value is string value)
-                        {
-                            _msgids.Add(value);
-                        }
-                        if (arguments.Count == 2 && arguments[0].Expression is LiteralExpressionSyntax messageLiteral && messageLiteral.Token.Value is string message && arguments[1].Expression is LiteralExpressionSyntax contextLiteral && contextLiteral.Token.Value is string context)
-                        {
-                            _msgidsContextPlural.Add(new Godot.Collections.Array { message, context, "" });
-                        }
+                        AddMsg(invocation.ArgumentList.Arguments, semanticModel, msgids, msgidsContextPlural);
                     }
-                    if (identifierNameSyntax.Identifier.Text == "TranslationServer" && memberAccessExpressionSyntax.Name.Identifier.Text == "TranslatePlural")
+                    else
                     {
-                        var arguments = invocationExpressionSyntax.ArgumentList.Arguments;
-                        if (arguments.Count == 3 && arguments[0].Expression is LiteralExpressionSyntax messageLiteral1 && messageLiteral1.Token.Value is string message1 && arguments[1].Expression is LiteralExpressionSyntax pluralLiteral1 && pluralLiteral1.Token.Value is string plural1)
-                        {
-                            _msgidsContextPlural.Add(new Godot.Collections.Array { message1, "", plural1 });
-                        }
-                        if (arguments.Count == 4 && arguments[0].Expression is LiteralExpressionSyntax messageLiteral2 && messageLiteral2.Token.Value is string message2 && arguments[1].Expression is LiteralExpressionSyntax pluralLiteral2 && pluralLiteral2.Token.Value is string plural2 && arguments[3].Expression is LiteralExpressionSyntax contextLiteral && contextLiteral.Token.Value is string context)
-                        {
-                            _msgidsContextPlural.Add(new Godot.Collections.Array { message2, context, plural2 });
-                        }
+                        AddPluralMsg(invocation.ArgumentList.Arguments, semanticModel, msgidsContextPlural);
                     }
-                }
-                switch (memberAccessExpressionSyntax.Name.Identifier.Text)
-                {
-                    case "Tr":
-                        {
-                            var arguments = invocationExpressionSyntax.ArgumentList.Arguments;
-                            if (arguments.Count == 1 && arguments[0].Expression is LiteralExpressionSyntax literalExpression && literalExpression.Token.Value is string value)
-                            {
-                                _msgids.Add(value);
-                            }
-                            if (arguments.Count == 2 && arguments[0].Expression is LiteralExpressionSyntax messageLiteral && messageLiteral.Token.Value is string message && arguments[1].Expression is LiteralExpressionSyntax contextLiteral && contextLiteral.Token.Value is string context)
-                            {
-                                _msgidsContextPlural.Add(new Godot.Collections.Array { message, context, "" });
-                            }
-
-                            break;
-                        }
-                    case "TrN":
-                        {
-                            var arguments = invocationExpressionSyntax.ArgumentList.Arguments;
-                            if (arguments.Count == 3 && arguments[0].Expression is LiteralExpressionSyntax messageLiteral1 && messageLiteral1.Token.Value is string message1 && arguments[1].Expression is LiteralExpressionSyntax pluralLiteral1 && pluralLiteral1.Token.Value is string plural1)
-                            {
-                                _msgidsContextPlural.Add(new Godot.Collections.Array { message1, "", plural1 });
-                            }
-
-                            if (arguments.Count == 4 && arguments[0].Expression is LiteralExpressionSyntax messageLiteral2 && messageLiteral2.Token.Value is string message2 && arguments[1].Expression is LiteralExpressionSyntax pluralLiteral2 && pluralLiteral2.Token.Value is string plural2 && arguments[3].Expression is LiteralExpressionSyntax contextLiteral && contextLiteral.Token.Value is string context)
-                            {
-                                _msgidsContextPlural.Add(new Godot.Collections.Array { message2, context, plural2 });
-                            }
-
-                            break;
-                        }
                 }
             }
         }
+    }
 
-        foreach (var childNode in node.ChildNodes())
+    private bool InheritsFromGodotObject(ITypeSymbol typeSymbol)
+    {
+        while (typeSymbol != null)
         {
-            ParseNode(childNode);
+            if (typeSymbol.ToDisplayString() == "Godot.GodotObject")
+                return true;
+#pragma warning disable CS8600
+            typeSymbol = typeSymbol.BaseType;
+#pragma warning restore CS8600
         }
+        return false;
+    }
+
+    private void AddMsg(SeparatedSyntaxList<ArgumentSyntax> arguments, SemanticModel semanticModel, Array<string> msgids, Array<Array> msgidsContextPlural)
+    {
+        switch (arguments.Count)
+        {
+            case 1:
+            {
+                var argExpr = arguments[0].Expression;
+                var constantValue = semanticModel.GetConstantValue(argExpr);
+
+                if (constantValue.HasValue && constantValue.Value is string message)
+                {
+                    msgids.Add(message);
+                }
+
+                break;
+            }
+            case 2:
+            {
+                var msgExpr = arguments[0].Expression;
+                var ctxExpr = arguments[1].Expression;
+
+                var msgValue = semanticModel.GetConstantValue(msgExpr);
+                var ctxValue = semanticModel.GetConstantValue(ctxExpr);
+
+                if (msgValue.HasValue && msgValue.Value is string message &&
+                    ctxValue.HasValue && ctxValue.Value is string context)
+                {
+                    msgidsContextPlural.Add(new Array { message, context, ""  });
+                }
+
+                break;
+            }
+        }
+    }
+
+    private void AddPluralMsg(SeparatedSyntaxList<ArgumentSyntax> arguments, SemanticModel semanticModel, Array<Array> msgidsContextPlural)
+    {
+        var singularExpr = arguments[0].Expression;
+        var pluralExpr = arguments[1].Expression;
+
+        var singularValue = semanticModel.GetConstantValue(singularExpr);
+        var pluralValue = semanticModel.GetConstantValue(pluralExpr);
+
+        if (!singularValue.HasValue || singularValue.Value is not string singular ||
+            !pluralValue.HasValue || pluralValue.Value is not string plural) return;
+
+        var context = "";
+        if (arguments.Count == 4)
+        {
+            var ctxExpr = arguments[3].Expression;
+            var ctxValue = semanticModel.GetConstantValue(ctxExpr);
+            if (ctxValue.HasValue && ctxValue.Value is string ctx)
+            {
+                context = ctx;
+            }
+        }
+        msgidsContextPlural.Add(new Array { singular, context, plural });
+    }
+
+    private List<MetadataReference> GetProjectReferences(string projectPath)
+    {
+        if (!MSBuildLocator.IsRegistered)
+        {
+            MSBuildLocator.RegisterDefaults();
+        }
+
+        var referencePaths = GetProjectReferencePaths(projectPath);
+
+        var metadataReferences = new List<MetadataReference>();
+        foreach (var dllPath in referencePaths)
+        {
+            if (File.Exists(dllPath))
+            {
+                var metadataReference = MetadataReference.CreateFromFile(dllPath);
+                metadataReferences.Add(metadataReference);
+            }
+        }
+
+        return metadataReferences;
+    }
+
+    private List<string> GetProjectReferencePaths(string projectPath)
+    {
+        var referencePaths = new List<string>();
+
+        var projectCollection = new ProjectCollection();
+        var project = projectCollection.LoadProject(projectPath);
+
+        project.SetProperty("Configuration", "Debug");
+        project.SetProperty("Platform", "Any CPU");
+
+        var buildParameters = new BuildParameters(projectCollection);
+        var buildRequest = new BuildRequestData(project.FullPath, project.GlobalProperties, null, new[] { "GetTargetPath" }, null);
+        var buildResult = BuildManager.DefaultBuildManager.Build(buildParameters, buildRequest);
+
+        if (buildResult.OverallResult == BuildResultCode.Success)
+        {
+            foreach (var item in buildResult.ResultsByTarget["GetTargetPath"].Items)
+            {
+                referencePaths.Add(item.ItemSpec);
+            }
+        }
+
+        projectCollection.UnloadAllProjects();
+        projectCollection.Dispose();
+
+        return referencePaths;
     }
 }

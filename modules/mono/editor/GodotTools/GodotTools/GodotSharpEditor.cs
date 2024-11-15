@@ -644,6 +644,9 @@ namespace GodotTools
             AddInspectorPlugin(inspectorPlugin);
             _inspectorPluginWeak = WeakRef(inspectorPlugin);
 
+            // TranslationParser Plugin
+            AddTranslationParserPlugin(new CsTranslationParserPlugin());
+
             BuildManager.Initialize();
             RiderPathManager.Initialize();
 
@@ -740,8 +743,6 @@ namespace GodotTools
             }
 
             populateConstructorMethod.Invoke(null, null);
-
-            Internal.EditorPlugin_AddTranslationParserPlugin(new CsTranslationParserPlugin());
 
             return new GodotSharpEditor().NativeInstance;
         }
