@@ -80,10 +80,10 @@ public partial class CsTranslationParserPlugin : EditorTranslationParserPlugin
             .Select(trivia => new CommentData
             {
                 Comment = trivia.ToFullString(),
-                StartLine = trivia.GetLocation().GetLineSpan().StartLinePosition.Line,
-                EndLine = trivia.GetLocation().GetLineSpan().EndLinePosition.Line,
+                StartLine = GetStartLine(trivia.GetLocation()),
+                EndLine = GetEndLine(trivia.GetLocation()),
                 Newline = tree.GetRoot().DescendantNodes()
-                    .FirstOrDefault(node => GetStartLine(node) == trivia.GetLocation().GetLineSpan().StartLinePosition.Line) == null
+                    .FirstOrDefault(node => GetStartLine(node.GetLocation()) == GetStartLine(trivia.GetLocation())) == null
             })
             .ToArray();
 
@@ -93,7 +93,7 @@ public partial class CsTranslationParserPlugin : EditorTranslationParserPlugin
             var commentText = "";
             var skip = false;
             // Parse inline comment
-            var line = GetStartLine(syntaxNode);
+            var line = GetStartLine(syntaxNode.GetLocation());
 
             var commentData = comments.FirstOrDefault(comment => comment.StartLine == line);
             if (commentData != null)
@@ -216,14 +216,14 @@ public partial class CsTranslationParserPlugin : EditorTranslationParserPlugin
         msgidsContextPluralComment.AddRange(_msgidsContextPluralComment);
     }
 
-    private int GetStartLine(SyntaxNode node)
+    private int GetStartLine(Location location)
     {
-        return node.GetLocation().GetLineSpan().StartLinePosition.Line;
+        return location.GetLineSpan().StartLinePosition.Line;
     }
 
-    private int GetEndLine(SyntaxNode node)
+    private int GetEndLine(Location location)
     {
-        return node.GetLocation().GetLineSpan().EndLinePosition.Line;
+        return location.GetLineSpan().EndLinePosition.Line;
     }
 
     private bool InheritsFromGodotObject(ITypeSymbol typeSymbol)
