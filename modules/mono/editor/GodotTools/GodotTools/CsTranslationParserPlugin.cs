@@ -16,7 +16,7 @@ namespace GodotTools;
 public partial class CsTranslationParserPlugin : EditorTranslationParserPlugin
 {
 
-    class CommentData
+    private class CommentData
     {
         public string Comment = "";
         public int StartLine;
@@ -137,7 +137,7 @@ public partial class CsTranslationParserPlugin : EditorTranslationParserPlugin
                     }
                     else
                     {
-                        commentText = currentComment  + "\n" + commentText;
+                        commentText = currentComment + "\n" + commentText;
                     }
                     if (currentComment.StartsWith(TranslationCommentPrefix))
                     {
