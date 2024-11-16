@@ -45,6 +45,23 @@ class ShaderGraph : public RefCounted {
 	friend class VisualShaderGroup; // For _get,_set and _get_property_list.
 
 public:
+	// TODO: Unify this eventually, but for now this is too much work.
+	// TODO: Rename to ShaderFunction/ShaderStage and make it an enum class.
+	// Keep in sync with VisualShader::Type.
+	enum Type {
+		TYPE_VERTEX,
+		TYPE_FRAGMENT,
+		TYPE_LIGHT,
+		TYPE_START,
+		TYPE_PROCESS,
+		TYPE_COLLIDE,
+		TYPE_START_CUSTOM,
+		TYPE_PROCESS_CUSTOM,
+		TYPE_SKY,
+		TYPE_FOG,
+		TYPE_MAX
+	};
+
 	struct Node {
 		// TODO: Rename to vsnode;
 		Ref<VisualShaderNode> node;
@@ -58,6 +75,17 @@ public:
 		int from_port = 0;
 		int to_node = 0;
 		int to_port = 0;
+	};
+
+	union ConnectionKey {
+		struct {
+			uint64_t node : 32;
+			uint64_t port : 32;
+		};
+		uint64_t key = 0;
+		bool operator<(const ConnectionKey &p_key) const {
+			return key < p_key.key;
+		}
 	};
 
 	struct DefaultTextureParam {
@@ -76,6 +104,7 @@ public:
 	List<Connection> connections; // TODO: Evaluate whether this should be a LocalVector.
 
 	void _node_changed();
+
 protected:
 	static void _bind_methods();
 
@@ -84,7 +113,24 @@ protected:
 	void _get_property_list(List<PropertyInfo> *p_list) const;
 
 public:
+	Error _write_node(
+			StringBuilder *p_global_code,
+			StringBuilder *p_global_code_per_node,
+			HashMap<Type, StringBuilder> *p_global_code_per_func,
+			StringBuilder &r_code,
+			Vector<ShaderGraph::DefaultTextureParam> &r_def_tex_params,
+			const VMap<ConnectionKey, const List<ShaderGraph::Connection>::Element *> &p_input_connections,
+			const VMap<ConnectionKey, const List<ShaderGraph::Connection>::Element *> &p_output_connections,
+			int p_node,
+			HashSet<int> &r_processed,
+			bool p_for_preview,
+			HashSet<StringName> &r_classes,
+			Type p_type = TYPE_MAX, // Only used for VisualShader.
+			Shader::Mode p_mode = Shader::MODE_MAX // Only used for VisualShader.
+	) const;
+
 	bool _check_reroute_subgraph(int p_target_port_type, int p_reroute_node, List<int> *r_visited_reroute_nodes = nullptr) const;
+
 	void add_node(const Ref<VisualShaderNode> &p_node, const Vector2 &p_position, int p_id);
 	void set_node_position(int p_id, const Vector2 &p_position);
 	Vector2 get_node_position(int p_id) const;
@@ -226,19 +272,20 @@ private:
 	mutable SafeFlag dirty;
 	void _queue_update();
 
-	// TODO: Move up.
-	union ConnectionKey {
-		struct {
-			uint64_t node : 32;
-			uint64_t port : 32;
-		};
-		uint64_t key = 0;
-		bool operator<(const ConnectionKey &p_key) const {
-			return key < p_key.key;
-		}
-	};
-
-	Error _write_node(Type p_type, StringBuilder *p_global_code, StringBuilder *p_global_code_per_node, HashMap<Type, StringBuilder> *p_global_code_per_func, StringBuilder &r_code, Vector<ShaderGraph::DefaultTextureParam> &r_def_tex_params, const VMap<ConnectionKey, const List<ShaderGraph::Connection>::Element *> &p_input_connections, const VMap<ConnectionKey, const List<ShaderGraph::Connection>::Element *> &p_output_connections, int p_node, HashSet<int> &r_processed, bool p_for_preview, HashSet<StringName> &r_classes) const;
+	Error _write_node(
+			ShaderGraph::Type p_type,
+			StringBuilder *p_global_code,
+			StringBuilder *p_global_code_per_node,
+			HashMap<ShaderGraph::Type, StringBuilder> *p_global_code_per_func,
+			StringBuilder &r_code, Vector<ShaderGraph::DefaultTextureParam> &r_def_tex_params,
+			const VMap<ShaderGraph::ConnectionKey,
+					const List<ShaderGraph::Connection>::Element *> &p_input_connections,
+			const VMap<ShaderGraph::ConnectionKey,
+					const List<ShaderGraph::Connection>::Element *> &p_output_connections,
+			int p_node,
+			HashSet<int> &r_processed,
+			bool p_for_preview,
+			HashSet<StringName> &r_classes) const;
 
 	void _input_type_changed(Type p_type, int p_id);
 	// TODO: Check why we need this method. At least rename it (underscore).
@@ -386,6 +433,8 @@ protected:
 	static void _bind_methods();
 
 public:
+	static String port_type_to_shader_string(PortType p_type);
+
 	bool is_simple_decl() const;
 
 	virtual String get_caption() const = 0;
@@ -940,8 +989,6 @@ public:
 	VisualShaderNodeGroupBase();
 };
 
-
-
 class VisualShaderNodeExpression : public VisualShaderNodeGroupBase {
 	GDCLASS(VisualShaderNodeExpression, VisualShaderNodeGroupBase);
 
@@ -1079,8 +1126,6 @@ public:
 
 	VisualShaderNodeVaryingGetter();
 };
-
-
 
 extern String make_unique_id(VisualShader::Type p_type, int p_id, const String &p_name);
 
