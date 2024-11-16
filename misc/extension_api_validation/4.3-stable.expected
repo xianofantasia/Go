@@ -122,3 +122,10 @@ GH-98918
 Validate extension JSON: Error: Field 'classes/FileAccess/methods/open_encrypted/arguments': size changed value in new API, from 3 to 4.
 
 Optional argument added to allow setting initialization vector. Compatibility method registered.
+
+GH-98566
+--------
+Validate extension JSON: API was removed: classes/VisualShader/methods/set_graph_offset
+Validate extension JSON: API was removed: classes/VisualShader/methods/get_graph_offset
+
+The graph_offset property was removed from the resource. This information is now stored as project metadata.
