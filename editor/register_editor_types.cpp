@@ -81,6 +81,7 @@
 #include "editor/plugins/editor_context_menu_plugin.h"
 #include "editor/plugins/editor_debugger_plugin.h"
 #include "editor/plugins/editor_resource_tooltip_plugins.h"
+#include "editor/plugins/editor_script_plugin.h"
 #include "editor/plugins/font_config_plugin.h"
 #include "editor/plugins/gpu_particles_collision_sdf_editor_plugin.h"
 #include "editor/plugins/gradient_editor_plugin.h"
@@ -215,6 +216,7 @@ void register_editor_types() {
 	EditorPlugins::add_by_type<ControlEditorPlugin>();
 	EditorPlugins::add_by_type<CPUParticles3DEditorPlugin>();
 	EditorPlugins::add_by_type<CurveEditorPlugin>();
+	EditorPlugins::add_by_type<EditorScriptPlugin>();
 	EditorPlugins::add_by_type<DebugAdapterServer>();
 	EditorPlugins::add_by_type<FontEditorPlugin>();
 	EditorPlugins::add_by_type<GPUParticles3DEditorPlugin>();

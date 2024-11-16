@@ -1,5 +1,5 @@
 /**************************************************************************/
-/*  editor_script.h                                                       */
+/*  editor_script_plugin.h                                                */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                             GODOT ENGINE                               */
@@ -28,34 +28,24 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef EDITOR_SCRIPT_H
-#define EDITOR_SCRIPT_H
+#ifndef EDITOR_SCRIPT_PLUGIN_H
+#define EDITOR_SCRIPT_PLUGIN_H
 
-#include "core/object/gdvirtual.gen.inc"
-#include "core/object/ref_counted.h"
+#include "editor/plugins/editor_plugin.h"
 
-class EditorInterface;
-class EditorNode;
-class Node;
+class EditorScriptPlugin : public EditorPlugin {
+	GDCLASS(EditorScriptPlugin, EditorPlugin);
 
-class EditorScript : public RefCounted {
-	GDCLASS(EditorScript, RefCounted);
+private:
+	List<StringName> commands;
 
-protected:
-	static void _bind_methods();
-
-	GDVIRTUAL0_REQUIRED(_run)
-	GDVIRTUAL0R(String, _get_name)
+	void run_command(const StringName &p_name);
+	void command_palette_about_to_popup();
 
 public:
-	void add_root_node(Node *p_node);
-	Node *get_scene() const;
-	EditorInterface *get_editor_interface() const;
+	EditorScriptPlugin();
 
-	virtual void run();
-	virtual String get_name();
-
-	EditorScript() {}
+	virtual String get_name() const override { return "EditorScript"; }
 };
 
-#endif // EDITOR_SCRIPT_H
+#endif // EDITOR_SCRIPT_PLUGIN_H
