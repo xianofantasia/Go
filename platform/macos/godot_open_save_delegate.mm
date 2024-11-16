@@ -123,7 +123,7 @@
 
 					NSMutableArray *type_filters = [[NSMutableArray alloc] init];
 					for (int j = 0; j < filter_slice_count; j++) {
-						String str = (flt.get_slice(",", j).strip_edges());
+						String str = (flt.get_slicec(',', j).strip_edges());
 						if (!str.is_empty()) {
 							[type_filters addObject:[NSString stringWithUTF8String:str.replace("*.", "").strip_edges().utf8().get_data()]];
 						}
@@ -151,7 +151,7 @@
 
 				NSMutableArray *type_filters = [[NSMutableArray alloc] init];
 				for (int j = 0; j < filter_slice_count; j++) {
-					String str = (flt.get_slice(",", j).strip_edges());
+					String str = (flt.get_slicec(',', j).strip_edges());
 					if (!str.is_empty()) {
 						[type_filters addObject:[NSString stringWithUTF8String:str.replace("*.", "").strip_edges().utf8().get_data()]];
 					}
