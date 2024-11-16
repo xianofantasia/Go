@@ -16,7 +16,28 @@ namespace GodotTools;
 public partial class CsTranslationParserPlugin : EditorTranslationParserPlugin
 {
 
+    class CommentData
+    {
+        public string Comment = "";
+        public int StartLine;
+        public int EndLine;
+        public bool Newline = true;
+    }
+
     private List<MetadataReference> _projectReferences;
+    private Array<string> _msgids;
+    private Array<Array> _msgidsContextPlural;
+    private Array<string> _msgidsComment;
+    private Array<string> _msgidsContextPluralComment;
+
+    private const string TranslationCommentPrefix = "TRANSLATORS:";
+    private const string NoTranslateComment = "NO_TRANSLATE";
+    private const string TranslationStaticClass = "Godot.TranslationServer";
+    private const string TranslationMethod = "Translate";
+    private const string TranslationPluralMethod = "TranslatePlural";
+    private const string TranslationClass = "Godot.GodotObject";
+    private const string TranslationMethodTr = "Tr";
+    private const string TranslationMethodTrN = "TrN";
 
     public override string[] _GetRecognizedExtensions()
     {
@@ -25,6 +46,11 @@ public partial class CsTranslationParserPlugin : EditorTranslationParserPlugin
 
     public override void _ParseFile(string path, Array<string> msgids, Array<Array> msgidsContextPlural)
     {
+        _msgids = new Array<string>();
+        _msgidsContextPlural = new Array<Array>();
+        _msgidsComment = new Array<string>();
+        _msgidsContextPluralComment = new Array<string>();
+
         if (_projectReferences == null)
         {
             _projectReferences = GetProjectReferences(GodotSharpDirs.ProjectCsProjPath);
@@ -39,22 +65,101 @@ public partial class CsTranslationParserPlugin : EditorTranslationParserPlugin
         var text = res.SourceCode;
         var tree = CSharpSyntaxTree.ParseText(text);
 
-        var compilation = CSharpCompilation.Create("TranslationParser", options: new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary))
+        var compilation = CSharpCompilation.Create("TranslationParser",
+                options: new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary))
             .AddReferences(_projectReferences)
             .AddSyntaxTrees(tree);
 
         var semanticModel = compilation.GetSemanticModel(tree);
+        var comments = tree.GetRoot().DescendantNodes()
+            .SelectMany(
+                node => node.GetTrailingTrivia()
+                    .Where(trivia => trivia.IsKind(SyntaxKind.SingleLineCommentTrivia))
+                    .Concat(node.GetLeadingTrivia().Where(trivia => trivia.IsKind(SyntaxKind.SingleLineCommentTrivia)
+                                                                    || trivia.IsKind(SyntaxKind.MultiLineCommentTrivia))))
+            .Select(trivia => new CommentData
+            {
+                Comment = trivia.ToFullString(),
+                StartLine = trivia.GetLocation().GetLineSpan().StartLinePosition.Line,
+                EndLine = trivia.GetLocation().GetLineSpan().EndLinePosition.Line,
+                Newline = tree.GetRoot().DescendantNodes()
+                    .FirstOrDefault(node => GetStartLine(node) == trivia.GetLocation().GetLineSpan().StartLinePosition.Line) == null
+            })
+            .ToArray();
+
         foreach (var syntaxNode in tree.GetRoot().DescendantNodes().Where(node => node is InvocationExpressionSyntax))
         {
-
             var invocation = (InvocationExpressionSyntax)syntaxNode;
+            var commentText = "";
+            var skip = false;
+            // Parse inline comment
+            var line = GetStartLine(syntaxNode);
+
+            var commentData = comments.FirstOrDefault(comment => comment.StartLine == line);
+            if (commentData != null)
+            {
+                commentText = commentData.Comment.TrimStart('/').Trim();
+                if (commentText.StartsWith(TranslationCommentPrefix))
+                {
+                    commentText = commentText.TrimPrefix(TranslationCommentPrefix).Trim();
+                }
+                else if (commentText == NoTranslateComment || commentText.StartsWith(NoTranslateComment + ":"))
+                {
+                    skip = true;
+                }
+            }
+            else
+            {
+                // Parse multiline comment
+                for (var index = line - 1; index >= 0; index--)
+                {
+                    var multilineCommentData =
+                        comments.FirstOrDefault(comment => comment.EndLine == index && comment.Newline);
+                    if (multilineCommentData == null)
+                    {
+                        commentText = "";
+                        break;
+                    }
+                    // multiline comment
+                    if (multilineCommentData.StartLine != multilineCommentData.EndLine)
+                    {
+                        var multilineComments = multilineCommentData.Comment.TrimSuffix("*/").Trim().Split("\n")
+                            .Select(lineStr => lineStr.TrimPrefix("/*").Trim().TrimPrefix(TranslationCommentPrefix));
+                        commentText = string.Join("\n", multilineComments);
+                        break;
+                    }
+                    // multiline single line comment
+                    var currentComment = multilineCommentData.Comment.TrimStart('/').Trim();
+                    if (currentComment == "") continue;
+                    if (commentText == "")
+                    {
+                        commentText = currentComment;
+                    }
+                    else
+                    {
+                        commentText = currentComment  + "\n" + commentText;
+                    }
+                    if (currentComment.StartsWith(TranslationCommentPrefix))
+                    {
+                        commentText = commentText.TrimPrefix(TranslationCommentPrefix).Trim();
+                        break;
+                    }
+                    if (currentComment == NoTranslateComment || currentComment.StartsWith(NoTranslateComment + ":"))
+                    {
+                        commentText = "";
+                        skip = true;
+                        break;
+                    }
+                }
+            }
+
             SymbolInfo? symbolInfo = null;
             if (invocation.Expression is IdentifierNameSyntax identifierNameSyntax)
             {
                 symbolInfo = semanticModel.GetSymbolInfo(identifierNameSyntax);
-
             }
-            if (invocation.Expression is MemberAccessExpressionSyntax memberAccessExpressionSyntax && memberAccessExpressionSyntax.Name is IdentifierNameSyntax nameSyntax)
+            if (invocation.Expression is MemberAccessExpressionSyntax memberAccessExpressionSyntax &&
+                memberAccessExpressionSyntax.Name is IdentifierNameSyntax nameSyntax)
             {
                 symbolInfo = semanticModel.GetSymbolInfo(nameSyntax);
             }
@@ -62,44 +167,65 @@ public partial class CsTranslationParserPlugin : EditorTranslationParserPlugin
             var methodSymbol = symbolInfo?.Symbol as IMethodSymbol;
             if (methodSymbol == null)
                 continue;
-
-            if (methodSymbol.Name == "Translate" &&
-                methodSymbol.ContainingType.ToDisplayString() == "Godot.TranslationServer")
+            if (methodSymbol.Name == TranslationMethod &&
+                methodSymbol.ContainingType.ToDisplayString() == TranslationStaticClass)
             {
-                AddMsg(invocation.ArgumentList.Arguments, semanticModel, msgids, msgidsContextPlural);
+                if (skip) continue;
+                AddMsg(invocation.ArgumentList.Arguments, semanticModel, commentText);
             }
 
-            if (methodSymbol.Name == "TranslatePlural" &&
-                methodSymbol.ContainingType.ToDisplayString() == "Godot.TranslationServer")
+            if (methodSymbol.Name == TranslationPluralMethod &&
+                methodSymbol.ContainingType.ToDisplayString() == TranslationStaticClass)
             {
-                AddPluralMsg(invocation.ArgumentList.Arguments, semanticModel, msgidsContextPlural);
+                if (skip) continue;
+                AddPluralMsg(invocation.ArgumentList.Arguments, semanticModel, commentText);
             }
 
-            if ((methodSymbol.Name == "Tr" || methodSymbol.Name == "TrN")
+            if ((methodSymbol.Name == TranslationMethodTr || methodSymbol.Name == TranslationMethodTrN)
                 && methodSymbol.MethodKind == MethodKind.Ordinary)
             {
                 var receiverType = methodSymbol.ReceiverType ?? methodSymbol.ContainingType;
 
                 if (receiverType != null && InheritsFromGodotObject(receiverType))
                 {
-                    if (methodSymbol.Name == "Tr")
+                    if (skip) continue;
+                    if (methodSymbol.Name == TranslationMethodTr)
                     {
-                        AddMsg(invocation.ArgumentList.Arguments, semanticModel, msgids, msgidsContextPlural);
+                        AddMsg(invocation.ArgumentList.Arguments, semanticModel, commentText);
                     }
                     else
                     {
-                        AddPluralMsg(invocation.ArgumentList.Arguments, semanticModel, msgidsContextPlural);
+                        AddPluralMsg(invocation.ArgumentList.Arguments, semanticModel, commentText);
                     }
                 }
             }
         }
+
+        msgids.AddRange(_msgids);
+        msgidsContextPlural.AddRange(_msgidsContextPlural);
+    }
+
+    public override void _GetComments(Array<string> msgidsComment, Array<string> msgidsContextPluralComment)
+    {
+        msgidsComment.AddRange(_msgidsComment);
+        msgidsContextPluralComment.AddRange(_msgidsContextPluralComment);
+    }
+
+    private int GetStartLine(SyntaxNode node)
+    {
+        return node.GetLocation().GetLineSpan().StartLinePosition.Line;
+    }
+
+    private int GetEndLine(SyntaxNode node)
+    {
+        return node.GetLocation().GetLineSpan().EndLinePosition.Line;
     }
 
     private bool InheritsFromGodotObject(ITypeSymbol typeSymbol)
     {
         while (typeSymbol != null)
         {
-            if (typeSymbol.ToDisplayString() == "Godot.GodotObject")
+            if (typeSymbol.ToDisplayString() == TranslationClass)
                 return true;
 #pragma warning disable CS8600
             typeSymbol = typeSymbol.BaseType;
@@ -108,7 +234,7 @@ public partial class CsTranslationParserPlugin : EditorTranslationParserPlugin
         return false;
     }
 
-    private void AddMsg(SeparatedSyntaxList<ArgumentSyntax> arguments, SemanticModel semanticModel, Array<string> msgids, Array<Array> msgidsContextPlural)
+    private void AddMsg(SeparatedSyntaxList<ArgumentSyntax> arguments, SemanticModel semanticModel, string comment)
     {
         switch (arguments.Count)
         {
@@ -119,7 +245,8 @@ public partial class CsTranslationParserPlugin : EditorTranslationParserPlugin
 
                 if (constantValue.HasValue && constantValue.Value is string message)
                 {
-                    msgids.Add(message);
+                    _msgids.Add(message);
+                    _msgidsComment.Add(comment);
                 }
 
                 break;
@@ -135,7 +262,8 @@ public partial class CsTranslationParserPlugin : EditorTranslationParserPlugin
                 if (msgValue.HasValue && msgValue.Value is string message &&
                     ctxValue.HasValue && ctxValue.Value is string context)
                 {
-                    msgidsContextPlural.Add(new Array { message, context, "" });
+                    _msgidsContextPlural.Add(new Array { message, context, "" });
+                    _msgidsContextPluralComment.Add(comment);
                 }
 
                 break;
@@ -143,7 +271,7 @@ public partial class CsTranslationParserPlugin : EditorTranslationParserPlugin
         }
     }
 
-    private void AddPluralMsg(SeparatedSyntaxList<ArgumentSyntax> arguments, SemanticModel semanticModel, Array<Array> msgidsContextPlural)
+    private void AddPluralMsg(SeparatedSyntaxList<ArgumentSyntax> arguments, SemanticModel semanticModel, string comment)
     {
         var singularExpr = arguments[0].Expression;
         var pluralExpr = arguments[1].Expression;
@@ -164,7 +292,8 @@ public partial class CsTranslationParserPlugin : EditorTranslationParserPlugin
                 context = ctx;
             }
         }
-        msgidsContextPlural.Add(new Array { singular, context, plural });
+        _msgidsContextPlural.Add(new Array { singular, context, plural });
+        _msgidsContextPluralComment.Add(comment);
     }
 
     private List<MetadataReference> GetProjectReferences(string projectPath)
@@ -205,10 +334,7 @@ public partial class CsTranslationParserPlugin : EditorTranslationParserPlugin
 
         if (buildResult.OverallResult == BuildResultCode.Success)
         {
-            foreach (var item in buildResult.ResultsByTarget["GetTargetPath"].Items)
-            {
-                referencePaths.Add(item.ItemSpec);
-            }
+            referencePaths.AddRange(buildResult.ResultsByTarget["GetTargetPath"].Items.Select(item => item.ItemSpec));
         }
 
         projectCollection.UnloadAllProjects();
