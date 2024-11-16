@@ -126,6 +126,11 @@ public partial class CsTranslationParserPlugin : EditorTranslationParserPlugin
                         var multilineComments = multilineCommentData.Comment.TrimSuffix("*/").Trim().Split("\n")
                             .Select(lineStr => lineStr.TrimPrefix("/*").Trim().TrimPrefix(TranslationCommentPrefix));
                         commentText = string.Join("\n", multilineComments);
+                        if (commentText == NoTranslateComment || commentText.StartsWith(NoTranslateComment + ":"))
+                        {
+                            commentText = "";
+                            skip = true;
+                        }
                         break;
                     }
                     // multiline single line comment
