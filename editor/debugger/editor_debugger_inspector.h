@@ -53,7 +53,7 @@ public:
 	List<PropertyInfo> prop_list;
 	HashMap<StringName, Variant> prop_values;
 
-	ObjectID get_remote_object_id() { return remote_object_id; };
+	ObjectID get_remote_object_id() { return remote_object_id; }
 	String get_title();
 
 	int update_props(SceneDebuggerObject &p_obj, HashSet<String> *p_changed, HashSet<Ref<Resource>> *p_remote_dependencies);

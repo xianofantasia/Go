@@ -135,9 +135,9 @@ void ScriptCreateDialog::_notification(int p_what) {
 				}
 			}
 
-			path_button->set_icon(get_editor_theme_icon(SNAME("Folder")));
-			parent_browse_button->set_icon(get_editor_theme_icon(SNAME("Folder")));
-			parent_search_button->set_icon(get_editor_theme_icon(SNAME("ClassList")));
+			path_button->set_button_icon(get_editor_theme_icon(SNAME("Folder")));
+			parent_browse_button->set_button_icon(get_editor_theme_icon(SNAME("Folder")));
+			parent_search_button->set_button_icon(get_editor_theme_icon(SNAME("ClassList")));
 		} break;
 	}
 }
@@ -359,6 +359,7 @@ void ScriptCreateDialog::_create_new() {
 			alert->popup_centered();
 			return;
 		}
+		EditorNode::get_singleton()->ensure_uid_file(lpath);
 	}
 
 	emit_signal(SNAME("script_created"), scr);

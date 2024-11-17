@@ -277,15 +277,17 @@ void CodeEdit::gui_input(const Ref<InputEvent> &p_gui_input) {
 				code_completion_force_item_center = -1;
 				queue_redraw();
 			}
-			code_completion_pan_offset += 1.0f;
+			code_completion_pan_offset = 0;
 		} else if (code_completion_pan_offset >= +1.0) {
 			if (code_completion_current_selected < code_completion_options.size() - 1) {
 				code_completion_current_selected++;
 				code_completion_force_item_center = -1;
 				queue_redraw();
 			}
-			code_completion_pan_offset -= 1.0f;
+			code_completion_pan_offset = 0;
 		}
+		accept_event();
+		return;
 	}
 
 	Ref<InputEventMouseButton> mb = p_gui_input;
@@ -1479,7 +1481,7 @@ void CodeEdit::_line_number_draw_callback(int p_line, int p_gutter, const Rect2 
 	if (E) {
 		text_rid = E->value;
 	} else {
-		String fc = String::num(p_line + 1).lpad(line_number_digits, line_number_padding);
+		String fc = String::num_int64(p_line + 1).lpad(line_number_digits, line_number_padding);
 		if (is_localizing_numeral_system()) {
 			fc = TS->format_number(fc);
 		}
@@ -1496,9 +1498,9 @@ void CodeEdit::_line_number_draw_callback(int p_line, int p_gutter, const Rect2 
 	ofs.y += TS->shaped_text_get_ascent(text_rid);
 
 	if (rtl) {
-		ofs.x = p_region.position.x;
-	} else {
 		ofs.x = p_region.get_end().x - text_size.width;
+	} else {
+		ofs.x = p_region.position.x;
 	}
 
 	Color number_color = get_line_gutter_item_color(p_line, line_number_gutter);

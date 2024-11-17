@@ -500,8 +500,8 @@ Vector<ScriptLanguage::StackInfo> CSharpLanguage::debug_get_current_stack_info()
 	}
 	_recursion_flag_ = true;
 	SCOPE_EXIT {
-		_recursion_flag_ = false;
-	};
+		_recursion_flag_ = false; // clang-format off
+	}; // clang-format on
 
 	if (!gdmono || !gdmono->is_runtime_initialized()) {
 		return Vector<StackInfo>();
@@ -2826,7 +2826,7 @@ Ref<Resource> ResourceFormatLoaderCSharpScript::load(const String &p_path, const
 		GDMonoCache::managed_callbacks.ScriptManagerBridge_GetOrCreateScriptBridgeForPath(&p_path, &scr);
 		ERR_FAIL_COND_V_MSG(scr.is_null(), Ref<Resource>(), "Could not create C# script '" + real_path + "'.");
 	} else {
-		scr = Ref<CSharpScript>(memnew(CSharpScript));
+		scr.instantiate();
 	}
 
 #if defined(DEBUG_ENABLED) || defined(TOOLS_ENABLED)
