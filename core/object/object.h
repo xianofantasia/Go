@@ -35,7 +35,6 @@
 #include "core/object/message_queue.h"
 #include "core/object/object_id.h"
 #include "core/os/rw_lock.h"
-#include "core/os/semaphore.h"
 #include "core/os/spin_lock.h"
 #include "core/templates/hash_map.h"
 #include "core/templates/hash_set.h"
@@ -1010,13 +1009,6 @@ class ObjectDB {
 		Object *object = nullptr;
 	};
 
-#ifdef DEBUG_ENABLED
-	// used to prevent Object::set from being called while
-	// debug_object is iterating over the ObjectDB
-	static Semaphore writes_blocked;
-	static bool waiting_to_debug;
-	static void block_on_waiting_to_debug();
-#endif
 	static SpinLock spin_lock;
 	static uint32_t slot_count;
 	static uint32_t slot_max;
@@ -1034,7 +1026,7 @@ class ObjectDB {
 	static void setup();
 
 public:
-	typedef void (*DebugFunc)(Object *p_ob, void *p_user_data);
+	typedef void (*DebugFunc)(Object *p_obj, void *p_user_data);
 
 	_ALWAYS_INLINE_ static Object *get_instance(ObjectID p_instance_id) {
 		uint64_t id = p_instance_id;

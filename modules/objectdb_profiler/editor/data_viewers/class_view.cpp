@@ -193,7 +193,7 @@ Tree *SnapshotClassView::_make_object_list_tree(const String &p_column_name) {
 void SnapshotClassView::_add_objects_to_class_map(HashMap<String, ClassData> &p_class_map, GameStateSnapshot *p_objects) {
 	for (const KeyValue<ObjectID, SnapshotDataObject *> &pair : p_objects->objects) {
 		StringName class_name = StringName(pair.value->type_name);
-		StringName parent_class_name = class_name != StringName() ? ClassDB::get_parent_class(class_name) : "";
+		StringName parent_class_name = class_name != StringName() && ClassDB::class_exists(class_name) ? ClassDB::get_parent_class(class_name) : "";
 
 		p_class_map[class_name].instances.push_back(pair.value);
 

@@ -102,10 +102,15 @@ int EditorDebuggerRemoteObject::update_props(SceneDebuggerObject &p_obj, HashSet
 		if (pinfo.type == Variant::OBJECT) {
 			if (var.is_string()) {
 				String path = var;
+				// If a resource is followed by a ::, it is a nested resource (like a sub_resource in a .tscn file).
+				// To get a reference to it, first we load the parent resource (the .tscn, for example), then,
+				// we load the child resource. The parent resource (dependency) should not be destroyed before the child
+				// resource (var) is loaded. We must declare dependency outside of the if statement to ensure this.
+				Ref<Resource> dependency;
 				if (path.contains("::")) {
 					// built-in resource
 					String base_path = path.get_slice("::", 0);
-					Ref<Resource> dependency = ResourceLoader::load(base_path);
+					dependency = ResourceLoader::load(base_path);
 					if (dependency.is_valid() && p_remote_dependencies) {
 						p_remote_dependencies->insert(dependency);
 					}

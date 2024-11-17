@@ -226,11 +226,6 @@ void Object::_get_valid_parents_static(List<String> *p_parents) {
 }
 
 void Object::set(const StringName &p_name, const Variant &p_value, bool *r_valid) {
-#ifdef DEBUG_ENABLED
-	ObjectDB::block_on_waiting_to_debug();
-	ObjectDB::writes_blocked.try_wait();
-#endif
-
 #ifdef TOOLS_ENABLED
 
 	_edited = true;
@@ -241,7 +236,7 @@ void Object::set(const StringName &p_name, const Variant &p_value, bool *r_valid
 			if (r_valid) {
 				*r_valid = true;
 			}
-			goto done;
+			return;
 		}
 	}
 
@@ -250,14 +245,14 @@ void Object::set(const StringName &p_name, const Variant &p_value, bool *r_valid
 			if (r_valid) {
 				*r_valid = true;
 			}
-			goto done;
+			return;
 		}
 	}
 
 	// Try built-in setter.
 	{
 		if (ClassDB::set_property(this, p_name, p_value, r_valid)) {
-			goto done;
+			return;
 		}
 	}
 
@@ -266,7 +261,7 @@ void Object::set(const StringName &p_name, const Variant &p_value, bool *r_valid
 		if (r_valid) {
 			*r_valid = true;
 		}
-		goto done;
+		return;
 
 	} else {
 		Variant **V = metadata_properties.getptr(p_name);
@@ -275,14 +270,14 @@ void Object::set(const StringName &p_name, const Variant &p_value, bool *r_valid
 			if (r_valid) {
 				*r_valid = true;
 			}
-			goto done;
+			return;
 		} else if (p_name.operator String().begins_with("metadata/")) {
 			// Must exist, otherwise duplicate() will not work.
 			set_meta(p_name.operator String().replace_first("metadata/", ""), p_value);
 			if (r_valid) {
 				*r_valid = true;
 			}
-			goto done;
+			return;
 		}
 	}
 
@@ -294,28 +289,23 @@ void Object::set(const StringName &p_name, const Variant &p_value, bool *r_valid
 			if (r_valid) {
 				*r_valid = true;
 			}
-			goto done;
+			return;
 		}
 	}
 #endif
 
 	// Something inside the object... :|
-	if (_setv(p_name, p_value)) {
+	bool success = _setv(p_name, p_value);
+	if (success) {
 		if (r_valid) {
 			*r_valid = true;
 		}
-		goto done;
+		return;
 	}
 
 	if (r_valid) {
 		*r_valid = false;
 	}
-
-done:
-#ifdef DEBUG_ENABLED
-	ObjectDB::writes_blocked.post();
-#endif
-	return;
 }
 
 Variant Object::get(const StringName &p_name, bool *r_valid) const {
@@ -2197,17 +2187,14 @@ void postinitialize_handler(Object *p_object) {
 }
 
 void ObjectDB::debug_objects(DebugFunc p_func, void *p_user_data) {
-#ifdef DEBUG_ENABLED
-	ObjectDB::waiting_to_debug = true;
-	writes_blocked.wait();
+	spin_lock.lock();
 	for (uint32_t i = 0, count = slot_count; i < slot_max && count != 0; i++) {
 		if (object_slots[i].validator) {
 			p_func(object_slots[i].object, p_user_data);
+			count--;
 		}
 	}
-	ObjectDB::waiting_to_debug = false;
-	writes_blocked.post();
-#endif
+	spin_lock.unlock();
 }
 
 #ifdef TOOLS_ENABLED
@@ -2256,14 +2243,6 @@ void Object::get_argument_options(const StringName &p_function, int p_idx, List<
 }
 #endif
 
-#ifdef DEBUG_ENABLED
-Semaphore ObjectDB::writes_blocked;
-bool ObjectDB::waiting_to_debug = 0;
-void ObjectDB::block_on_waiting_to_debug() {
-	while (ObjectDB::waiting_to_debug) {
-	}
-}
-#endif
 SpinLock ObjectDB::spin_lock;
 uint32_t ObjectDB::slot_count = 0;
 uint32_t ObjectDB::slot_max = 0;
@@ -2276,10 +2255,6 @@ int ObjectDB::get_object_count() {
 
 ObjectID ObjectDB::add_instance(Object *p_object) {
 	spin_lock.lock();
-#ifdef DEBUG_ENABLED
-	ObjectDB::block_on_waiting_to_debug();
-	writes_blocked.try_wait();
-#endif
 	if (unlikely(slot_count == slot_max)) {
 		CRASH_COND(slot_count == (1 << OBJECTDB_SLOT_MAX_COUNT_BITS));
 
@@ -2297,9 +2272,6 @@ ObjectID ObjectDB::add_instance(Object *p_object) {
 	uint32_t slot = object_slots[slot_count].next_free;
 	if (object_slots[slot].object != nullptr) {
 		spin_lock.unlock();
-#ifdef DEBUG_ENABLED
-		writes_blocked.post();
-#endif
 		ERR_FAIL_COND_V(object_slots[slot].object != nullptr, ObjectID());
 	}
 	object_slots[slot].object = p_object;
@@ -2321,9 +2293,6 @@ ObjectID ObjectDB::add_instance(Object *p_object) {
 	slot_count++;
 
 	spin_lock.unlock();
-#ifdef DEBUG_ENABLED
-	writes_blocked.post();
-#endif
 
 	return ObjectID(id);
 }
@@ -2333,27 +2302,17 @@ void ObjectDB::remove_instance(Object *p_object) {
 	uint32_t slot = t & OBJECTDB_SLOT_MAX_COUNT_MASK; //slot is always valid on valid object
 
 	spin_lock.lock();
-#ifdef DEBUG_ENABLED
-	ObjectDB::block_on_waiting_to_debug();
-	writes_blocked.try_wait();
-#endif
 
 #ifdef DEBUG_ENABLED
 
 	if (object_slots[slot].object != p_object) {
 		spin_lock.unlock();
-#ifdef DEBUG_ENABLED
-		writes_blocked.post();
-#endif
 		ERR_FAIL_COND(object_slots[slot].object != p_object);
 	}
 	{
 		uint64_t validator = (t >> OBJECTDB_SLOT_MAX_COUNT_BITS) & OBJECTDB_VALIDATOR_MASK;
 		if (object_slots[slot].validator != validator) {
 			spin_lock.unlock();
-#ifdef DEBUG_ENABLED
-			writes_blocked.post();
-#endif
 			ERR_FAIL_COND(object_slots[slot].validator != validator);
 		}
 	}
@@ -2369,9 +2328,6 @@ void ObjectDB::remove_instance(Object *p_object) {
 	object_slots[slot].object = nullptr;
 
 	spin_lock.unlock();
-#ifdef DEBUG_ENABLED
-	writes_blocked.post();
-#endif
 }
 
 void ObjectDB::setup() {
@@ -2380,10 +2336,6 @@ void ObjectDB::setup() {
 
 void ObjectDB::cleanup() {
 	spin_lock.lock();
-#ifdef DEBUG_ENABLED
-	ObjectDB::block_on_waiting_to_debug();
-	writes_blocked.try_wait();
-#endif
 
 	if (slot_count > 0) {
 		WARN_PRINT("ObjectDB instances leaked at exit (run with --verbose for details).");
@@ -2426,7 +2378,4 @@ void ObjectDB::cleanup() {
 	}
 
 	spin_lock.unlock();
-#ifdef DEBUG_ENABLED
-	writes_blocked.post();
-#endif
 }
