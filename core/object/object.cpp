@@ -2187,14 +2187,14 @@ void postinitialize_handler(Object *p_object) {
 }
 
 void ObjectDB::debug_objects(DebugFunc p_func, void *p_user_data) {
-	spin_lock.lock();
+	write_lock.lock();
 	for (uint32_t i = 0, count = slot_count; i < slot_max && count != 0; i++) {
 		if (object_slots[i].validator) {
 			p_func(object_slots[i].object, p_user_data);
 			count--;
 		}
 	}
-	spin_lock.unlock();
+	write_lock.unlock();
 }
 
 #ifdef TOOLS_ENABLED
@@ -2244,6 +2244,7 @@ void Object::get_argument_options(const StringName &p_function, int p_idx, List<
 #endif
 
 SpinLock ObjectDB::spin_lock;
+SpinLock ObjectDB::write_lock;
 uint32_t ObjectDB::slot_count = 0;
 uint32_t ObjectDB::slot_max = 0;
 ObjectDB::ObjectSlot *ObjectDB::object_slots = nullptr;
@@ -2254,6 +2255,7 @@ int ObjectDB::get_object_count() {
 }
 
 ObjectID ObjectDB::add_instance(Object *p_object) {
+	write_lock.lock();
 	spin_lock.lock();
 	if (unlikely(slot_count == slot_max)) {
 		CRASH_COND(slot_count == (1 << OBJECTDB_SLOT_MAX_COUNT_BITS));
@@ -2271,6 +2273,7 @@ ObjectID ObjectDB::add_instance(Object *p_object) {
 
 	uint32_t slot = object_slots[slot_count].next_free;
 	if (object_slots[slot].object != nullptr) {
+		write_lock.unlock();
 		spin_lock.unlock();
 		ERR_FAIL_COND_V(object_slots[slot].object != nullptr, ObjectID());
 	}
@@ -2292,6 +2295,7 @@ ObjectID ObjectDB::add_instance(Object *p_object) {
 
 	slot_count++;
 
+	write_lock.unlock();
 	spin_lock.unlock();
 
 	return ObjectID(id);
@@ -2301,17 +2305,20 @@ void ObjectDB::remove_instance(Object *p_object) {
 	uint64_t t = p_object->get_instance_id();
 	uint32_t slot = t & OBJECTDB_SLOT_MAX_COUNT_MASK; //slot is always valid on valid object
 
+	write_lock.lock();
 	spin_lock.lock();
 
 #ifdef DEBUG_ENABLED
 
 	if (object_slots[slot].object != p_object) {
+		write_lock.unlock();
 		spin_lock.unlock();
 		ERR_FAIL_COND(object_slots[slot].object != p_object);
 	}
 	{
 		uint64_t validator = (t >> OBJECTDB_SLOT_MAX_COUNT_BITS) & OBJECTDB_VALIDATOR_MASK;
 		if (object_slots[slot].validator != validator) {
+			write_lock.unlock();
 			spin_lock.unlock();
 			ERR_FAIL_COND(object_slots[slot].validator != validator);
 		}
@@ -2327,6 +2334,7 @@ void ObjectDB::remove_instance(Object *p_object) {
 	object_slots[slot].is_ref_counted = false;
 	object_slots[slot].object = nullptr;
 
+	write_lock.unlock();
 	spin_lock.unlock();
 }
 
@@ -2335,6 +2343,7 @@ void ObjectDB::setup() {
 }
 
 void ObjectDB::cleanup() {
+	write_lock.lock();
 	spin_lock.lock();
 
 	if (slot_count > 0) {
@@ -2377,5 +2386,6 @@ void ObjectDB::cleanup() {
 		memfree(object_slots);
 	}
 
+	write_lock.unlock();
 	spin_lock.unlock();
 }

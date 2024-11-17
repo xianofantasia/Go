@@ -182,7 +182,7 @@ void TreeSortAndFilterBar::_notification(int p_what) {
 		case NOTIFICATION_THEME_CHANGED:
 		case NOTIFICATION_TRANSLATION_CHANGED: {
 			filter_edit->set_right_icon(get_editor_theme_icon(SNAME("Search")));
-			sort_button->set_icon(get_editor_theme_icon(SNAME("Sort")));
+			sort_button->set_button_icon(get_editor_theme_icon(SNAME("Sort")));
 
 			apply();
 
