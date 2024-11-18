@@ -579,7 +579,7 @@ void ColorPicker::_reset_sliders_theme() {
 }
 
 void ColorPicker::_html_submitted(const String &p_html) {
-	if (updating || text_is_constructor || !c_text->is_visible()) {
+	if (updating || text_is_constructor || !c_text->is_editable()) {
 		return;
 	}
 
@@ -717,7 +717,7 @@ void ColorPicker::_text_type_toggled() {
 		c_text->set_editable(true);
 		c_text->set_tooltip_text(ETR("Enter a hex code (\"#ff0000\") or named color (\"red\")."));
 	}
-	_update_color();
+	_update_text_value();
 }
 
 Color ColorPicker::get_pick_color() const {
@@ -1047,25 +1047,30 @@ bool ColorPicker::is_deferred_mode() const {
 }
 
 void ColorPicker::_update_text_value() {
-	bool text_visible = true;
-	if (text_is_constructor) {
+	bool is_rgb_valid = color.r <= 1 && color.g <= 1 && color.b <= 1 && color.r >= 0 && color.g >= 0 && color.b >= 0;
+	if (text_is_constructor || !is_rgb_valid) {
 		String t = "Color(" + String::num(color.r, 3) + ", " + String::num(color.g, 3) + ", " + String::num(color.b, 3);
 		if (edit_alpha && color.a < 1) {
 			t += ", " + String::num(color.a, 3) + ")";
 		} else {
 			t += ")";
 		}
+		text_type->set_text("");
+#ifdef TOOLS_ENABLED
+		text_type->set_button_icon(get_editor_theme_icon(SNAME("Script")));
+#endif
+		if (!is_rgb_valid) {
+			text_type->set_disabled(true);
+		}
 		c_text->set_text(t);
-	}
-
-	if (color.r > 1 || color.g > 1 || color.b > 1 || color.r < 0 || color.g < 0 || color.b < 0) {
-		text_visible = false;
-	} else if (!text_is_constructor) {
+		c_text->set_editable(false);
+	} else {
+		text_type->set_text("#");
+		text_type->set_button_icon(nullptr);
+		text_type->set_disabled(false);
 		c_text->set_text(color.to_html(edit_alpha && color.a < 1));
+		c_text->set_editable(true);
 	}
-
-	text_type->set_visible(text_visible);
-	c_text->set_visible(text_visible);
 }
 
 void ColorPicker::_sample_input(const Ref<InputEvent> &p_event) {
