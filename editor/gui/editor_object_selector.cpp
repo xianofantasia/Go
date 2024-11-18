@@ -132,7 +132,7 @@ void EditorObjectSelector::update_path() {
 		Ref<Texture2D> obj_icon;
 		if (Object::cast_to<MultiNodeEdit>(obj)) {
 			obj_icon = EditorNode::get_singleton()->get_class_icon(Object::cast_to<MultiNodeEdit>(obj)->get_edited_class_name());
-		} else if (Object::cast_to<EditorDebuggerRemoteObject>(obj)) {
+		} else if (Object::cast_to<EditorDebuggerRemoteObject>(obj) || Object::cast_to<EditorDebuggerMultiRemoteObject>(obj)) {
 			String class_name;
 			Ref<Script> base_script = obj->get_script();
 			if (base_script.is_valid()) {
@@ -144,7 +144,15 @@ void EditorObjectSelector::update_path() {
 				}
 			}
 
-			obj_icon = EditorNode::get_singleton()->get_class_icon(class_name.is_empty() ? Object::cast_to<EditorDebuggerRemoteObject>(obj)->type_name : class_name);
+			if (class_name.is_empty()) {
+				if (EditorDebuggerRemoteObject *robj = Object::cast_to<EditorDebuggerRemoteObject>(obj)) {
+					class_name = robj->type_name;
+				} else {
+					class_name = Object::cast_to<EditorDebuggerMultiRemoteObject>(obj)->type_name;
+				}
+			}
+
+			obj_icon = EditorNode::get_singleton()->get_class_icon(class_name);
 		} else {
 			obj_icon = EditorNode::get_singleton()->get_object_icon(obj);
 		}
@@ -168,7 +176,7 @@ void EditorObjectSelector::update_path() {
 				if (name.is_empty()) {
 					name = r->get_class();
 				}
-			} else if (obj->is_class("EditorDebuggerRemoteObject")) {
+			} else if (obj->is_class("EditorDebuggerRemoteObject") || obj->is_class("EditorDebuggerMultiRemoteObject")) {
 				name = obj->call("get_title");
 			} else if (Object::cast_to<Node>(obj)) {
 				name = Object::cast_to<Node>(obj)->get_name();
