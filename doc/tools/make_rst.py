@@ -2263,6 +2263,13 @@ def format_text_block(
                         repl_text = target_name
                         if target_class_name != state.current_class:
                             repl_text = f"{target_class_name}.{target_name}"
+
+                        if target_class_name == "ProjectSettings" or target_class_name == "EditorSettings":
+                            repl_text = "(Editor)" if target_class_name == "EditorSettings" else ""
+                            for section in target_name.split("/"):
+                                repl_text += section.title() + " > "
+                            return repl_text
+
                         tag_text = f":ref:`{repl_text}<class_{target_class_name}{ref_type}_{target_name}>`"
                         escape_pre = True
                         escape_post = True
