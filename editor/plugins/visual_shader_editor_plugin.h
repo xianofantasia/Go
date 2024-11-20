@@ -38,6 +38,7 @@
 #include "scene/gui/graph_edit.h"
 #include "scene/resources/syntax_highlighter.h"
 #include "scene/resources/visual_shader.h"
+#include "scene/resources/visual_shader_group.h"
 
 class CodeEdit;
 class ColorPicker;
@@ -126,8 +127,10 @@ private:
 	};
 
 	Ref<VisualShader> visual_shader;
+	Ref<VisualShaderGroup> editing_visual_shader_group; // TODO: Do we need this here?
+
 	HashMap<int, Link> links;
-	List<VisualShader::Connection> connections;
+	List<ShaderGraph::Connection> connections;
 
 	Color vector_expanded_color[4];
 
@@ -138,9 +141,11 @@ protected:
 	static void _bind_methods();
 
 public:
+	static Vector<Color> get_connection_type_colors();
+
 	void set_editor(VisualShaderEditor *p_editor);
 	void register_shader(VisualShader *p_visual_shader);
-	void set_connections(const List<VisualShader::Connection> &p_connections);
+	void set_connections(const List<ShaderGraph::Connection> &p_connections);
 	void register_link(VisualShader::Type p_type, int p_id, VisualShaderNode *p_visual_node, GraphElement *p_graph_element);
 	void register_output_port(int p_id, int p_port, VisualShaderNode::PortType p_port_type, TextureButton *p_button);
 	void register_parameter_name(int p_id, LineEdit *p_parameter_name);
@@ -175,8 +180,8 @@ public:
 	int get_constant_index(float p_constant) const;
 	Ref<Script> get_node_script(int p_node_id) const;
 	void update_theme();
+	// TODO: Rename and move to VisualShader/ShaderGraph.
 	bool is_node_has_parameter_instances_relatively(VisualShader::Type p_type, int p_node) const;
-	VisualShader::Type get_shader_type() const;
 
 	VisualShaderGraphPlugin();
 	~VisualShaderGraphPlugin();
@@ -202,6 +207,13 @@ class VisualShaderEditor : public ShaderEditor {
 	GDCLASS(VisualShaderEditor, ShaderEditor);
 	friend class VisualShaderGraphPlugin;
 
+	Ref<ShaderGraph> editing_shader_graph;
+	Ref<VisualShader> visual_shader; // Could be null (editing just a VisualShaderGroup).
+	Ref<VisualShaderGroup> visual_shader_group; // Could be null.
+
+	Ref<ShaderMaterial> preview_material;
+	Ref<Environment> preview_environment;
+
 	PopupPanel *property_editor_popup = nullptr;
 	EditorProperty *property_editor = nullptr;
 	int editing_node = -1;
@@ -209,9 +221,6 @@ class VisualShaderEditor : public ShaderEditor {
 	Ref<VisualShaderEditedProperty> edited_property_holder;
 
 	MaterialEditor *material_editor = nullptr;
-	Ref<VisualShader> visual_shader;
-	Ref<ShaderMaterial> preview_material;
-	Ref<Environment> env;
 	String param_filter_name;
 	EditorProperty *current_prop = nullptr;
 	VBoxContainer *shader_preview_vbox = nullptr;
@@ -220,6 +229,7 @@ class VisualShaderEditor : public ShaderEditor {
 	MenuButton *varying_button = nullptr;
 	Button *code_preview_button = nullptr;
 	Button *shader_preview_button = nullptr;
+	Button *exit_group_button = nullptr;
 
 	int last_to_node = -1;
 	int last_to_port = -1;
@@ -287,6 +297,9 @@ class VisualShaderEditor : public ShaderEditor {
 	VBoxContainer *param_vbox = nullptr;
 	VBoxContainer *param_vbox2 = nullptr;
 
+	VisualShaderGroupPortsDialog *group_ports_dialog = nullptr;
+	List<Ref<VisualShaderGroup>> group_edit_stack;
+
 	enum ShaderModeFlags {
 		MODE_FLAGS_SPATIAL_CANVASITEM = 1,
 		MODE_FLAGS_SKY = 2,
@@ -295,6 +308,7 @@ class VisualShaderEditor : public ShaderEditor {
 	};
 
 	int mode = MODE_FLAGS_SPATIAL_CANVASITEM;
+	VisualShader::Type current_type = VisualShader::Type::TYPE_VERTEX; // The type of the currently edited VisualShader.
 
 	enum TypeFlags {
 		TYPE_FLAGS_VERTEX = 1,
@@ -385,6 +399,9 @@ class VisualShaderEditor : public ShaderEditor {
 	void _update_nodes();
 	void _update_graph();
 
+	void _restore_editor_state();
+
+	// TODO: This needs a big refactor, but probably later.
 	struct AddOption {
 		String name;
 		String category;
@@ -440,11 +457,17 @@ class VisualShaderEditor : public ShaderEditor {
 	void _update_options_menu();
 	void _set_mode(int p_which);
 
+	void _edit_group_in_graph(int p_idx);
+	void _exit_group();
+	void _update_group_related_nodes(const Ref<VisualShaderGroup> &p_group);
+	void _edit_group_ports_pressed(int p_group_input_node_id, Button *p_button);
+
 	void _show_preview_text();
 	void _preview_close_requested();
 	void _preview_size_changed();
 	void _update_preview();
 	void _update_next_previews(int p_node_id);
+	// TODO: Move to ShaderGraph!
 	void _get_next_nodes_recursively(VisualShader::Type p_type, int p_node_id, LocalVector<int> &r_nodes) const;
 	String _get_description(int p_idx);
 
@@ -461,15 +484,17 @@ class VisualShaderEditor : public ShaderEditor {
 	};
 	List<DragOp> drag_buffer;
 
+	Timer *panning_debounce_timer = nullptr;
+	bool shader_fully_loaded = false;
+
 	bool drag_dirty = false;
 	void _node_dragged(const Vector2 &p_from, const Vector2 &p_to, int p_node);
 	void _nodes_dragged();
-	bool updating = false;
 
 	void _connection_request(const String &p_from, int p_from_index, const String &p_to, int p_to_index);
 	void _disconnection_request(const String &p_from, int p_from_index, const String &p_to, int p_to_index);
 
-	void _scroll_changed(const Vector2 &p_scroll);
+	void _scroll_offset_changed(const Vector2 &p_scroll);
 	void _node_selected(Object *p_node);
 
 	void _delete_nodes(int p_type, const List<int> &p_nodes);
@@ -542,14 +567,14 @@ class VisualShaderEditor : public ShaderEditor {
 		bool disabled = false;
 	};
 
-	void _dup_copy_nodes(int p_type, List<CopyItem> &r_nodes, List<VisualShader::Connection> &r_connections);
-	void _dup_paste_nodes(int p_type, List<CopyItem> &r_items, const List<VisualShader::Connection> &p_connections, const Vector2 &p_offset, bool p_duplicate);
+	void _dup_copy_nodes(int p_type, List<CopyItem> &r_nodes, List<ShaderGraph::Connection> &r_connections);
+	void _dup_paste_nodes(int p_type, List<CopyItem> &r_items, const List<ShaderGraph::Connection> &p_connections, const Vector2 &p_offset, bool p_duplicate);
 
 	void _duplicate_nodes();
 
 	static Vector2 selection_center;
 	static List<CopyItem> copy_items_buffer;
-	static List<VisualShader::Connection> copy_connections_buffer;
+	static List<ShaderGraph::Connection> copy_connections_buffer;
 
 	void _clear_copy_buffer();
 	void _copy_nodes(bool p_cut);
@@ -558,7 +583,7 @@ class VisualShaderEditor : public ShaderEditor {
 	Vector<Ref<VisualShaderNodePlugin>> plugins;
 	Ref<VisualShaderGraphPlugin> graph_plugin;
 
-	void _mode_selected(int p_id);
+	void _type_selected(int p_id);
 	void _custom_mode_toggled(bool p_enabled);
 
 	void _input_select_item(Ref<VisualShaderNodeInput> p_input, const String &p_name);
@@ -566,8 +591,6 @@ class VisualShaderEditor : public ShaderEditor {
 	void _varying_select_item(Ref<VisualShaderNodeVarying> p_varying, const String &p_name);
 
 	void _float_constant_selected(int p_which);
-
-	VisualShader::Type get_current_shader_type() const;
 
 	void _add_input_port(int p_node, int p_port, int p_port_type, const String &p_name);
 	void _remove_input_port(int p_node, int p_port);
@@ -634,6 +657,8 @@ class VisualShaderEditor : public ShaderEditor {
 	void _param_selected();
 	void _param_unselected();
 
+	void _panning_debounce_timer_timeout();
+
 protected:
 	void _notification(int p_what);
 	static void _bind_methods();
@@ -644,6 +669,9 @@ public:
 	virtual bool is_unsaved() const override;
 	virtual void save_external_data(const String &p_str = "") override;
 	virtual void validate_script() override;
+
+	void set_current_shader_type(VisualShader::Type p_type);
+	VisualShader::Type get_current_shader_type() const;
 
 	void add_plugin(const Ref<VisualShaderNodePlugin> &p_plugin);
 	void remove_plugin(const Ref<VisualShaderNodePlugin> &p_plugin);
@@ -659,6 +687,7 @@ public:
 	virtual Size2 get_minimum_size() const override;
 
 	Ref<VisualShader> get_visual_shader() const { return visual_shader; }
+	Ref<ShaderGraph> get_shader_graph() const { return editing_shader_graph; }
 
 	VisualShaderEditor();
 };
