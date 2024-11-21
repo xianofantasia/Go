@@ -128,10 +128,8 @@ void ColorPicker::_notification(int p_what) {
 
 			_reset_sliders_theme();
 
-			if (Engine::get_singleton()->is_editor_hint()) {
-				// Adjust for the width of the "Script" icon.
-				text_type->set_custom_minimum_size(Size2(28 * theme_cache.base_scale, 0));
-			}
+			// Adjust for the width of the "Script" icon.
+			text_type->set_custom_minimum_size(Size2(28 * theme_cache.base_scale, 0));
 
 			_update_presets();
 			_update_recent_presets();
@@ -705,7 +703,9 @@ void ColorPicker::_text_type_toggled() {
 	if (text_is_constructor) {
 		text_type->set_text("");
 #ifdef TOOLS_ENABLED
-		text_type->set_button_icon(get_editor_theme_icon(SNAME("Script")));
+		if (Engine::get_singleton()->is_editor_hint()) {
+			text_type->set_button_icon(get_editor_theme_icon(SNAME("Script")));
+		}
 #endif
 
 		c_text->set_editable(false);
@@ -1057,10 +1057,14 @@ void ColorPicker::_update_text_value() {
 		}
 		text_type->set_text("");
 #ifdef TOOLS_ENABLED
-		text_type->set_button_icon(get_editor_theme_icon(SNAME("Script")));
+		if (Engine::get_singleton()->is_editor_hint()) {
+			text_type->set_button_icon(get_editor_theme_icon(SNAME("Script")));
+		}
 #endif
 		if (!is_rgb_valid) {
 			text_type->set_disabled(true);
+		} else {
+			text_type->set_disabled(false);
 		}
 		c_text->set_text(t);
 		c_text->set_editable(false);
@@ -1068,6 +1072,7 @@ void ColorPicker::_update_text_value() {
 		text_type->set_text("#");
 		text_type->set_button_icon(nullptr);
 		text_type->set_disabled(false);
+
 		c_text->set_text(color.to_html(edit_alpha && color.a < 1));
 		c_text->set_editable(true);
 	}
@@ -1939,11 +1944,9 @@ ColorPicker::ColorPicker() {
 	hex_hbc->add_child(text_type);
 	text_type->set_text("#");
 	text_type->set_tooltip_text(RTR("Switch between hexadecimal and code values."));
-	if (Engine::get_singleton()->is_editor_hint()) {
-		text_type->connect(SceneStringName(pressed), callable_mp(this, &ColorPicker::_text_type_toggled));
-	} else {
+	text_type->connect(SceneStringName(pressed), callable_mp(this, &ColorPicker::_text_type_toggled));
+	if (!Engine::get_singleton()->is_editor_hint()) {
 		text_type->set_flat(true);
-		text_type->set_mouse_filter(MOUSE_FILTER_IGNORE);
 	}
 
 	c_text = memnew(LineEdit);
