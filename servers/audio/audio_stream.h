@@ -181,6 +181,7 @@ protected:
 	GDVIRTUAL0RC(bool, _has_loop)
 	GDVIRTUAL0RC(int, _get_bar_beats)
 	GDVIRTUAL0RC(int, _get_beat_count)
+	GDVIRTUAL0RC(Dictionary, _get_tags);
 	GDVIRTUAL0RC(TypedArray<Dictionary>, _get_parameter_list)
 
 public:
@@ -191,6 +192,7 @@ public:
 	virtual bool has_loop() const;
 	virtual int get_bar_beats() const;
 	virtual int get_beat_count() const;
+	virtual Dictionary get_tags() const;
 
 	virtual double get_length() const;
 	virtual bool is_monophonic() const;
