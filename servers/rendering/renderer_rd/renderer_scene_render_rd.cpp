@@ -429,8 +429,33 @@ void RendererSceneRenderRD::_render_buffers_post_process_and_tonemap(const Rende
 	can_use_effects &= _debug_draw_can_use_effects(debug_draw);
 	bool can_use_storage = _render_buffers_can_be_storage();
 
-	bool use_fsr = fsr && can_use_effects && rb->get_scaling_3d_mode() == RS::VIEWPORT_SCALING_3D_MODE_FSR;
-	bool use_upscaled_texture = rb->has_upscaled_texture() && rb->get_scaling_3d_mode() == RS::VIEWPORT_SCALING_3D_MODE_FSR2;
+	enum {
+		SCALE_NONE,
+		SCALE_FSR,
+		SCALE_MFX,
+		SCALE_TEMPORAL,
+	} scale_type = SCALE_NONE;
+	bool use_upscaled_texture = false;
+	switch (rb->get_scaling_3d_mode()) {
+		case RS::VIEWPORT_SCALING_3D_MODE_FSR:
+			scale_type = fsr && can_use_effects ? SCALE_FSR : SCALE_NONE;
+			break;
+		case RS::VIEWPORT_SCALING_3D_MODE_METALFX_SPATIAL:
+#ifdef METAL_ENABLED
+			scale_type = mfx_spatial && can_use_effects ? SCALE_MFX : SCALE_NONE;
+#else
+			scale_type = SCALE_NONE;
+#endif
+			break;
+		case RS::VIEWPORT_SCALING_3D_MODE_FSR2:
+			[[fallthrough]];
+		case RS::VIEWPORT_SCALING_3D_MODE_METALFX_TEMPORAL:
+			scale_type = SCALE_TEMPORAL;
+			use_upscaled_texture = rb->has_upscaled_texture();
+			break;
+		default:
+			break;
+	}
 
 	RID render_target = rb->get_render_target();
 	RID color_texture = use_upscaled_texture ? rb->get_upscaled_texture() : rb->get_internal_texture();
@@ -644,7 +669,7 @@ void RendererSceneRenderRD::_render_buffers_post_process_and_tonemap(const Rende
 		tonemap.convert_to_srgb = !texture_storage->render_target_is_using_hdr(render_target);
 
 		RID dest_fb;
-		bool use_intermediate_fb = use_fsr;
+		bool use_intermediate_fb = scale_type == SCALE_FSR || scale_type == SCALE_MFX;
 		if (use_intermediate_fb) {
 			// If we use FSR to upscale we need to write our result into an intermediate buffer.
 			// Note that this is cached so we only create the texture the first time.
@@ -668,7 +693,7 @@ void RendererSceneRenderRD::_render_buffers_post_process_and_tonemap(const Rende
 		RD::get_singleton()->draw_command_end_label();
 	}
 
-	if (use_fsr) {
+	if (scale_type == SCALE_FSR) {
 		RD::get_singleton()->draw_command_begin_label("FSR 1.0 Upscale");
 
 		for (uint32_t v = 0; v < rb->get_view_count(); v++) {
@@ -689,6 +714,32 @@ void RendererSceneRenderRD::_render_buffers_post_process_and_tonemap(const Rende
 
 		RD::get_singleton()->draw_command_end_label();
 	}
+
+#ifdef METAL_ENABLED
+	if (rb.is_valid() && scale_type == SCALE_MFX) {
+		rb->ensure_mfx(mfx_spatial);
+
+		RD::get_singleton()->draw_command_begin_label("MetalFX Spatial Upscale");
+
+		for (uint32_t v = 0; v < rb->get_view_count(); v++) {
+			RID source_texture = rb->get_texture_slice(SNAME("Tonemapper"), SNAME("destination"), v, 0);
+			RID dest_texture = texture_storage->render_target_get_rd_texture_slice(render_target, v);
+
+			mfx_spatial->process(rb->get_mfx_spatial_context(), source_texture, dest_texture);
+		}
+
+		if (dest_is_msaa_2d) {
+			// We can't upscale directly into our MSAA buffer so we need to do a copy
+			RID source_texture = texture_storage->render_target_get_rd_texture(render_target);
+			RID dest_fb = FramebufferCacheRD::get_singleton()->get_cache(texture_storage->render_target_get_rd_texture_msaa(render_target));
+			copy_effects->copy_to_fb_rect(source_texture, dest_fb, Rect2i(Point2i(), rb->get_target_size()));
+
+			texture_storage->render_target_set_msaa_needs_resolve(render_target, true); // Make sure this gets resolved.
+		}
+
+		RD::get_singleton()->draw_command_end_label();
+	}
+#endif
 
 	texture_storage->render_target_disable_clear_request(render_target);
 }
@@ -1520,6 +1571,9 @@ void RendererSceneRenderRD::init() {
 	if (can_use_storage) {
 		fsr = memnew(RendererRD::FSR);
 	}
+#ifdef METAL_ENABLED
+	mfx_spatial = memnew(RendererRD::MFXSpatialEffect);
+#endif
 }
 
 RendererSceneRenderRD::~RendererSceneRenderRD() {
@@ -1548,6 +1602,11 @@ RendererSceneRenderRD::~RendererSceneRenderRD() {
 	if (fsr) {
 		memdelete(fsr);
 	}
+#ifdef METAL_ENABLED
+	if (mfx_spatial) {
+		memdelete(mfx_spatial);
+	}
+#endif
 
 	if (sky.sky_scene_state.uniform_set.is_valid() && RD::get_singleton()->uniform_set_is_valid(sky.sky_scene_state.uniform_set)) {
 		RD::get_singleton()->free(sky.sky_scene_state.uniform_set);
