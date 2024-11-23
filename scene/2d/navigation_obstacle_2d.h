@@ -106,7 +106,9 @@ public:
 	void set_carve_navigation_mesh(bool p_enabled);
 	bool get_carve_navigation_mesh() const;
 
-	PackedStringArray get_configuration_warnings() const override;
+#ifdef TOOLS_ENABLED
+	virtual Vector<ConfigurationInfo> get_configuration_info() const override;
+#endif
 
 private:
 	void _update_map(RID p_map);
