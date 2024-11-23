@@ -57,6 +57,25 @@ const int SNAPSHOT_CHUNK_SIZE = 6 << 20;
 void ObjectDBProfilerPanel::_request_object_snapshot() {
 	take_snapshot->set_disabled(true);
 	take_snapshot->set_text(TTR("Generating Snapshot"));
+	// Pause the game while the snapshot is taken so the state of the game isn't modified as we capture the snapshot.
+	if (EditorDebuggerNode::get_singleton()->get_current_debugger()->is_breaked()) {
+		requested_break_for_snapshot = false;
+		_begin_object_snapshot();
+	} else {
+		awaiting_debug_break = true;
+		requested_break_for_snapshot = true; // We only need to resume the game if we are the ones who paused it.
+		EditorDebuggerNode::get_singleton()->debug_break();
+	}
+}
+
+void ObjectDBProfilerPanel::_on_debug_breaked(const bool &p_reallydid, const bool &p_can_debug, const String &p_reason, const bool &p_has_stackdump) {
+	if (p_reallydid && awaiting_debug_break) {
+		awaiting_debug_break = false;
+		_begin_object_snapshot();
+	}
+}
+
+void ObjectDBProfilerPanel::_begin_object_snapshot() {
 	Array args;
 	args.push_back(next_request_id++);
 	args.push_back(SnapshotCollector::get_godot_version_string());
@@ -123,6 +142,9 @@ void ObjectDBProfilerPanel::receive_snapshot(int request_id) {
 		}
 	}
 	partial_snapshots.erase(request_id);
+	if (requested_break_for_snapshot) {
+		EditorDebuggerNode::get_singleton()->debug_continue();
+	}
 	take_snapshot->set_disabled(false);
 	take_snapshot->set_text("Take ObjectDB Snapshot");
 }
@@ -323,6 +345,8 @@ ObjectDBProfilerPanel::ObjectDBProfilerPanel() {
 	set_name(TTR("ObjectDB Profiler"));
 
 	snapshot_cache = LRUCache<String, Ref<GameStateSnapshotRef>>(SNAPSHOT_CACHE_MAX_SIZE);
+
+	EditorDebuggerNode::get_singleton()->get_current_debugger()->connect(SNAME("breaked"), callable_mp(this, &ObjectDBProfilerPanel::_on_debug_breaked));
 
 	HSplitContainer *root_container = memnew(HSplitContainer);
 	root_container->set_anchors_preset(Control::LayoutPreset::PRESET_FULL_RECT);

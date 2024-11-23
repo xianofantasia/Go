@@ -57,6 +57,8 @@ protected:
 	};
 
 	int next_request_id = 0;
+	bool awaiting_debug_break = false;
+	bool requested_break_for_snapshot = false;
 
 	Tree *snapshot_list = nullptr;
 	Button *take_snapshot = nullptr;
@@ -72,6 +74,8 @@ protected:
 	LRUCache<String, Ref<GameStateSnapshotRef>> snapshot_cache;
 
 	void _request_object_snapshot();
+	void _begin_object_snapshot();
+	void _on_debug_breaked(const bool &p_reallydid, const bool &p_can_debug, const String &p_reason, const bool &p_has_stackdump);
 	void _show_selected_snapshot();
 	Ref<DirAccess> _get_and_create_snapshot_storage_dir();
 	TreeItem *_add_snapshot_button(const String &p_snapshot_file_name, const String &p_full_file_path);
