@@ -71,7 +71,7 @@ def get_flags():
     return {
         "arch": "arm64",
         "target": "template_debug",
-        "supported": ["mono"],
+        "supported": ["mimalloc", "mono"],
     }
 
 
