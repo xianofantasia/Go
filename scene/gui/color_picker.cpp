@@ -280,7 +280,7 @@ void ColorPicker::_update_controls() {
 		alpha_label->hide();
 	}
 
-	switch (_get_actual_shape()) {
+	switch (current_shape) {
 		case SHAPE_HSV_RECTANGLE:
 			wheel_edit->hide();
 			w_edit->show();
@@ -524,7 +524,7 @@ void ColorPicker::_copy_color_to_hsv() {
 }
 
 void ColorPicker::_copy_hsv_to_color() {
-	if (_get_actual_shape() == SHAPE_OKHSL_CIRCLE) {
+	if (current_shape == SHAPE_OKHSL_CIRCLE) {
 		color.set_ok_hsl(ok_hsl_h, ok_hsl_s, ok_hsl_l, color.a);
 	} else {
 		color.set_hsv(h, s, v, color.a);
@@ -554,10 +554,6 @@ bool ColorPicker::_select_from_recent_preset_hbc(const Color &p_color) {
 		}
 	}
 	return false;
-}
-
-ColorPicker::PickerShapeType ColorPicker::_get_actual_shape() const {
-	return modes[current_mode]->get_shape_override() != SHAPE_MAX ? modes[current_mode]->get_shape_override() : current_shape;
 }
 
 void ColorPicker::_reset_sliders_theme() {
@@ -1138,7 +1134,6 @@ void ColorPicker::_hsv_draw(int p_which, Control *c) {
 		return;
 	}
 
-	PickerShapeType actual_shape = _get_actual_shape();
 	if (p_which == 0) {
 		Vector<Point2> points;
 		Vector<Color> colors;
@@ -1146,7 +1141,7 @@ void ColorPicker::_hsv_draw(int p_which, Control *c) {
 		Color col = color;
 		Vector2 center = c->get_size() / 2.0;
 
-		switch (actual_shape) {
+		switch (current_shape) {
 			case SHAPE_HSV_WHEEL: {
 				points.resize(4);
 				colors.resize(4);
@@ -1208,9 +1203,9 @@ void ColorPicker::_hsv_draw(int p_which, Control *c) {
 
 		int x;
 		int y;
-		if (actual_shape == SHAPE_VHS_CIRCLE || actual_shape == SHAPE_OKHSL_CIRCLE) {
-			x = center.x + (center.x * Math::cos((actual_shape == SHAPE_OKHSL_CIRCLE ? ok_hsl_h : h) * Math_TAU) * s) - (theme_cache.picker_cursor->get_width() / 2);
-			y = center.y + (center.y * Math::sin((actual_shape == SHAPE_OKHSL_CIRCLE ? ok_hsl_h : h) * Math_TAU) * s) - (theme_cache.picker_cursor->get_height() / 2);
+		if (current_shape == SHAPE_VHS_CIRCLE || current_shape == SHAPE_OKHSL_CIRCLE) {
+			x = center.x + (center.x * Math::cos((current_shape == SHAPE_OKHSL_CIRCLE ? ok_hsl_h : h) * Math_TAU) * s) - (theme_cache.picker_cursor->get_width() / 2);
+			y = center.y + (center.y * Math::sin((current_shape == SHAPE_OKHSL_CIRCLE ? ok_hsl_h : h) * Math_TAU) * s) - (theme_cache.picker_cursor->get_height() / 2);
 		} else {
 			real_t corner_x = (c == wheel_uv) ? center.x - Math_SQRT12 * c->get_size().width * 0.42 : 0;
 			real_t corner_y = (c == wheel_uv) ? center.y - Math_SQRT12 * c->get_size().height * 0.42 : 0;
@@ -1222,7 +1217,7 @@ void ColorPicker::_hsv_draw(int p_which, Control *c) {
 		c->draw_texture(theme_cache.picker_cursor, Point2(x, y));
 
 		col.set_hsv(h, 1, 1);
-		if (actual_shape == SHAPE_HSV_WHEEL) {
+		if (current_shape == SHAPE_HSV_WHEEL) {
 			points.resize(4);
 			double h1 = h - (0.5 / 360);
 			double h2 = h + (0.5 / 360);
@@ -1234,7 +1229,7 @@ void ColorPicker::_hsv_draw(int p_which, Control *c) {
 		}
 
 	} else if (p_which == 1) {
-		if (actual_shape == SHAPE_HSV_RECTANGLE) {
+		if (current_shape == SHAPE_HSV_RECTANGLE) {
 			c->draw_set_transform(Point2(), -Math_PI / 2, Size2(c->get_size().x, -c->get_size().y));
 			c->draw_texture_rect(theme_cache.color_hue, Rect2(Point2(), Size2(1, 1)));
 			c->draw_set_transform(Point2(), 0, Size2(1, 1));
@@ -1242,7 +1237,7 @@ void ColorPicker::_hsv_draw(int p_which, Control *c) {
 			Color col;
 			col.set_hsv(h, 1, 1);
 			c->draw_line(Point2(0, y), Point2(c->get_size().x, y), col.inverted());
-		} else if (actual_shape == SHAPE_OKHSL_CIRCLE) {
+		} else if (current_shape == SHAPE_OKHSL_CIRCLE) {
 			Vector<Point2> points;
 			Vector<Color> colors;
 			Color col;
@@ -1269,7 +1264,7 @@ void ColorPicker::_hsv_draw(int p_which, Control *c) {
 			int y = c->get_size().y - c->get_size().y * CLAMP(ok_hsl_l, 0, 1);
 			col.set_ok_hsl(ok_hsl_h, 1, ok_hsl_l);
 			c->draw_line(Point2(0, y), Point2(c->get_size().x, y), col.inverted());
-		} else if (actual_shape == SHAPE_VHS_CIRCLE) {
+		} else if (current_shape == SHAPE_VHS_CIRCLE) {
 			Vector<Point2> points;
 			Vector<Color> colors;
 			Color col;
@@ -1291,9 +1286,9 @@ void ColorPicker::_hsv_draw(int p_which, Control *c) {
 		}
 	} else if (p_which == 2) {
 		c->draw_rect(Rect2(Point2(), c->get_size()), Color(1, 1, 1));
-		if (actual_shape == SHAPE_VHS_CIRCLE) {
+		if (current_shape == SHAPE_VHS_CIRCLE) {
 			circle_mat->set_shader_parameter("v", v);
-		} else if (actual_shape == SHAPE_OKHSL_CIRCLE) {
+		} else if (current_shape == SHAPE_OKHSL_CIRCLE) {
 			circle_mat->set_shader_parameter("ok_hsl_l", ok_hsl_l);
 		}
 	}
@@ -1307,12 +1302,11 @@ void ColorPicker::_slider_draw(int p_which) {
 
 void ColorPicker::_uv_input(const Ref<InputEvent> &p_event, Control *c) {
 	Ref<InputEventMouseButton> bev = p_event;
-	PickerShapeType actual_shape = _get_actual_shape();
 
 	if (bev.is_valid()) {
 		if (bev->is_pressed() && bev->get_button_index() == MouseButton::LEFT) {
 			Vector2 center = c->get_size() / 2.0;
-			if (actual_shape == SHAPE_VHS_CIRCLE || actual_shape == SHAPE_OKHSL_CIRCLE) {
+			if (current_shape == SHAPE_VHS_CIRCLE || current_shape == SHAPE_OKHSL_CIRCLE) {
 				real_t dist = center.distance_to(bev->get_position());
 				if (dist <= center.x) {
 					real_t rad = center.angle_to_point(bev->get_position());
@@ -1382,7 +1376,7 @@ void ColorPicker::_uv_input(const Ref<InputEvent> &p_event, Control *c) {
 		}
 
 		Vector2 center = c->get_size() / 2.0;
-		if (actual_shape == SHAPE_VHS_CIRCLE || actual_shape == SHAPE_OKHSL_CIRCLE) {
+		if (current_shape == SHAPE_VHS_CIRCLE || current_shape == SHAPE_OKHSL_CIRCLE) {
 			real_t dist = center.distance_to(mev->get_position());
 			real_t rad = center.angle_to_point(mev->get_position());
 			h = ((rad >= 0) ? rad : (Math_TAU + rad)) / Math_TAU;
@@ -1418,13 +1412,12 @@ void ColorPicker::_uv_input(const Ref<InputEvent> &p_event, Control *c) {
 
 void ColorPicker::_w_input(const Ref<InputEvent> &p_event) {
 	Ref<InputEventMouseButton> bev = p_event;
-	PickerShapeType actual_shape = _get_actual_shape();
 
 	if (bev.is_valid()) {
 		if (bev->is_pressed() && bev->get_button_index() == MouseButton::LEFT) {
 			changing_color = true;
 			float y = CLAMP((float)bev->get_position().y, 0, w_edit->get_size().height);
-			if (actual_shape == SHAPE_VHS_CIRCLE || actual_shape == SHAPE_OKHSL_CIRCLE) {
+			if (current_shape == SHAPE_VHS_CIRCLE || current_shape == SHAPE_OKHSL_CIRCLE) {
 				v = 1.0 - (y / w_edit->get_size().height);
 				ok_hsl_l = v;
 			} else {
@@ -1453,7 +1446,7 @@ void ColorPicker::_w_input(const Ref<InputEvent> &p_event) {
 			return;
 		}
 		float y = CLAMP((float)mev->get_position().y, 0, w_edit->get_size().height);
-		if (actual_shape == SHAPE_VHS_CIRCLE || actual_shape == SHAPE_OKHSL_CIRCLE) {
+		if (current_shape == SHAPE_VHS_CIRCLE || current_shape == SHAPE_OKHSL_CIRCLE) {
 			v = 1.0 - (y / w_edit->get_size().height);
 			ok_hsl_l = v;
 		} else {
