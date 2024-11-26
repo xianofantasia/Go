@@ -332,7 +332,7 @@ void CanvasItemEditor::_snap_other_nodes(
 
 	if (ci && !exception) {
 		Transform2D ci_transform = ci->get_global_transform_with_canvas();
-		if (fmod(ci_transform.get_rotation() - p_transform_to_snap.get_rotation(), (real_t)360.0) == 0.0) {
+		if (Math::fmod(ci_transform.get_rotation() - p_transform_to_snap.get_rotation(), (real_t)360.0) == 0.0) {
 			if (ci->_edit_use_rect()) {
 				Point2 begin = ci_transform.xform(ci->_edit_get_rect().get_position());
 				Point2 end = ci_transform.xform(ci->_edit_get_rect().get_position() + ci->_edit_get_rect().get_size());
@@ -437,7 +437,7 @@ Point2 CanvasItemEditor::snap_point(Point2 p_target, unsigned int p_modes, unsig
 				get_tree()->get_edited_scene_root());
 	}
 
-	if (((is_snap_active && snap_guides && (p_modes & SNAP_GUIDES)) || (p_forced_modes & SNAP_GUIDES)) && fmod(rotation, (real_t)360.0) == 0.0) {
+	if (((is_snap_active && snap_guides && (p_modes & SNAP_GUIDES)) || (p_forced_modes & SNAP_GUIDES)) && Math::fmod(rotation, (real_t)360.0) == 0.0) {
 		// Guides.
 		if (Node *scene = EditorNode::get_singleton()->get_edited_scene()) {
 			Array vguides = scene->get_meta("_edit_vertical_guides_", Array());
@@ -452,7 +452,7 @@ Point2 CanvasItemEditor::snap_point(Point2 p_target, unsigned int p_modes, unsig
 		}
 	}
 
-	if (((grid_snap_active && (p_modes & SNAP_GRID)) || (p_forced_modes & SNAP_GRID)) && fmod(rotation, (real_t)360.0) == 0.0) {
+	if (((grid_snap_active && (p_modes & SNAP_GRID)) || (p_forced_modes & SNAP_GRID)) && Math::fmod(rotation, (real_t)360.0) == 0.0) {
 		// Grid
 		Point2 offset = grid_offset;
 		if (snap_relative) {
@@ -3070,8 +3070,8 @@ void CanvasItemEditor::_draw_grid() {
 
 		if (snap_relative && selection.size() > 0) {
 			const Vector2 topleft = _get_encompassing_rect_from_list(selection).position;
-			real_grid_offset.x = fmod(topleft.x, grid_step.x * (real_t)Math::pow(2.0, grid_step_multiplier));
-			real_grid_offset.y = fmod(topleft.y, grid_step.y * (real_t)Math::pow(2.0, grid_step_multiplier));
+			real_grid_offset.x = Math::fmod(topleft.x, grid_step.x * (real_t)Math::pow(2.0, grid_step_multiplier));
+			real_grid_offset.y = Math::fmod(topleft.y, grid_step.y * (real_t)Math::pow(2.0, grid_step_multiplier));
 		} else {
 			real_grid_offset = grid_offset;
 		}

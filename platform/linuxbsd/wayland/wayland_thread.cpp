@@ -1645,7 +1645,7 @@ void WaylandThread::_wl_pointer_on_frame(void *data, struct wl_pointer *wl_point
 				if (test_button == MouseButton::WHEEL_RIGHT || test_button == MouseButton::WHEEL_LEFT) {
 					// If this is a discrete scroll, specify how many "clicks" it did for this
 					// pointer frame.
-					mb->set_factor(fabs(pd.discrete_scroll_vector_120.x / (float)120));
+					mb->set_factor(Math::abs(pd.discrete_scroll_vector_120.x / (float)120));
 				}
 
 				mb->set_button_mask(pd.pressed_button_mask);
@@ -3847,7 +3847,7 @@ void WaylandThread::cursor_shape_set_custom_image(DisplayServer::CursorShape p_c
 
 	// Fill the cursor buffer with the image data.
 	for (unsigned int index = 0; index < (unsigned int)(image_size.width * image_size.height); index++) {
-		int row_index = floor(index / image_size.width);
+		int row_index = Math::floor(index / float(image_size.width));
 		int column_index = (index % int(image_size.width));
 
 		cursor.buffer_data[index] = p_image->get_pixel(column_index, row_index).to_argb32();

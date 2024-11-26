@@ -443,15 +443,15 @@ void CapsuleMesh::create_mesh_array(Array &p_arr, const float radius, const floa
 		v = j;
 
 		v /= (rings + 1);
-		w = sin(0.5 * Math_PI * v);
-		y = radius * cos(0.5 * Math_PI * v);
+		w = Math::sin(0.5 * Math_PI * v);
+		y = radius * Math::cos(0.5 * Math_PI * v);
 
 		for (i = 0; i <= radial_segments; i++) {
 			u = i;
 			u /= radial_segments;
 
-			x = -sin(u * Math_TAU);
-			z = cos(u * Math_TAU);
+			x = -Math::sin(u * Math_TAU);
+			z = Math::cos(u * Math_TAU);
 
 			Vector3 p = Vector3(x * radius * w, y, -z * radius * w);
 			points.push_back(p + Vector3(0.0, 0.5 * height - radius, 0.0));
@@ -492,8 +492,8 @@ void CapsuleMesh::create_mesh_array(Array &p_arr, const float radius, const floa
 			u = i;
 			u /= radial_segments;
 
-			x = -sin(u * Math_TAU);
-			z = cos(u * Math_TAU);
+			x = -Math::sin(u * Math_TAU);
+			z = Math::cos(u * Math_TAU);
 
 			Vector3 p = Vector3(x * radius, y, -z * radius);
 			points.push_back(p);
@@ -528,15 +528,15 @@ void CapsuleMesh::create_mesh_array(Array &p_arr, const float radius, const floa
 
 		v /= (rings + 1);
 		v += 1.0;
-		w = sin(0.5 * Math_PI * v);
-		y = radius * cos(0.5 * Math_PI * v);
+		w = Math::sin(0.5 * Math_PI * v);
+		y = radius * Math::cos(0.5 * Math_PI * v);
 
 		for (i = 0; i <= radial_segments; i++) {
 			u = i;
 			u /= radial_segments;
 
-			x = -sin(u * Math_TAU);
-			z = cos(u * Math_TAU);
+			x = -Math::sin(u * Math_TAU);
+			z = Math::cos(u * Math_TAU);
 
 			Vector3 p = Vector3(x * radius * w, y, -z * radius * w);
 			points.push_back(p + Vector3(0.0, -0.5 * height + radius, 0.0));
@@ -1074,8 +1074,8 @@ void CylinderMesh::create_mesh_array(Array &p_arr, float top_radius, float botto
 			u = i;
 			u /= radial_segments;
 
-			x = sin(u * Math_TAU);
-			z = cos(u * Math_TAU);
+			x = Math::sin(u * Math_TAU);
+			z = Math::cos(u * Math_TAU);
 
 			Vector3 p = Vector3(x * radius, y, z * radius);
 			points.push_back(p);
@@ -1126,8 +1126,8 @@ void CylinderMesh::create_mesh_array(Array &p_arr, float top_radius, float botto
 			float r = i;
 			r /= radial_segments;
 
-			x = sin(r * Math_TAU);
-			z = cos(r * Math_TAU);
+			x = Math::sin(r * Math_TAU);
+			z = Math::cos(r * Math_TAU);
 
 			u = ((x + 1.0) * 0.25);
 			v = 0.5 + ((z + 1.0) * 0.25);
@@ -1168,8 +1168,8 @@ void CylinderMesh::create_mesh_array(Array &p_arr, float top_radius, float botto
 			float r = i;
 			r /= radial_segments;
 
-			x = sin(r * Math_TAU);
-			z = cos(r * Math_TAU);
+			x = Math::sin(r * Math_TAU);
+			z = Math::cos(r * Math_TAU);
 
 			u = 0.5 + ((x + 1.0) * 0.25);
 			v = 1.0 - ((z + 1.0) * 0.25);
@@ -1934,15 +1934,15 @@ void SphereMesh::create_mesh_array(Array &p_arr, float radius, float height, int
 		float w;
 
 		v /= (rings + 1);
-		w = sin(Math_PI * v);
-		y = scale * cos(Math_PI * v);
+		w = Math::sin(Math_PI * v);
+		y = scale * Math::cos(Math_PI * v);
 
 		for (i = 0; i <= radial_segments; i++) {
 			float u = i;
 			u /= radial_segments;
 
-			x = sin(u * Math_TAU);
-			z = cos(u * Math_TAU);
+			x = Math::sin(u * Math_TAU);
+			z = Math::cos(u * Math_TAU);
 
 			if (is_hemisphere && y < 0.0) {
 				points.push_back(Vector3(x * radius * w, 0.0, z * radius * w));
@@ -2434,8 +2434,8 @@ void TubeTrailMesh::_create_mesh_array(Array &p_arr) const {
 			if (curve.is_valid() && curve->get_point_count() > 0) {
 				r *= curve->sample_baked(v);
 			}
-			float x = sin(u * Math_TAU);
-			float z = cos(u * Math_TAU);
+			float x = Math::sin(u * Math_TAU);
+			float z = Math::cos(u * Math_TAU);
 
 			Vector3 p = Vector3(x * r, y, z * r);
 			points.push_back(p);
@@ -2503,8 +2503,8 @@ void TubeTrailMesh::_create_mesh_array(Array &p_arr) const {
 				float r = i;
 				r /= radial_steps;
 
-				float x = sin(r * Math_TAU);
-				float z = cos(r * Math_TAU);
+				float x = Math::sin(r * Math_TAU);
+				float z = Math::cos(r * Math_TAU);
 
 				float u = ((x + 1.0) * 0.25);
 				float v = 0.5 + ((z + 1.0) * 0.25);
@@ -2568,8 +2568,8 @@ void TubeTrailMesh::_create_mesh_array(Array &p_arr) const {
 				float r = i;
 				r /= radial_steps;
 
-				float x = sin(r * Math_TAU);
-				float z = cos(r * Math_TAU);
+				float x = Math::sin(r * Math_TAU);
+				float z = Math::cos(r * Math_TAU);
 
 				float u = 0.5 + ((x + 1.0) * 0.25);
 				float v = 1.0 - ((z + 1.0) * 0.25);
