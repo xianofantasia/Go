@@ -5911,8 +5911,11 @@ void EditorNode::_notify_nodes_scene_reimported(Node *p_node, Array p_reimported
 
 void EditorNode::reload_scene(const String &p_path) {
 	int scene_idx = -1;
+
+	String lpath = ProjectSettings::get_singleton()->localize_path(p_path);
+
 	for (int i = 0; i < editor_data.get_edited_scene_count(); i++) {
-		if (editor_data.get_scene_path(i) == p_path) {
+		if (editor_data.get_scene_path(i) == lpath) {
 			scene_idx = i;
 			break;
 		}
