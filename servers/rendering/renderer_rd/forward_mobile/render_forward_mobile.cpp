@@ -173,9 +173,17 @@ RID RenderForwardMobile::RenderBufferDataForwardMobile::get_color_fbs(Framebuffe
 	uint32_t view_count = render_buffers->get_view_count();
 
 	RID vrs_texture;
+#if 0
 	if (render_buffers->has_texture(RB_SCOPE_VRS, RB_TEXTURE)) {
 		vrs_texture = render_buffers->get_texture(RB_SCOPE_VRS, RB_TEXTURE);
 	}
+#else
+	// HACK: Directly use the VRS texture from the XRInterface.
+	Ref<XRInterface> interface = XRServer::get_singleton()->get_primary_interface();
+	if (interface.is_valid()) {
+		vrs_texture = interface->get_vrs_texture();
+	}
+#endif
 
 	Vector<RID> textures;
 	int color_buffer_id = 0;
@@ -730,7 +738,10 @@ void RenderForwardMobile::_render_scene(RenderDataRD *p_render_data, const Color
 
 	RENDER_TIMESTAMP("Prepare 3D Scene");
 
+#if 0
+	// HACK: Skip updating the VRS texture.
 	_update_vrs(rb);
+#endif
 
 	RENDER_TIMESTAMP("Setup 3D Scene");
 

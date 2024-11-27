@@ -1476,6 +1476,11 @@ RID OpenXRInterface::get_vrs_texture() {
 		return RID();
 	}
 
+	RID density_map = openxr_api->get_density_map_texture();
+	if (density_map.is_valid()) {
+		return density_map;
+	}
+
 	PackedVector2Array eye_foci;
 
 	Size2 target_size = get_render_target_size();
