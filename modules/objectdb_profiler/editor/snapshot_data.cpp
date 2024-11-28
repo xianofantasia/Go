@@ -32,7 +32,9 @@
 
 #include "core/core_bind.h"
 #include "core/version.h"
+#if defined(MODULE_GDSCRIPT_ENABLED) && defined(DEBUG_ENABLED)
 #include "modules/gdscript/gdscript.h"
+#endif
 #include "scene/debugger/scene_debugger.h"
 #include "zlib.h"
 
@@ -60,6 +62,16 @@ String SnapshotDataObject::get_node_path() {
 	return path;
 }
 
+String _get_script_name(Script *script) {
+#if defined(MODULE_GDSCRIPT_ENABLED) && defined(DEBUG_ENABLED)
+	// GDScripts have more specific names than base scripts, so use those names if possible.
+	return GDScript::debug_get_script_name(script);
+#else
+	// Otherwise fallback to the base script's name.
+	return script->get_global_name();
+#endif
+}
+
 String SnapshotDataObject::get_name() {
 	String found_type_name = type_name;
 
@@ -72,7 +84,7 @@ String SnapshotDataObject::get_name() {
 
 			String full_name;
 			while (script_obj != nullptr) {
-				String global_name = GDScript::debug_get_script_name(script_obj);
+				String global_name = _get_script_name(script_obj);
 				if (global_name != "") {
 					if (full_name != "") {
 						full_name = global_name + "/" + full_name;
