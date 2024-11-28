@@ -477,6 +477,8 @@ namespace Godot.Bridge
                 // This path is slower, but it's only executed for the first instantiation of the type
                 CreateScriptBridgeForType(scriptType, outScript);
             }
+
+            NativeFuncs.godotsharp_internal_reload_registered_script(outScript->Reference);
         }
 
         internal static unsafe void GetOrLoadOrCreateScriptForType(Type scriptType, godot_ref* outScript)
@@ -510,8 +512,10 @@ namespace Godot.Bridge
 
                     CreateScriptBridgeForType(scriptType, outScript);
                     scriptPath = null;
-                    return false;
                 }
+
+                NativeFuncs.godotsharp_internal_reload_registered_script(outScript->Reference);
+                return false;
             }
 
             static string GetVirtualConstructedGenericTypeScriptPath(Type scriptType, string scriptPath)
@@ -541,7 +545,10 @@ namespace Godot.Bridge
                     // IMPORTANT: The virtual path must be added to _pathTypeBiMap before the first
                     // load of the script, otherwise the loaded script won't be added to _scriptTypeBiMap.
                     scriptPath = GetVirtualConstructedGenericTypeScriptPath(scriptType, scriptPath);
-                    _pathTypeBiMap.Add(scriptPath, scriptType);
+                    lock (_scriptTypeBiMap.ReadWriteLock)
+                    {
+                        _pathTypeBiMap.Add(scriptPath, scriptType);
+                    }
                 }
 
                 // This must be done outside the read-write lock, as the script resource loading can lock it
@@ -567,6 +574,9 @@ namespace Godot.Bridge
             }
         }
 
+        /// <summary>
+        /// WARNING: We need to make sure that after unlocking the bimap, we call godotsharp_internal_reload_registered_script
+        /// </summary>
         private static unsafe void CreateScriptBridgeForType(Type scriptType, godot_ref* outScript)
         {
             Debug.Assert(!scriptType.IsGenericTypeDefinition, $"Script type must be a constructed generic type or not generic at all. Type: {scriptType}.");
@@ -576,8 +586,6 @@ namespace Godot.Bridge
 
             // Caller takes care of locking
             _scriptTypeBiMap.Add(scriptPtr, scriptType);
-
-            NativeFuncs.godotsharp_internal_reload_registered_script(scriptPtr);
         }
 
         [UnmanagedCallersOnly]
