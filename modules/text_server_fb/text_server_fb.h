@@ -393,6 +393,7 @@ class TextServerFallback : public TextServerExtension {
 
 	// Shaped text cache data.
 	struct TrimData {
+		bool left = false;
 		int trim_pos = -1;
 		int ellipsis_pos = -1;
 		Vector<Glyph> ellipsis_glyph_buf;
@@ -826,6 +827,7 @@ public:
 	MODBIND1RC(int64_t, shaped_text_get_ellipsis_pos, const RID &);
 	MODBIND1RC(const Glyph *, shaped_text_get_ellipsis_glyphs, const RID &);
 	MODBIND1RC(int64_t, shaped_text_get_ellipsis_glyph_count, const RID &);
+	MODBIND1RC(bool, shaped_text_get_ellipsis_from_left, const RID &);
 
 	MODBIND3(shaped_text_overrun_trim_to_width, const RID &, double, BitField<TextServer::TextOverrunFlag>);
 

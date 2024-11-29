@@ -206,6 +206,9 @@ void Label::_shape() {
 			case TextServer::OVERRUN_NO_TRIMMING:
 				break;
 		}
+		if (horizontal_alignment == HORIZONTAL_ALIGNMENT_RIGHT) {
+			overrun_flags.set_flag(TextServer::OVERRUN_ELLIPSIS_AT_START);
+		}
 
 		// Fill after min_size calculation.
 
@@ -542,7 +545,6 @@ void Label::_notification(int p_what) {
 			Color font_outline_color = has_settings ? settings->get_outline_color() : theme_cache.font_outline_color;
 			int outline_size = has_settings ? settings->get_outline_size() : theme_cache.font_outline_size;
 			int shadow_outline_size = has_settings ? settings->get_shadow_size() : theme_cache.font_shadow_outline_size;
-			bool rtl = (TS->shaped_text_get_inferred_direction(text_rid) == TextServer::DIRECTION_RTL);
 			bool rtl_layout = is_layout_rtl();
 
 			style->draw(ci, Rect2(Point2(0, 0), get_size()));
@@ -578,6 +580,7 @@ void Label::_notification(int p_what) {
 
 				const Glyph *ellipsis_glyphs = TS->shaped_text_get_ellipsis_glyphs(lines_rid[i]);
 				int ellipsis_gl_size = TS->shaped_text_get_ellipsis_glyph_count(lines_rid[i]);
+				bool left_ellipsis = TS->shaped_text_get_ellipsis_from_left(lines_rid[i]);
 
 				// Draw shadow, outline and text. Note: Do not merge this into the single loop iteration, to prevent overlaps.
 				for (int step = DRAW_STEP_SHADOW; step < DRAW_STEP_MAX; step++) {
@@ -591,7 +594,7 @@ void Label::_notification(int p_what) {
 					int processed_glyphs_step = processed_glyphs;
 					Vector2 offset_step = ofs;
 					// Draw RTL ellipsis string when necessary.
-					if (rtl && ellipsis_pos >= 0) {
+					if (left_ellipsis && ellipsis_pos >= 0) {
 						for (int gl_idx = ellipsis_gl_size - 1; gl_idx >= 0; gl_idx--) {
 							for (int j = 0; j < ellipsis_glyphs[gl_idx].repeat; j++) {
 								bool skip = (trim_chars && ellipsis_glyphs[gl_idx].end > visible_chars) || (trim_glyphs_ltr && (processed_glyphs_step >= visible_glyphs)) || (trim_glyphs_rtl && (processed_glyphs_step < total_glyphs - visible_glyphs));
@@ -613,7 +616,7 @@ void Label::_notification(int p_what) {
 					for (int j = 0; j < gl_size; j++) {
 						// Trim when necessary.
 						if (trim_pos >= 0) {
-							if (rtl) {
+							if (left_ellipsis) {
 								if (j < trim_pos) {
 									continue;
 								}
@@ -639,7 +642,7 @@ void Label::_notification(int p_what) {
 						}
 					}
 					// Draw LTR ellipsis string when necessary.
-					if (!rtl && ellipsis_pos >= 0) {
+					if (!left_ellipsis && ellipsis_pos >= 0) {
 						for (int gl_idx = 0; gl_idx < ellipsis_gl_size; gl_idx++) {
 							for (int j = 0; j < ellipsis_glyphs[gl_idx].repeat; j++) {
 								bool skip = (trim_chars && ellipsis_glyphs[gl_idx].end > visible_chars) || (trim_glyphs_ltr && (processed_glyphs_step >= visible_glyphs)) || (trim_glyphs_rtl && (processed_glyphs_step < total_glyphs - visible_glyphs));
@@ -780,7 +783,7 @@ void Label::set_horizontal_alignment(HorizontalAlignment p_alignment) {
 		return;
 	}
 
-	if (horizontal_alignment == HORIZONTAL_ALIGNMENT_FILL || p_alignment == HORIZONTAL_ALIGNMENT_FILL) {
+	if (horizontal_alignment == HORIZONTAL_ALIGNMENT_FILL || p_alignment == HORIZONTAL_ALIGNMENT_FILL || overrun_behavior != TextServer::OVERRUN_NO_TRIMMING) {
 		lines_dirty = true; // Reshape lines.
 	}
 	horizontal_alignment = p_alignment;

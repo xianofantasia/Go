@@ -292,6 +292,7 @@ void TextServerExtension::_bind_methods() {
 	GDVIRTUAL_BIND(_shaped_text_get_ellipsis_pos, "shaped");
 	GDVIRTUAL_BIND(_shaped_text_get_ellipsis_glyph_count, "shaped");
 	GDVIRTUAL_BIND(_shaped_text_get_ellipsis_glyphs, "shaped");
+	GDVIRTUAL_BIND(_shaped_text_get_ellipsis_from_left, "shaped");
 
 	GDVIRTUAL_BIND(_shaped_text_overrun_trim_to_width, "shaped", "width", "trim_flags");
 
@@ -1293,6 +1294,12 @@ const Glyph *TextServerExtension::shaped_text_get_ellipsis_glyphs(const RID &p_s
 int64_t TextServerExtension::shaped_text_get_ellipsis_glyph_count(const RID &p_shaped) const {
 	int64_t ret = -1;
 	GDVIRTUAL_CALL(_shaped_text_get_ellipsis_glyph_count, p_shaped, ret);
+	return ret;
+}
+
+bool TextServerExtension::shaped_text_get_ellipsis_from_left(const RID &p_shaped) const {
+	bool ret = false;
+	GDVIRTUAL_CALL(_shaped_text_get_ellipsis_from_left, p_shaped, ret);
 	return ret;
 }
 

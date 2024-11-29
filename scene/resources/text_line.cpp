@@ -137,6 +137,9 @@ void TextLine::_shape() {
 				case TextServer::OVERRUN_NO_TRIMMING:
 					break;
 			}
+			if (alignment == HORIZONTAL_ALIGNMENT_RIGHT) {
+				overrun_flags.set_flag(TextServer::OVERRUN_ELLIPSIS_AT_START);
+			}
 
 			if (alignment == HORIZONTAL_ALIGNMENT_FILL) {
 				TS->shaped_text_fit_to_width(rid, width, flags);
@@ -272,7 +275,7 @@ Rect2 TextLine::get_object_rect(Variant p_key) const {
 
 void TextLine::set_horizontal_alignment(HorizontalAlignment p_alignment) {
 	if (alignment != p_alignment) {
-		if (alignment == HORIZONTAL_ALIGNMENT_FILL || p_alignment == HORIZONTAL_ALIGNMENT_FILL) {
+		if (alignment == HORIZONTAL_ALIGNMENT_FILL || p_alignment == HORIZONTAL_ALIGNMENT_FILL || overrun_behavior != TextServer::OVERRUN_NO_TRIMMING) {
 			alignment = p_alignment;
 			dirty = true;
 		} else {

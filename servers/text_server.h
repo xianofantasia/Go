@@ -129,6 +129,7 @@ public:
 		OVERRUN_ADD_ELLIPSIS = 1 << 2,
 		OVERRUN_ENFORCE_ELLIPSIS = 1 << 3,
 		OVERRUN_JUSTIFICATION_AWARE = 1 << 4,
+		OVERRUN_ELLIPSIS_AT_START = 1 << 5,
 	};
 
 	enum GraphemeFlag {
@@ -497,6 +498,7 @@ public:
 	virtual const Glyph *shaped_text_get_ellipsis_glyphs(const RID &p_shaped) const = 0;
 	TypedArray<Dictionary> _shaped_text_get_ellipsis_glyphs_wrapper(const RID &p_shaped) const;
 	virtual int64_t shaped_text_get_ellipsis_glyph_count(const RID &p_shaped) const = 0;
+	virtual bool shaped_text_get_ellipsis_from_left(const RID &p_shaped) const = 0;
 
 	virtual void shaped_text_overrun_trim_to_width(const RID &p_shaped, double p_width, BitField<TextServer::TextOverrunFlag> p_trim_flags) = 0;
 

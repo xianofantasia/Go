@@ -1340,6 +1340,13 @@
 				Returns dominant direction of in the range of text.
 			</description>
 		</method>
+		<method name="shaped_text_get_ellipsis_from_left" qualifiers="const">
+			<return type="bool" />
+			<param index="0" name="shaped" type="RID" />
+			<description>
+				Returns [code]true[/code] if ellipsis is on the left side (end of RTL or beginning of LTR) of the text.
+			</description>
+		</method>
 		<method name="shaped_text_get_ellipsis_glyph_count" qualifiers="const">
 			<return type="int" />
 			<param index="0" name="shaped" type="RID" />
@@ -1959,6 +1966,9 @@
 		</constant>
 		<constant name="OVERRUN_JUSTIFICATION_AWARE" value="16" enum="TextOverrunFlag" is_bitfield="true">
 			Accounts for the text being justified before attempting to trim it (see [enum JustificationFlag]).
+		</constant>
+		<constant name="OVERRUN_ELLIPSIS_AT_START" value="32" enum="TextOverrunFlag" is_bitfield="true">
+			Is set, text is trimmed from the beginning instead of the end of the string.
 		</constant>
 		<constant name="GRAPHEME_IS_VALID" value="1" enum="GraphemeFlag" is_bitfield="true">
 			Grapheme is supported by the font, and can be drawn.

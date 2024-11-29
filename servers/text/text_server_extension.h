@@ -483,10 +483,12 @@ public:
 	virtual int64_t shaped_text_get_ellipsis_pos(const RID &p_shaped) const override;
 	virtual const Glyph *shaped_text_get_ellipsis_glyphs(const RID &p_shaped) const override;
 	virtual int64_t shaped_text_get_ellipsis_glyph_count(const RID &p_shaped) const override;
+	virtual bool shaped_text_get_ellipsis_from_left(const RID &p_shaped) const override;
 	GDVIRTUAL1RC_REQUIRED(int64_t, _shaped_text_get_trim_pos, RID);
 	GDVIRTUAL1RC_REQUIRED(int64_t, _shaped_text_get_ellipsis_pos, RID);
 	GDVIRTUAL1RC_REQUIRED(GDExtensionConstPtr<const Glyph>, _shaped_text_get_ellipsis_glyphs, RID);
 	GDVIRTUAL1RC_REQUIRED(int64_t, _shaped_text_get_ellipsis_glyph_count, RID);
+	GDVIRTUAL1RC_REQUIRED(bool, _shaped_text_get_ellipsis_from_left, RID);
 
 	virtual void shaped_text_overrun_trim_to_width(const RID &p_shaped, double p_width, BitField<TextServer::TextOverrunFlag> p_trim_flags) override;
 	GDVIRTUAL3(_shaped_text_overrun_trim_to_width, RID, double, BitField<TextServer::TextOverrunFlag>);
