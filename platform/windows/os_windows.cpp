@@ -2223,6 +2223,10 @@ String OS_Windows::get_system_ca_certificates() {
 	return certs;
 }
 
+void OS_Windows::alloc_console() {
+	AllocConsole();
+}
+
 OS_Windows::OS_Windows(HINSTANCE _hInstance) {
 	hInstance = _hInstance;
 
