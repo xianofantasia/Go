@@ -125,6 +125,7 @@ class ProjectExportDialog : public ConfirmationDialog {
 
 	String default_filename;
 
+	Callable focus_callback;
 	bool exporting = false;
 
 	void _advanced_options_pressed();
@@ -179,10 +180,12 @@ class ProjectExportDialog : public ConfirmationDialog {
 	void _open_export_template_manager();
 
 	void _export_pck_zip();
+	void _pre_export_pck_zip_selected(const String &p_path);
 	void _export_pck_zip_selected(const String &p_path);
 
 	void _validate_export_path(const String &p_path);
 	void _export_project();
+	void _pre_export_project_to_path(const String &p_path);
 	void _export_project_to_path(const String &p_path);
 	void _export_all_dialog();
 	void _export_all_dialog_action(const String &p_str);
