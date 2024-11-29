@@ -107,6 +107,8 @@ public:
 
 protected:
 	friend class Main;
+	// Needed to reset default fs access on test start.
+	friend struct GodotTestCaseListener;
 	// Needed by tests to setup command-line args.
 	friend int test_main(int argc, char *argv[]);
 
@@ -118,6 +120,7 @@ protected:
 
 	virtual void initialize() = 0;
 	virtual void initialize_joypads() = 0;
+	virtual void initialize_default_fs_access() {}
 
 	void set_display_driver_id(int p_display_driver_id) { _display_driver_id = p_display_driver_id; }
 
