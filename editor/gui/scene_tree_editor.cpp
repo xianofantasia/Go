@@ -60,8 +60,10 @@ void SceneTreeEditor::_cell_button_pressed(Object *p_item, int p_column, int p_i
 		return;
 	}
 
-	if (connect_to_script_mode) {
-		return; //don't do anything in this mode
+	if (connect_to_script_mode || connecting_signal) {
+		tree->set_selected(Object::cast_to<TreeItem>(p_item));
+		tree->emit_signal(SNAME("item_activated"));
+		return;
 	}
 
 	TreeItem *item = Object::cast_to<TreeItem>(p_item);
@@ -263,9 +265,10 @@ void SceneTreeEditor::_add_nodes(Node *p_node, TreeItem *p_parent) {
 		Ref<Script> scr = p_node->get_script();
 		if (scr.is_valid()) {
 			item->add_button(0, get_editor_theme_icon(SNAME("Script")), BUTTON_SCRIPT);
+			item->set_button_tooltip_text(0, 0, TTR("Connect signal"));
 			if (EditorNode::get_singleton()->get_object_custom_type_base(p_node) == scr) {
 				// Disable button on custom scripts (pure visual cue).
-				item->set_button_disabled(0, item->get_button_count(0) - 1, true);
+				item->set_button_color(0, 0, get_theme_color(SNAME("icon_disabled_color"), EditorStringName(Editor)));
 			}
 		}
 	}
