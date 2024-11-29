@@ -62,13 +62,13 @@ String SnapshotDataObject::get_node_path() {
 	return path;
 }
 
-String SnapshotDataObject::_get_script_name(Script *script) {
+String SnapshotDataObject::_get_script_name(Script *p_script) {
 #if defined(MODULE_GDSCRIPT_ENABLED) && defined(DEBUG_ENABLED)
 	// GDScripts have more specific names than base scripts, so use those names if possible.
-	return GDScript::debug_get_script_name(script);
+	return GDScript::debug_get_script_name(p_script);
 #else
 	// Otherwise fallback to the base script's name.
-	return script->get_global_name();
+	return p_script->get_global_name();
 #endif
 }
 
