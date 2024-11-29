@@ -178,3 +178,10 @@ Validate extension JSON: Error: Field 'classes/RenderingDevice/methods/draw_list
 
 Draw lists no longer require the initial and final action for color and depth attachments to be specified.
 Draw lists can now specify if a particular color, depth, or stencil attachment should be cleared.
+
+
+GH-87696
+--------
+Validate extension JSON: Error: Field 'classes/PCKPacker/methods/add_file/arguments': size changed value in new API, from 3 to 4.
+
+Added optional argument. Compatibility method registered.

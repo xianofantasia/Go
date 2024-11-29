@@ -127,6 +127,48 @@
 				Returns script export mode.
 			</description>
 		</method>
+		<method name="get_seed" qualifiers="const">
+			<return type="int" />
+			<description>
+				Returns encryption seed.
+			</description>
+		</method>
+		<method name="get_sign_ex_filter" qualifiers="const">
+			<return type="String" />
+			<description>
+				Returns file filters to exclude during PCK signing.
+			</description>
+		</method>
+		<method name="get_sign_in_filter" qualifiers="const">
+			<return type="String" />
+			<description>
+				Returns file filters to include during PCK signing.
+			</description>
+		</method>
+		<method name="get_sign_pck" qualifiers="const">
+			<return type="bool" />
+			<description>
+				Returns [code]true[/code], PCK signing is enabled in the export dialog.
+			</description>
+		</method>
+		<method name="get_signing_curve" qualifiers="const">
+			<return type="int" />
+			<description>
+				Returns PCK signing curve.
+			</description>
+		</method>
+		<method name="get_signing_key_priv" qualifiers="const">
+			<return type="String" />
+			<description>
+				Returns PCK signing private key.
+			</description>
+		</method>
+		<method name="get_signing_key_pub" qualifiers="const">
+			<return type="String" />
+			<description>
+				Returns PCK signing public key.
+			</description>
+		</method>
 		<method name="get_version" qualifiers="const">
 			<return type="String" />
 			<param index="0" name="name" type="StringName" />
