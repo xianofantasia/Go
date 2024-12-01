@@ -718,6 +718,15 @@ void EditorAutoloadSettings::drop_data_fw(const Point2 &p_point, const Variant &
 	Dictionary drop_data = p_data;
 	PackedStringArray autoloads = drop_data["autoloads"];
 
+	// Store the initial order of the autoloads for comparison.
+	Vector<int> initial_orders;
+	initial_orders.resize(autoload_cache.size());
+	int idx = 0;
+	for (const AutoloadInfo &F : autoload_cache) {
+		initial_orders.write[idx++] = F.order;
+	}
+
+	// Perform the drag-and-drop operation.
 	Vector<int> orders;
 	orders.resize(autoload_cache.size());
 
@@ -738,9 +747,13 @@ void EditorAutoloadSettings::drop_data_fw(const Point2 &p_point, const Variant &
 	}
 
 	int i = 0;
-
 	for (const AutoloadInfo &F : autoload_cache) {
 		orders.write[i++] = F.order;
+	}
+
+	// If the order didn't change, we shouldn't create undo/redo actions.
+	if (orders == initial_orders) {
+		return;
 	}
 
 	orders.sort();
