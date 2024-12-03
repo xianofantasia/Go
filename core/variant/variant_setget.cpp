@@ -1809,6 +1809,7 @@ Variant Variant::iter_get(const Variant &r_iter, bool &r_valid) const {
 			int idx = r_iter;
 #ifdef DEBUG_ENABLED
 			if (idx < 0 || idx >= arr->size()) {
+				_err_print_index_error(FUNCTION_STR, __FILE__, __LINE__, idx, arr->size(), _STR(m_index), _STR(m_size));
 				r_valid = false;
 				return Variant();
 			}
@@ -1820,6 +1821,7 @@ Variant Variant::iter_get(const Variant &r_iter, bool &r_valid) const {
 			int idx = r_iter;
 #ifdef DEBUG_ENABLED
 			if (idx < 0 || idx >= arr->size()) {
+				_err_print_index_error(FUNCTION_STR, __FILE__, __LINE__, idx, arr->size(), _STR(m_index), _STR(m_size));
 				r_valid = false;
 				return Variant();
 			}
@@ -1831,6 +1833,7 @@ Variant Variant::iter_get(const Variant &r_iter, bool &r_valid) const {
 			int32_t idx = r_iter;
 #ifdef DEBUG_ENABLED
 			if (idx < 0 || idx >= arr->size()) {
+				_err_print_index_error(FUNCTION_STR, __FILE__, __LINE__, idx, arr->size(), _STR(m_index), _STR(m_size));
 				r_valid = false;
 				return Variant();
 			}
@@ -1842,6 +1845,7 @@ Variant Variant::iter_get(const Variant &r_iter, bool &r_valid) const {
 			int64_t idx = r_iter;
 #ifdef DEBUG_ENABLED
 			if (idx < 0 || idx >= arr->size()) {
+				_err_print_index_error(FUNCTION_STR, __FILE__, __LINE__, idx, arr->size(), _STR(m_index), _STR(m_size));
 				r_valid = false;
 				return Variant();
 			}
@@ -1853,6 +1857,7 @@ Variant Variant::iter_get(const Variant &r_iter, bool &r_valid) const {
 			int idx = r_iter;
 #ifdef DEBUG_ENABLED
 			if (idx < 0 || idx >= arr->size()) {
+				_err_print_index_error(FUNCTION_STR, __FILE__, __LINE__, idx, arr->size(), _STR(m_index), _STR(m_size));
 				r_valid = false;
 				return Variant();
 			}
@@ -1864,6 +1869,7 @@ Variant Variant::iter_get(const Variant &r_iter, bool &r_valid) const {
 			int idx = r_iter;
 #ifdef DEBUG_ENABLED
 			if (idx < 0 || idx >= arr->size()) {
+				_err_print_index_error(FUNCTION_STR, __FILE__, __LINE__, idx, arr->size(), _STR(m_index), _STR(m_size));
 				r_valid = false;
 				return Variant();
 			}
@@ -1875,6 +1881,7 @@ Variant Variant::iter_get(const Variant &r_iter, bool &r_valid) const {
 			int idx = r_iter;
 #ifdef DEBUG_ENABLED
 			if (idx < 0 || idx >= arr->size()) {
+				_err_print_index_error(FUNCTION_STR, __FILE__, __LINE__, idx, arr->size(), _STR(m_index), _STR(m_size));
 				r_valid = false;
 				return Variant();
 			}
@@ -1886,6 +1893,7 @@ Variant Variant::iter_get(const Variant &r_iter, bool &r_valid) const {
 			int idx = r_iter;
 #ifdef DEBUG_ENABLED
 			if (idx < 0 || idx >= arr->size()) {
+				_err_print_index_error(FUNCTION_STR, __FILE__, __LINE__, idx, arr->size(), _STR(m_index), _STR(m_size));
 				r_valid = false;
 				return Variant();
 			}
@@ -1897,6 +1905,7 @@ Variant Variant::iter_get(const Variant &r_iter, bool &r_valid) const {
 			int idx = r_iter;
 #ifdef DEBUG_ENABLED
 			if (idx < 0 || idx >= arr->size()) {
+				_err_print_index_error(FUNCTION_STR, __FILE__, __LINE__, idx, arr->size(), _STR(m_index), _STR(m_size));
 				r_valid = false;
 				return Variant();
 			}
@@ -1908,6 +1917,7 @@ Variant Variant::iter_get(const Variant &r_iter, bool &r_valid) const {
 			int idx = r_iter;
 #ifdef DEBUG_ENABLED
 			if (idx < 0 || idx >= arr->size()) {
+				_err_print_index_error(FUNCTION_STR, __FILE__, __LINE__, idx, arr->size(), _STR(m_index), _STR(m_size));
 				r_valid = false;
 				return Variant();
 			}
@@ -1919,6 +1929,7 @@ Variant Variant::iter_get(const Variant &r_iter, bool &r_valid) const {
 			int idx = r_iter;
 #ifdef DEBUG_ENABLED
 			if (idx < 0 || idx >= arr->size()) {
+				_err_print_index_error(FUNCTION_STR, __FILE__, __LINE__, idx, arr->size(), _STR(m_index), _STR(m_size));
 				r_valid = false;
 				return Variant();
 			}
