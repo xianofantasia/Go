@@ -33,6 +33,10 @@
 
 #ifdef TOOLS_ENABLED
 
+#include "modules/modules_enabled.gen.h" // For regex.
+
+#ifdef MODULE_REGEX_ENABLED
+
 #include "tests/test_macros.h"
 
 #include "../language_server/gdscript_extend_parser.h"
@@ -505,6 +509,8 @@ func f():
 }
 
 } // namespace GDScriptTests
+
+#endif // MODULE_REGEX_ENABLED
 
 #endif // TOOLS_ENABLED
 
