@@ -198,7 +198,7 @@
 		<method name="get_virtual_controller">
 			<return type="VirtualController" />
 			<description>
-				Return platform-specific virtual controller or null. (See [VirtualController])
+				Return the platform-specific virtual controller or [code]null[/code] if it is not available. See also [VirtualController].
 				[b]Note:[/b] Currently implemented only on iOS 15.0+.
 			</description>
 		</method>
