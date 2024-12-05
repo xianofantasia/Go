@@ -63,6 +63,8 @@ private:
 	int fixed_fps = 0;
 	bool fractional_delta = false;
 	bool interpolate = true;
+	// $TODO add documentation.
+	bool use_physics_step = false;
 	float interp_to_end_factor = 0;
 	Vector3 previous_velocity;
 	Vector2 previous_position;
@@ -151,6 +153,9 @@ public:
 
 	void set_interpolate(bool p_enable);
 	bool get_interpolate() const;
+
+	void set_use_physics_step(bool p_enable);
+	bool get_use_physics_step() const;
 
 	void set_draw_order(DrawOrder p_order);
 	DrawOrder get_draw_order() const;

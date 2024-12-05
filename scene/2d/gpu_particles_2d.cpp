@@ -322,6 +322,15 @@ bool GPUParticles2D::get_interpolate() const {
 	return interpolate;
 }
 
+void GPUParticles2D::set_use_physics_step(bool p_enable) {
+	use_physics_step = p_enable;
+	RS::get_singleton()->particles_set_use_physics_step(particles, p_enable);
+}
+
+bool GPUParticles2D::get_use_physics_step() const {
+	return use_physics_step;
+}
+
 float GPUParticles2D::get_interp_to_end() const {
 	return interp_to_end_factor;
 }
@@ -765,6 +774,7 @@ void GPUParticles2D::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_fixed_fps", "fps"), &GPUParticles2D::set_fixed_fps);
 	ClassDB::bind_method(D_METHOD("set_fractional_delta", "enable"), &GPUParticles2D::set_fractional_delta);
 	ClassDB::bind_method(D_METHOD("set_interpolate", "enable"), &GPUParticles2D::set_interpolate);
+	ClassDB::bind_method(D_METHOD("set_use_physics_step", "enable"), &GPUParticles2D::set_use_physics_step);
 	ClassDB::bind_method(D_METHOD("set_process_material", "material"), &GPUParticles2D::set_process_material);
 	ClassDB::bind_method(D_METHOD("set_speed_scale", "scale"), &GPUParticles2D::set_speed_scale);
 	ClassDB::bind_method(D_METHOD("set_collision_base_size", "size"), &GPUParticles2D::set_collision_base_size);
@@ -782,6 +792,7 @@ void GPUParticles2D::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_fixed_fps"), &GPUParticles2D::get_fixed_fps);
 	ClassDB::bind_method(D_METHOD("get_fractional_delta"), &GPUParticles2D::get_fractional_delta);
 	ClassDB::bind_method(D_METHOD("get_interpolate"), &GPUParticles2D::get_interpolate);
+	ClassDB::bind_method(D_METHOD("get_use_physics_step"), &GPUParticles2D::get_use_physics_step);
 	ClassDB::bind_method(D_METHOD("get_process_material"), &GPUParticles2D::get_process_material);
 	ClassDB::bind_method(D_METHOD("get_speed_scale"), &GPUParticles2D::get_speed_scale);
 	ClassDB::bind_method(D_METHOD("get_collision_base_size"), &GPUParticles2D::get_collision_base_size);

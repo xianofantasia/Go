@@ -76,6 +76,10 @@ private:
 	int fixed_fps = 0;
 	bool fractional_delta = false;
 	bool interpolate = true;
+	// $TODO add documentation
+	// * `fixed_fps` is ignored when this is true.
+	// * interactions between physics interpolation, and the particle `interpolate` setting
+	bool use_physics_step = false;
 	NodePath sub_emitter;
 	real_t collision_base_size = 0.01;
 
@@ -125,6 +129,7 @@ public:
 	void set_trail_enabled(bool p_enabled);
 	void set_trail_lifetime(double p_seconds);
 	void set_interp_to_end(float p_interp);
+	void set_use_physics_step(bool p_enable);
 
 	bool is_emitting() const;
 	int get_amount() const;
@@ -142,6 +147,7 @@ public:
 	bool is_trail_enabled() const;
 	double get_trail_lifetime() const;
 	float get_interp_to_end() const;
+	bool get_use_physics_step() const;
 
 	void set_amount_ratio(float p_ratio);
 	float get_amount_ratio() const;
