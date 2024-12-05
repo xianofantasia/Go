@@ -4147,28 +4147,40 @@ String String::replace_first(const char *p_key, const char *p_with) const {
 String String::replace_char(char32_t p_key, char32_t p_with) const {
 	ERR_FAIL_COND_V_MSG(p_with == 0, *this, "`with` must not be null.");
 
-	if (p_key == 0 || is_empty()) {
+	int len = length();
+	if (p_key == 0 || len == 0) {
 		return *this;
 	}
 
-	String new_string;
+	int index = find_char(p_key);
 
-	new_string.resize(size());
-
-	char32_t *new_ptrw = new_string.ptrw();
-	const char32_t *old_ptr = ptr();
-
-	while (*old_ptr) {
-		if (*old_ptr == p_key) {
-			*new_ptrw = p_with;
-		} else {
-			*new_ptrw = *old_ptr;
-		}
-		++new_ptrw;
-		++old_ptr;
+	// If no occurrence of `key` was found, return this.
+	if (index == -1) {
+		return *this;
 	}
 
-	*new_ptrw = 0;
+	const char32_t *old_ptr = ptr();
+
+	// If we found at least one occurrence of `key`, create new string.
+	String new_string;
+	new_string.resize(len + 1);
+	char32_t *new_ptr = new_string.ptrw();
+
+	// Copy part of input before `key`.
+	memcpy(new_ptr, old_ptr, index * sizeof(char32_t));
+
+	new_ptr[index] = p_with;
+
+	// Copy or replace rest of input.
+	for (++index; index < len; ++index) {
+		if (old_ptr[index] == p_key) {
+			new_ptr[index] = p_with;
+		} else {
+			new_ptr[index] = old_ptr[index];
+		}
+	}
+
+	new_ptr[index] = _null;
 
 	return new_string;
 }
@@ -4176,28 +4188,44 @@ String String::replace_char(char32_t p_key, char32_t p_with) const {
 String String::replace_chars(const Vector<char32_t> &p_keys, char32_t p_with) const {
 	ERR_FAIL_COND_V_MSG(p_with == 0, *this, "`with` must not be null.");
 
-	if (p_keys.is_empty() || is_empty()) {
+	int len = length();
+	if (p_keys.is_empty() || len == 0) {
 		return *this;
 	}
 
-	String new_string;
-
-	new_string.resize(size());
-
-	char32_t *new_ptrw = new_string.ptrw();
+	int index = 0;
 	const char32_t *old_ptr = ptr();
-
-	while (*old_ptr) {
-		if (p_keys.has(*old_ptr)) {
-			*new_ptrw = p_with;
-		} else {
-			*new_ptrw = *old_ptr;
+	for (; index < len; ++index) {
+		if (p_keys.has(old_ptr[index])) {
+			break;
 		}
-		++new_ptrw;
-		++old_ptr;
 	}
 
-	*new_ptrw = 0;
+	// If no occurrence of `keys` was found, return this.
+	if (index == len) {
+		return *this;
+	}
+
+	// If we found at least one occurrence of `keys`, create new string.
+	String new_string;
+	new_string.resize(len + 1);
+	char32_t *new_ptr = new_string.ptrw();
+
+	// Copy part of input before `key`.
+	memcpy(new_ptr, old_ptr, index * sizeof(char32_t));
+
+	new_ptr[index] = p_with;
+
+	// Copy or replace rest of input.
+	for (++index; index < len; ++index) {
+		if (p_keys.has(old_ptr[index])) {
+			new_ptr[index] = p_with;
+		} else {
+			new_ptr[index] = old_ptr[index];
+		}
+	}
+
+	new_ptr[index] = _null;
 
 	return new_string;
 }
