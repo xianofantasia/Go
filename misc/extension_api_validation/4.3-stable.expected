@@ -205,3 +205,12 @@ GH-99481
 Validate extension JSON: Error: Field 'classes/RichTextLabel/methods/push_meta/arguments': size changed value in new API, from 2 to 3.
 
 Optional argument added to set tooltip. Compatibility method registered.
+
+
+GH-96588
+--------
+Validate extension JSON: API was removed: classes/CodeHighlighter/properties/color_regions
+Validate extension JSON: API was removed: classes/CodeHighlighter/properties/keyword_colors
+Validate extension JSON: API was removed: classes/CodeHighlighter/properties/member_keyword_colors
+
+Properties replaced with new 'regions', 'keywords', and 'member_keywords'. Compatibility getters/setters for old properties preserved.
