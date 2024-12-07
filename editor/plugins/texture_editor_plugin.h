@@ -37,6 +37,8 @@
 #include "scene/resources/texture.h"
 
 class TextureRect;
+class ShaderMaterial;
+class ColorChannelSelector;
 
 class TexturePreview : public MarginContainer {
 	GDCLASS(TexturePreview, MarginContainer);
@@ -46,11 +48,16 @@ private:
 
 	TextureRect *checkerboard = nullptr;
 	Label *metadata_label = nullptr;
+	Ref<ShaderMaterial> material;
+
+	ColorChannelSelector *channel_selector;
 
 	void _update_metadata_label_text();
 
 protected:
 	void _notification(int p_what);
+
+	void on_selected_channels_changed();
 
 public:
 	TextureRect *get_texture_display();

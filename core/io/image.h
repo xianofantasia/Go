@@ -396,6 +396,7 @@ public:
 	static void set_compress_bc_func(void (*p_compress_func)(Image *, UsedChannels));
 	static void set_compress_bptc_func(void (*p_compress_func)(Image *, UsedChannels));
 	static String get_format_name(Format p_format);
+	static uint32_t get_format_components_mask(const Format p_format);
 
 	Error load_png_from_buffer(const Vector<uint8_t> &p_array);
 	Error load_jpg_from_buffer(const Vector<uint8_t> &p_array);
