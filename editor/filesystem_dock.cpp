@@ -3259,8 +3259,8 @@ void FileSystemDock::_file_and_folders_fill_popup(PopupMenu *p_popup, const Vect
 		p_popup->add_separator();
 	}
 
-	// Check if the root path is selected. We must check p_paths[1] because the first string in 
-	// the list of paths obtained by _tree_get_selected() is not always the root path
+	// Check if the root path is selected, we must check p_paths[1] because the first string in
+	// the list of paths obtained by _tree_get_selected(...) is not always the root path.
 	bool root_path_not_selected = p_paths[0] != "res://" && (p_paths.size() <= 1 || p_paths[1] != "res://");
 
 	if (all_folders && foldernames.size() > 0) {
