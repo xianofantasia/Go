@@ -78,6 +78,7 @@ public:
 		bool acquire(bool &p_should_render);
 		bool release();
 		RID get_image();
+		RID get_density_map();
 	};
 
 private:
@@ -477,6 +478,7 @@ public:
 	XrSwapchain get_color_swapchain();
 	RID get_color_texture();
 	RID get_depth_texture();
+	RID get_density_map_texture();
 	void post_draw_viewport(RID p_render_target);
 	void end_frame();
 

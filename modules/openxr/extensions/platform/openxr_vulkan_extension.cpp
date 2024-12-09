@@ -31,6 +31,7 @@
 #include "openxr_vulkan_extension.h"
 
 #include "../../openxr_util.h"
+#include "../openxr_fb_foveation_extension.h"
 
 #include "core/string/print_string.h"
 #include "servers/rendering/renderer_rd/effects/copy_effects.h"
@@ -240,6 +241,7 @@ void OpenXRVulkanExtension::get_usable_depth_formats(Vector<int64_t> &p_usable_s
 
 bool OpenXRVulkanExtension::get_swapchain_image_data(XrSwapchain p_swapchain, int64_t p_swapchain_format, uint32_t p_width, uint32_t p_height, uint32_t p_sample_count, uint32_t p_array_size, void **r_swapchain_graphics_data) {
 	XrSwapchainImageVulkanKHR *images = nullptr;
+	XrSwapchainImageFoveationVulkanFB *density_images = nullptr;
 
 	RenderingServer *rendering_server = RenderingServer::get_singleton();
 	ERR_FAIL_NULL_V(rendering_server, false);
@@ -262,10 +264,27 @@ bool OpenXRVulkanExtension::get_swapchain_image_data(XrSwapchain p_swapchain, in
 		images[i].image = VK_NULL_HANDLE;
 	}
 
+	if (OpenXRFBFoveationExtension::get_singleton()->is_enabled()) {
+		density_images = (XrSwapchainImageFoveationVulkanFB *)memalloc(sizeof(XrSwapchainImageFoveationVulkanFB) * swapchain_length);
+
+		for (uint64_t i = 0; i < swapchain_length; i++) {
+			density_images[i].type = XR_TYPE_SWAPCHAIN_IMAGE_FOVEATION_VULKAN_FB;
+			density_images[i].next = nullptr;
+			density_images[i].image = VK_NULL_HANDLE;
+			density_images[i].width = 0;
+			density_images[i].height = 0;
+
+			images[i].next = &density_images[i];
+		}
+	}
+
 	result = xrEnumerateSwapchainImages(p_swapchain, swapchain_length, &swapchain_length, (XrSwapchainImageBaseHeader *)images);
 	if (XR_FAILED(result)) {
-		print_line("OpenXR: Failed to get swapchaim images [", OpenXRAPI::get_singleton()->get_error_string(result), "]");
+		print_line("OpenXR: Failed to get swapchain images [", OpenXRAPI::get_singleton()->get_error_string(result), "]");
 		memfree(images);
+		if (density_images) {
+			memfree(density_images);
+		}
 		return false;
 	}
 
@@ -274,6 +293,9 @@ bool OpenXRVulkanExtension::get_swapchain_image_data(XrSwapchain p_swapchain, in
 	if (data == nullptr) {
 		print_line("OpenXR: Failed to allocate memory for swapchain data");
 		memfree(images);
+		if (density_images) {
+			memfree(density_images);
+		}
 		return false;
 	}
 	*r_swapchain_graphics_data = data;
@@ -355,6 +377,7 @@ bool OpenXRVulkanExtension::get_swapchain_image_data(XrSwapchain p_swapchain, in
 	}
 
 	Vector<RID> texture_rids;
+	Vector<RID> density_map_rids;
 
 	// create Godot texture objects for each entry in our swapchain
 	for (uint64_t i = 0; i < swapchain_length; i++) {
@@ -370,11 +393,30 @@ bool OpenXRVulkanExtension::get_swapchain_image_data(XrSwapchain p_swapchain, in
 				p_array_size);
 
 		texture_rids.push_back(image_rid);
+
+		if (density_images && density_images[i].image != VK_NULL_HANDLE) {
+			RID density_map_rid = rendering_device->texture_create_from_extension(
+					p_array_size == 1 ? RenderingDevice::TEXTURE_TYPE_2D : RenderingDevice::TEXTURE_TYPE_2D_ARRAY,
+					RD::DATA_FORMAT_R8G8_UNORM,
+					RenderingDevice::TEXTURE_SAMPLES_1,
+					RD::TEXTURE_USAGE_COLOR_ATTACHMENT_BIT | RD::TEXTURE_USAGE_SAMPLING_BIT | RD::TEXTURE_USAGE_STORAGE_BIT | RD::TEXTURE_USAGE_VRS_ATTACHMENT_BIT,
+					(uint64_t)density_images[i].image,
+					density_images[i].width,
+					density_images[i].height,
+					1,
+					p_array_size);
+
+			density_map_rids.push_back(density_map_rid);
+		} else {
+			density_map_rids.push_back(RID());
+		}
 	}
 
 	data->texture_rids = texture_rids;
+	data->density_map_rids = density_map_rids;
 
 	memfree(images);
+	memfree(density_images);
 
 	return true;
 }
@@ -401,6 +443,14 @@ RID OpenXRVulkanExtension::get_texture(void *p_swapchain_graphics_data, int p_im
 	return data->texture_rids[p_image_index];
 }
 
+RID OpenXRVulkanExtension::get_density_map(void *p_swapchain_graphics_data, int p_image_index) {
+	SwapchainGraphicsData *data = (SwapchainGraphicsData *)p_swapchain_graphics_data;
+	ERR_FAIL_NULL_V(data, RID());
+
+	ERR_FAIL_INDEX_V(p_image_index, data->density_map_rids.size(), RID());
+	return data->density_map_rids[p_image_index];
+}
+
 void OpenXRVulkanExtension::cleanup_swapchain_graphics_data(void **p_swapchain_graphics_data) {
 	if (*p_swapchain_graphics_data == nullptr) {
 		return;
@@ -418,6 +468,13 @@ void OpenXRVulkanExtension::cleanup_swapchain_graphics_data(void **p_swapchain_g
 		rendering_device->free(data->texture_rids[i]);
 	}
 	data->texture_rids.clear();
+
+	for (int i = 0; i < data->density_map_rids.size(); i++) {
+		if (data->density_map_rids[i].is_valid()) {
+			rendering_device->free(data->density_map_rids[i]);
+		}
+	}
+	data->density_map_rids.clear();
 
 	memdelete(data);
 	*p_swapchain_graphics_data = nullptr;
