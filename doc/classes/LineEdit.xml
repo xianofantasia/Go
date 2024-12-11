@@ -6,7 +6,7 @@
 	<description>
 		[LineEdit] provides an input field for editing a single line of text.
 		- When the [LineEdit] control is focused using the keyboard arrow keys, it will only gain focus and not enter edit mode.
-		- To enter edit mode, click on the control with the mouse or press the [code]ui_text_submit[/code] action (by default [kbd]Enter[/kbd] or [kbd]Kp Enter[/kbd]).
+		- To enter edit mode, click on the control with the mouse, see also [member editing_on_text_submit].
 		- To exit edit mode, press [code]ui_text_submit[/code] or [code]ui_cancel[/code] (by default [kbd]Escape[/kbd]) actions.
 		- Check [method edit], [method unedit], [method is_editing], and [signal editing_toggled] for more information.
 		[b]Important:[/b]
@@ -80,7 +80,7 @@
 			<return type="void" />
 			<description>
 				Allows entering edit mode whether the [LineEdit] is focused or not.
-				Use [method Callable.call_deferred] if you want to enter edit mode on [signal text_submitted].
+				See also [member editing_on_text_submit].
 			</description>
 		</method>
 		<method name="get_menu" qualifiers="const">
@@ -275,6 +275,10 @@
 		</member>
 		<member name="editable" type="bool" setter="set_editable" getter="is_editable" default="true" keywords="readonly, disabled, enabled">
 			If [code]false[/code], existing text cannot be modified and new text cannot be added.
+		</member>
+		<member name="editing_on_text_submit" type="bool" setter="set_editing_on_text_submit" getter="is_editing_on_text_submit" default="true">
+			If [code]true[/code], the [LineEdit] will not exit edit mode when text is submitted by pressing [code]ui_text_submit[/code] action (by default: [kbd]Enter[/kbd] or [kbd]Kp Enter[/kbd]).
+			[b]Note:[/b] Disabled by default for editor, project manager, and editor plugins.
 		</member>
 		<member name="expand_to_text_length" type="bool" setter="set_expand_to_text_length_enabled" getter="is_expand_to_text_length_enabled" default="false">
 			If [code]true[/code], the [LineEdit] width will increase to stay longer than the [member text]. It will [b]not[/b] compress if the [member text] is shortened.

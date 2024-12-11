@@ -189,13 +189,13 @@ static int audio_driver_idx = -1;
 static bool single_window = false;
 static bool editor = false;
 static bool project_manager = false;
-static bool cmdline_tool = false;
 static String locale;
 static String log_file;
 static bool show_help = false;
 static uint64_t quit_after = 0;
 static OS::ProcessID editor_pid = 0;
 #ifdef TOOLS_ENABLED
+static bool cmdline_tool = false;
 static bool found_project = false;
 static bool auto_build_solutions = false;
 static String debug_server_uri;
@@ -266,10 +266,6 @@ static const String NULL_AUDIO_DRIVER("Dummy");
 static const int OPTION_COLUMN_LENGTH = 32;
 
 /* Helper methods */
-
-bool Main::is_cmdline_tool() {
-	return cmdline_tool;
-}
 
 #ifdef TOOLS_ENABLED
 const Vector<String> &Main::get_forwardable_cli_arguments(Main::CLIScope p_scope) {
@@ -1890,9 +1886,11 @@ Error Main::setup(const char *execpath, int argc, char *argv[], bool p_second_ph
 		}
 	}
 
-	if (!project_manager && !editor) {
+	if (cmdline_tool) {
+		Engine::get_singleton()->set_cmdline_tool(true);
+	} else if (!project_manager && !editor) {
 		// If we didn't find a project, we fall back to the project manager.
-		project_manager = !found_project && !cmdline_tool;
+		project_manager = !found_project;
 	}
 
 	if (project_manager) {
