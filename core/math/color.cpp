@@ -483,7 +483,13 @@ Color Color::from_rgbe9995(uint32_t p_rgbe) {
 }
 
 Color::operator String() const {
-	return "(" + String::num(r, 4) + ", " + String::num(g, 4) + ", " + String::num(b, 4) + ", " + String::num(a, 4) + ")";
+	return String::concat(
+			"(",
+			String::num(r, 4), ", ",
+			String::num(g, 4), ", ",
+			String::num(b, 4), ", ",
+			String::num(a, 4),
+			")");
 }
 
 Color Color::operator+(const Color &p_color) const {
