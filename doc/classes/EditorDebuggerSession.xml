@@ -54,9 +54,22 @@
 			<return type="void" />
 			<param index="0" name="path" type="String" />
 			<param index="1" name="line" type="int" />
-			<param index="2" name="enabled" type="bool" />
+			<param index="2" name="breakpointed" type="bool" />
 			<description>
-				Enables or disables a specific breakpoint based on [param enabled], updating the Editor Breakpoint Panel accordingly.
+				Enables or disables a specific breakpoint based on enabled, updating the Editor Breakpoint Panel accordingly.
+			</description>
+		</method>
+		<method name="set_breakpoint_data">
+			<return type="void" />
+			<param index="0" name="path" type="String" />
+			<param index="1" name="line" type="int" />
+			<param index="2" name="data" type="Dictionary" />
+			<description>
+				Sets a breakpoint's configuration. The [param data] dictionary should contain the following fields:
+				[code]enabled[/code]: A [bool] with the breakpoint's enabled state.
+				[code]suspend[/code]: A [bool] with the breakpoint's suspend state. When [code]false[/code], the breakpoint will not suspend execution. This can be used for print-only breakpoints.
+				[code]condition[/code]: A [String] containing an expression. The breakpoint will break or print only if the expression evaluates to [code]true[/code].
+				[code]print[/code]: A [String] containing an print message. String interpolation is supported for local stack and member variables names, for example, [code]"Node: {name}"[/code].
 			</description>
 		</method>
 		<method name="toggle_profiler">
