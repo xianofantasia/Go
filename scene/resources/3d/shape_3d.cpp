@@ -66,7 +66,6 @@ void Shape3D::set_margin(real_t p_margin) {
 	PhysicsServer3D::get_singleton()->shape_set_margin(shape, margin);
 }
 
-#ifdef DEBUG_ENABLED
 void Shape3D::set_debug_color(const Color &p_color) {
 	if (p_color == debug_color) {
 		return;
@@ -92,7 +91,6 @@ void Shape3D::set_debug_fill(bool p_fill) {
 bool Shape3D::get_debug_fill() const {
 	return debug_fill;
 }
-#endif // DEBUG_ENABLED
 
 Ref<ArrayMesh> Shape3D::get_debug_mesh() {
 	if (debug_mesh_cache.is_valid()) {
@@ -169,6 +167,12 @@ void Shape3D::_bind_methods() {
 
 	ClassDB::bind_method(D_METHOD("set_margin", "margin"), &Shape3D::set_margin);
 	ClassDB::bind_method(D_METHOD("get_margin"), &Shape3D::get_margin);
+
+	ClassDB::bind_method(D_METHOD("set_debug_color", "color"), &Shape3D::set_debug_color);
+	ClassDB::bind_method(D_METHOD("get_debug_color"), &Shape3D::get_debug_color);
+
+	ClassDB::bind_method(D_METHOD("set_debug_fill", "fill"), &Shape3D::set_debug_fill);
+	ClassDB::bind_method(D_METHOD("get_debug_fill"), &Shape3D::get_debug_fill);
 
 	ClassDB::bind_method(D_METHOD("get_debug_mesh"), &Shape3D::get_debug_mesh);
 
