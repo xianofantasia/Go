@@ -119,14 +119,14 @@ TEST_CASE("[Dictionary] List init") {
 TEST_CASE("[Dictionary] get_key_lists()") {
 	Dictionary map;
 	LocalVector<Variant> keys;
-	map.get_key_list(keys);
+	keys = map.get_key_list();
 	CHECK(keys.is_empty());
 	map[1] = 3;
-	map.get_key_list(keys);
+	keys = map.get_key_list();
 	CHECK(keys.size() == 1);
 	CHECK(int(keys[0]) == 1);
 	map[2] = 4;
-	map.get_key_list(keys);
+	keys = map.get_key_list();
 	CHECK(keys.size() == 3);
 }
 
