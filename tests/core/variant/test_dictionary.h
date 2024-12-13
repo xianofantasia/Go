@@ -127,7 +127,7 @@ TEST_CASE("[Dictionary] get_key_lists()") {
 	CHECK(int(keys[0]) == 1);
 	map[2] = 4;
 	keys = map.get_key_list();
-	CHECK(keys.size() == 3);
+	CHECK(keys.size() == 2);
 }
 
 TEST_CASE("[Dictionary] get_key_at_index()") {
