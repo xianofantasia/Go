@@ -36,9 +36,6 @@
 #include "editor/editor_string_names.h"
 #include "editor/gui/editor_toaster.h"
 #include "editor/gui/editor_version_button.h"
-#ifdef ANDROID_ENABLED
-#include "editor/gui/touch_actions_panel.h"
-#endif
 #include "editor/themes/editor_scale.h"
 #include "scene/gui/box_container.h"
 #include "scene/gui/button.h"
@@ -265,12 +262,6 @@ EditorBottomPanel::EditorBottomPanel() {
 	button_hbox = memnew(HBoxContainer);
 	button_hbox->set_h_size_flags(Control::SIZE_EXPAND_FILL);
 	bottom_hbox->add_child(button_hbox);
-
-#ifdef ANDROID_ENABLED
-	TouchActionsPanel *touch_actions_panel = memnew(TouchActionsPanel);
-	touch_actions_panel->set_h_size_flags(Control::SIZE_EXPAND_FILL);
-	bottom_hbox->add_child(touch_actions_panel);
-#endif
 
 	editor_toaster = memnew(EditorToaster);
 	bottom_hbox->add_child(editor_toaster);

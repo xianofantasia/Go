@@ -34,16 +34,25 @@
 #include "scene/gui/box_container.h"
 #include "scene/gui/button.h"
 #include "scene/gui/panel_container.h"
+#include "scene/gui/texture_rect.h"
 
 class TouchActionsPanel : public PanelContainer {
 	GDCLASS(TouchActionsPanel, PanelContainer);
 
 private:
 	HBoxContainer *hbox;
+	Button *save_button;
 	Button *undo_button;
 	Button *redo_button;
+	TextureRect *drag_handle;
+
+	bool dragging;
+	Vector2 drag_offset;
+
+	void _notification(int p_what);
 
 	void _simulate_action(const String &action_name);
+	void _on_drag_handle_gui_input(const Ref<InputEvent> &event);
 
 public:
 	TouchActionsPanel();
