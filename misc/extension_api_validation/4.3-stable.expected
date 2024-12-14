@@ -261,3 +261,10 @@ Validate extension JSON: Error: Field 'classes/PointLight2D/properties/texture':
 
 Property hints modified to disallow resource types that don't work. The types allowed are now more restricted, but this change only impacts the editor and not the actual exposed API. No adjustments should be necessary.
 Decal properties were previously changed from Texture to Texture2D in 4.2, so we need to silence those warnings too.
+
+
+GH-100414
+---------
+Validate extension JSON: Error: Field 'builtin_classes/Vector2/constants/INF': value changed value in new API, from "Vector2(inf, inf)" to "Vector2(INF, INF)".
+Validate extension JSON: Error: Field 'builtin_classes/Vector3/constants/INF': value changed value in new API, from "Vector3(inf, inf, inf)" to "Vector3(INF, INF, INF)".
+Validate extension JSON: Error: Field 'builtin_classes/Vector4/constants/INF': value changed value in new API, from "Vector4(inf, inf, inf, inf)" to "Vector4(INF, INF, INF, INF)".
