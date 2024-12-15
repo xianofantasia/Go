@@ -40,11 +40,12 @@ class TouchActionsPanel : public PanelContainer {
 	GDCLASS(TouchActionsPanel, PanelContainer);
 
 private:
-	HBoxContainer *hbox;
+	BoxContainer *hbox;
 	Button *save_button;
 	Button *undo_button;
 	Button *redo_button;
 	TextureRect *drag_handle;
+	Button *layout_toggle_button;
 
 	bool dragging;
 	Vector2 drag_offset;
@@ -53,6 +54,8 @@ private:
 
 	void _simulate_action(const String &action_name);
 	void _on_drag_handle_gui_input(const Ref<InputEvent> &event);
+	void switch_layout();
+	Button *add_new_action(const String &shortcut);
 
 public:
 	TouchActionsPanel();

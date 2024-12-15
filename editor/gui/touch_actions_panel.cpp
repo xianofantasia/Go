@@ -38,9 +38,10 @@ void TouchActionsPanel::_notification(int p_what) {
 	switch (p_what) {
 		case NOTIFICATION_THEME_CHANGED: {
 			drag_handle->set_texture(get_editor_theme_icon(SNAME("DragHandle")));
+			layout_toggle_button->set_button_icon(get_editor_theme_icon(SNAME("DistractionFree")));
 			save_button->set_button_icon(get_editor_theme_icon(SNAME("Save")));
 			undo_button->set_button_icon(get_editor_theme_icon(SNAME("UndoRedo")));
-			redo_button->set_button_icon(get_editor_theme_icon(SNAME("UndoRedo")));
+			redo_button->set_button_icon(get_editor_theme_icon(SNAME("Redo")));
 		} break;
 		default:
 			break;
@@ -82,6 +83,21 @@ void TouchActionsPanel::_on_drag_handle_gui_input(const Ref<InputEvent> &event) 
 	}
 }
 
+void TouchActionsPanel::switch_layout() {
+	hbox->set_vertical(!hbox->is_vertical());
+	reset_size();
+}
+
+Button *TouchActionsPanel::add_new_action(const String &shortcut) {
+	Button *action_button = memnew(Button);
+	action_button->set_focus_mode(Control::FOCUS_NONE);
+	action_button->set_h_size_flags(Control::SIZE_SHRINK_CENTER);
+	action_button->set_v_size_flags(Control::SIZE_SHRINK_CENTER);
+	action_button->connect(SceneStringName(pressed), callable_mp(this, &TouchActionsPanel::_simulate_action).bind(shortcut));
+	hbox->add_child(action_button);
+	return action_button;
+}
+
 TouchActionsPanel::TouchActionsPanel() {
 	dragging = false;
 
@@ -96,39 +112,35 @@ TouchActionsPanel::TouchActionsPanel() {
 	panel_style->set_content_margin_all(12);
 	add_theme_style_override("panel", panel_style);
 
-	//set_anchors_preset(Control::PRESET_CENTER_BOTTOM);
+	//set_anchors_and_offsets_preset(Control::PRESET_CENTER_BOTTOM, Control::PRESET_MODE_MINSIZE, 80);
 
-	hbox = memnew(HBoxContainer);
+	hbox = memnew(BoxContainer);
 	hbox->set_alignment(BoxContainer::ALIGNMENT_CENTER);
-	hbox->add_theme_constant_override("separation", 10);
+	hbox->add_theme_constant_override("separation", 15);
+	//hbox->set_h_size_flags(Control::SIZE_SHRINK_CENTER);
+	//hbox->set_v_size_flags(Control::SIZE_SHRINK_CENTER);
+	hbox->set_vertical(false);
 	add_child(hbox);
 
-	// Create drag handle
+	// Add drag handle.
 	drag_handle = memnew(TextureRect);
-	drag_handle->set_custom_minimum_size(Size2(50, 30));
+	drag_handle->set_custom_minimum_size(Size2(60, 40));
 	drag_handle->set_stretch_mode(TextureRect::STRETCH_KEEP_CENTERED);
 	drag_handle->connect(SceneStringName(gui_input), callable_mp(this, &TouchActionsPanel::_on_drag_handle_gui_input));
 	hbox->add_child(drag_handle);
 
 	// Add a dummy control node for horizontal spacing.
-	Control *spacer = memnew(Control);
-	hbox->add_child(spacer);
+	//Control *spacer = memnew(Control);
+	//hbox->add_child(spacer);
 
-	save_button = memnew(Button);
-	save_button->set_focus_mode(Control::FOCUS_NONE);
-	save_button->connect(SceneStringName(pressed), callable_mp(this, &TouchActionsPanel::_simulate_action).bind("editor/save_scene"));
-	hbox->add_child(save_button);
+	// Add Layout Toggle Button
+	layout_toggle_button = memnew(Button);
+	layout_toggle_button->set_h_size_flags(Control::SIZE_SHRINK_CENTER);
+	layout_toggle_button->set_v_size_flags(Control::SIZE_SHRINK_CENTER);
+	layout_toggle_button->connect("pressed", callable_mp(this, &TouchActionsPanel::switch_layout));
+	hbox->add_child(layout_toggle_button);
 
-	undo_button = memnew(Button);
-	undo_button->set_text(TTR("Undo"));
-	undo_button->set_focus_mode(Control::FOCUS_NONE);
-	undo_button->connect(SceneStringName(pressed), callable_mp(this, &TouchActionsPanel::_simulate_action).bind("ui_undo"));
-	hbox->add_child(undo_button);
-
-	redo_button = memnew(Button);
-	redo_button->set_text(TTR("Redo"));
-	redo_button->set_focus_mode(Control::FOCUS_NONE);
-	redo_button->set_icon_alignment(HORIZONTAL_ALIGNMENT_RIGHT);
-	redo_button->connect(SceneStringName(pressed), callable_mp(this, &TouchActionsPanel::_simulate_action).bind("ui_redo"));
-	hbox->add_child(redo_button);
+	save_button = add_new_action("editor/save_scene");
+	undo_button = add_new_action("ui_undo");
+	redo_button = add_new_action("ui_redo");
 }
