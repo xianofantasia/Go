@@ -1517,7 +1517,7 @@ String VisualShader::generate_preview_shader(Type p_type, int p_node, int p_port
 	global_code += global_expressions;
 
 	//make it faster to go around through shader
-	VMap<ConnectionKey, const List<Connection>::Element *> input_connections;
+	HashMap<ConnectionKey, const List<Connection>::Element *> input_connections;
 
 	for (const List<Connection>::Element *E = graph[p_type].connections.front(); E; E = E->next()) {
 		ConnectionKey to_key;
@@ -1949,7 +1949,7 @@ void VisualShader::_get_property_list(List<PropertyInfo> *p_list) const {
 	}
 }
 
-Error VisualShader::_write_node(Type type, StringBuilder *p_global_code, StringBuilder *p_global_code_per_node, HashMap<Type, StringBuilder> *p_global_code_per_func, StringBuilder &r_code, Vector<VisualShader::DefaultTextureParam> &r_def_tex_params, const VMap<ConnectionKey, const List<Connection>::Element *> &p_input_connections, int p_node, HashSet<int> &r_processed, bool p_for_preview, HashSet<StringName> &r_classes) const {
+Error VisualShader::_write_node(Type type, StringBuilder *p_global_code, StringBuilder *p_global_code_per_node, HashMap<Type, StringBuilder> *p_global_code_per_func, StringBuilder &r_code, Vector<VisualShader::DefaultTextureParam> &r_def_tex_params, const HashMap<ConnectionKey, const List<Connection>::Element *> &p_input_connections, int p_node, HashSet<int> &r_processed, bool p_for_preview, HashSet<StringName> &r_classes) const {
 	const Ref<VisualShaderNode> vsnode = graph[type].nodes[p_node].node;
 
 	if (vsnode->is_disabled()) {
@@ -2696,7 +2696,7 @@ void VisualShader::_update_shader() const {
 		}
 
 		//make it faster to go around through shader
-		VMap<ConnectionKey, const List<Connection>::Element *> input_connections;
+		HashMap<ConnectionKey, const List<Connection>::Element *> input_connections;
 
 		StringBuilder func_code;
 		HashSet<int> processed;
