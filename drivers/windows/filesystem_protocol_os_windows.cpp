@@ -49,6 +49,9 @@ void FileSystemProtocolOSWindows::initialize() {
 		invalid_files.insert(reserved_files[reserved_file_index]);
 		reserved_file_index++;
 	}
+
+	_setmaxstdio(8192);
+	print_verbose(vformat("Maximum number of file handles: %d", _getmaxstdio()));
 }
 void FileSystemProtocolOSWindows::finalize() {
 	invalid_files.clear();
@@ -58,7 +61,7 @@ bool FileSystemProtocolOSWindows::is_path_invalid(const String &p_path) {
 	// Check for invalid operating system file.
 	String fname = p_path.get_file().to_lower();
 
-	int dot = fname.find(".");
+	int dot = fname.find_char('.');
 	if (dot != -1) {
 		fname = fname.substr(0, dot);
 	}
@@ -66,20 +69,21 @@ bool FileSystemProtocolOSWindows::is_path_invalid(const String &p_path) {
 }
 
 String FileSystemProtocolOSWindows::fix_path(const String &p_path) {
-	String path = FileSystem::fix_path(p_path);
-	if (p_path.is_relative_path()) {
+	String r_path = FileSystem::fix_path(p_path);
+
+	if (r_path.is_relative_path()) {
 		Char16String current_dir_name;
 		size_t str_len = GetCurrentDirectoryW(0, nullptr);
 		current_dir_name.resize(str_len + 1);
 		GetCurrentDirectoryW(current_dir_name.size(), (LPWSTR)current_dir_name.ptrw());
-		path = String::utf16((const char16_t *)current_dir_name.get_data()).trim_prefix(R"(\\?\)").replace("\\", "/").path_join(path);
+		r_path = String::utf16((const char16_t *)current_dir_name.get_data()).trim_prefix(R"(\\?\)").replace("\\", "/").path_join(r_path);
 	}
-	path = path.simplify_path();
-	path = path.replace("/", "\\");
-	if (path.size() >= MAX_PATH && !path.is_network_share_path() && !path.begins_with(R"(\\?\)")) {
-		path = R"(\\?\)" + path;
+	r_path = r_path.simplify_path();
+	r_path = r_path.replace("/", "\\");
+	if (!r_path.is_network_share_path() && !r_path.begins_with(R"(\\?\)")) {
+		r_path = R"(\\?\)" + r_path;
 	}
-	return path;
+	return r_path;
 }
 
 bool FileSystemProtocolOSWindows::file_exists_static(const String &p_path) {
