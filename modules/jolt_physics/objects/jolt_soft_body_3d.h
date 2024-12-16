@@ -168,6 +168,11 @@ public:
 
 	bool is_vertex_pinned(int p_index) const;
 
+	void apply_node_impulse(uint32_t p_node_index, const Vector3 &p_impulse);
+	void apply_node_force(uint32_t p_node_index, const Vector3 &p_force);
+	void apply_central_impulse(const Vector3 &p_impulse);
+	void apply_central_force(const Vector3 &p_force);
+
 	String to_string() const;
 };
 
