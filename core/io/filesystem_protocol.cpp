@@ -37,10 +37,6 @@ Ref<FileAccess> FileSystemProtocol::_open_file(const String &p_path, int p_mode_
 	return open_file(p_path, p_mode_flags, open_error);
 }
 
-String FileSystemProtocol::globalize_path(const String &p_path) const {
-	return p_path;
-}
-
 void FileSystemProtocol::disguise_file(const Ref<FileAccess> &p_file, const String &p_protocol_name, const String &p_path) const {
 	p_file->set_path_disguise(p_protocol_name + "://" + p_path);
 }

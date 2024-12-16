@@ -87,7 +87,14 @@ public:
 
 	Error get_open_error() const;
 
+	// If failed, returns empty string
+	// Not the same behavior as ProjectSettings::globalize_path
 	String globalize_path(const String &path) const;
+
+	// If failed, returns file path (with protocol part stripped)
+	// It's the same behavior as ProjectSettings::globalize_path
+	String globalize_path_or_fallback(const String &path) const;
+
 
 	Ref<FileAccess> open_file(const String &p_path, int p_mode_flags, Error *r_error = nullptr) const;
 	bool file_exists(const String &p_path) const;

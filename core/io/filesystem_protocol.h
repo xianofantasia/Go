@@ -48,7 +48,7 @@ protected:
 public:
 	Error get_open_error() const;
 
-	virtual String globalize_path(const String &path) const;
+	virtual String globalize_path(const String &p_path) const { return String(); }
 
 	virtual Ref<FileAccess> open_file(const String &p_path, int p_mode_flags, Error &r_error) const = 0;
 	virtual bool file_exists(const String &p_path) const = 0;

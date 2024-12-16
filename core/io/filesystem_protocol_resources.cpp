@@ -47,7 +47,7 @@ String FileSystemProtocolResources::globalize_path(const String &p_path) const {
 	if (!resource_path.is_empty()) {
 		return resource_path + "/" + p_path;
 	} else {
-		return p_path;
+		return String();
 	}
 }
 Ref<FileAccess> FileSystemProtocolResources::open_file(const String &p_path, int p_mode_flags, Error &r_error) const {

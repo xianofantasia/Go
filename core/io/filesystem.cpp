@@ -146,6 +146,20 @@ String FileSystem::globalize_path(const String &p_path) const {
 
 	return protocol->globalize_path(file_path);
 }
+
+String FileSystem::globalize_path_or_fallback(const String &p_path) const {
+	String protocol_name = String();
+	Ref<FileSystemProtocol> protocol = Ref<FileSystemProtocol>();
+	String file_path = String();
+	process_path(p_path, &protocol_name, &protocol, &file_path);
+	ERR_FAIL_COND_V_MSG(protocol.is_null(), String(), "Unknown filesystem protocol " + protocol_name);
+
+	String r_path = protocol->globalize_path(file_path);
+	if (r_path.is_empty()) {
+		r_path = file_path;
+	}
+	return r_path;
+}
 Ref<FileAccess> FileSystem::open_file(const String &p_path, int p_mode_flags, Error *r_error) const {
 	String protocol_name = String();
 	Ref<FileSystemProtocol> protocol = Ref<FileSystemProtocol>();
