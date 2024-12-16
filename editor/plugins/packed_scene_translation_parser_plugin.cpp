@@ -35,7 +35,7 @@
 #include "scene/gui/option_button.h"
 #include "scene/resources/packed_scene.h"
 
-void PackedSceneEditorTranslationParserPlugin::get_recognized_extensions(List<String> *r_extensions) const {
+void PackedSceneEditorTranslationParserPlugin::get_recognized_extensions(LocalVector<String> &r_extensions) const {
 	ResourceLoader::get_recognized_extensions_for_type("PackedScene", r_extensions);
 }
 

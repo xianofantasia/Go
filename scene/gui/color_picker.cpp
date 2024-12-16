@@ -836,8 +836,8 @@ void ColorPicker::_add_recent_preset_button(int p_size, const Color &p_color) {
 }
 
 void ColorPicker::_load_palette() {
-	List<String> extensions;
-	ResourceLoader::get_recognized_extensions_for_type("ColorPalette", &extensions);
+	LocalVector<String> extensions;
+	ResourceLoader::get_recognized_extensions_for_type("ColorPalette", extensions);
 
 	file_dialog->set_title(RTR("Load Color Palette"));
 	file_dialog->clear_filters();
@@ -856,8 +856,8 @@ void ColorPicker::_save_palette(bool p_is_save_as) {
 		_palette_file_selected(palette_path);
 		return;
 	} else {
-		List<String> extensions;
-		ResourceLoader::get_recognized_extensions_for_type("ColorPalette", &extensions);
+		LocalVector<String> extensions;
+		ResourceLoader::get_recognized_extensions_for_type("ColorPalette", extensions);
 
 		file_dialog->set_title(RTR("Save Color Palette"));
 		file_dialog->clear_filters();
