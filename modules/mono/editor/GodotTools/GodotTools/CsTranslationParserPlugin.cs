@@ -24,11 +24,12 @@ public partial class CsTranslationParserPlugin : EditorTranslationParserPlugin
         public bool Newline = true;
     }
 
-    private List<MetadataReference> _projectReferences;
-    private Array<string> _msgids;
-    private Array<Array> _msgidsContextPlural;
-    private Array<string> _msgidsComment;
-    private Array<string> _msgidsContextPluralComment;
+    private List<MetadataReference>? _projectReferences;
+    private Array<string>? _msgids;
+    private Array<Array>? _msgidsContextPlural;
+    private Array<string>? _msgidsComment;
+    private Array<string>? _msgidsContextPluralComment;
+    private List<SyntaxTree> _syntaxTreeCaches = new List<SyntaxTree>();
 
     private const string TranslationCommentPrefix = "TRANSLATORS:";
     private const string NoTranslateComment = "NO_TRANSLATE";
@@ -38,6 +39,8 @@ public partial class CsTranslationParserPlugin : EditorTranslationParserPlugin
     private const string TranslationClass = "Godot.GodotObject";
     private const string TranslationMethodTr = "Tr";
     private const string TranslationMethodTrN = "TrN";
+    private static readonly string[] Configurations = new string[]{ "Debug", "Release" };
+    private static readonly string[] TargetPlatforms = new string[]{ "windows", "linuxbsd", "macos", "android", "ios", "web" };
 
     public override string[] _GetRecognizedExtensions()
     {
@@ -53,21 +56,59 @@ public partial class CsTranslationParserPlugin : EditorTranslationParserPlugin
 
         if (_projectReferences == null)
         {
-            _projectReferences = GetProjectReferences(GodotSharpDirs.ProjectCsProjPath);
-            var references = System.AppDomain.CurrentDomain.GetAssemblies()
+            _projectReferences = new List<MetadataReference>();
+            foreach (string configuration in Configurations){
+                foreach (string targetPlatform in TargetPlatforms){
+                    GetProjectReferences(GodotSharpDirs.ProjectCsProjPath, configuration, targetPlatform).ForEach(reference => {
+                        if (!_projectReferences.Contains(reference)) _projectReferences.Add(reference);
+                    });
+                }
+            }
+            System.AppDomain.CurrentDomain.GetAssemblies()
                 .Where(a => !a.IsDynamic)
                 .Where(a => a.Location != "")
                 .Select(a => MetadataReference.CreateFromFile(a.Location))
-                .Cast<MetadataReference>();
-            _projectReferences.AddRange(references);
+                .Cast<MetadataReference>()
+                .ToList()
+                .ForEach(reference => {
+                    if (!_projectReferences.Contains(reference)) _projectReferences.Add(reference);
+                });
         }
+
         var res = ResourceLoader.Load<CSharpScript>(path, "Script");
         var text = res.SourceCode;
-        var tree = CSharpSyntaxTree.ParseText(text);
 
-        var compilation = CSharpCompilation.Create("TranslationParser",
-                options: new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary))
-            .AddReferences(_projectReferences)
+        string[] symbols = new string[]{};
+        foreach (string configuration in Configurations){
+            foreach (string targetPlatform in TargetPlatforms){
+                symbols = GetProjectDefineConstants(GodotSharpDirs.ProjectCsProjPath, configuration, targetPlatform);
+                ParseCode(text, symbols, _projectReferences);
+            }
+        }
+        _syntaxTreeCaches.Clear();
+        msgids.AddRange(_msgids);
+        msgidsContextPlural.AddRange(_msgidsContextPlural);
+    }
+
+    public override void _GetComments(Array<string> msgidsComment, Array<string> msgidsContextPluralComment)
+    {
+        if (_msgidsComment != null)
+        {
+            msgidsComment.AddRange(_msgidsComment);
+        }
+        if (_msgidsContextPluralComment != null)
+        {
+            msgidsContextPluralComment.AddRange(_msgidsContextPluralComment);
+        }
+    }
+
+    private void ParseCode(string  code, string[] symbols, List<MetadataReference> references) {
+        var options = new CSharpParseOptions(LanguageVersion.Default, DocumentationMode.Parse, SourceCodeKind.Script, symbols);
+        var tree = CSharpSyntaxTree.ParseText(code, options);
+        if (SyntaxTreeContains(tree) || tree == null) return;
+         _syntaxTreeCaches.Add(tree);
+        var compilation = CSharpCompilation.Create("TranslationParser", options: new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary))
+            .AddReferences(references)
             .AddSyntaxTrees(tree);
 
         var semanticModel = compilation.GetSemanticModel(tree);
@@ -156,7 +197,7 @@ public partial class CsTranslationParserPlugin : EditorTranslationParserPlugin
                         break;
                     }
                 }
-            }
+            }     
 
             SymbolInfo? symbolInfo = null;
             if (invocation.Expression is IdentifierNameSyntax identifierNameSyntax)
@@ -205,17 +246,22 @@ public partial class CsTranslationParserPlugin : EditorTranslationParserPlugin
                 }
             }
         }
-
-        msgids.AddRange(_msgids);
-        msgidsContextPlural.AddRange(_msgidsContextPlural);
     }
 
-    public override void _GetComments(Array<string> msgidsComment, Array<string> msgidsContextPluralComment)
+    private bool SyntaxTreeContains(SyntaxTree otherTree)
     {
-        msgidsComment.AddRange(_msgidsComment);
-        msgidsContextPluralComment.AddRange(_msgidsContextPluralComment);
-    }
+        bool result = false;
 
+        for (int i = 0; i < _syntaxTreeCaches.Count; i++)
+        {
+            if (_syntaxTreeCaches[i].GetRoot().IsEquivalentTo(otherTree.GetRoot()))
+            {
+                result = true;
+                break;
+            }
+        }
+        return result;
+    }
     private int GetStartLine(Location location)
     {
         return location.GetLineSpan().StartLinePosition.Line;
@@ -250,8 +296,8 @@ public partial class CsTranslationParserPlugin : EditorTranslationParserPlugin
 
                 if (constantValue.HasValue && constantValue.Value is string message)
                 {
-                    _msgids.Add(message);
-                    _msgidsComment.Add(comment);
+                    _msgids?.Add(message);
+                    _msgidsComment?.Add(comment);
                 }
 
                 break;
@@ -267,8 +313,8 @@ public partial class CsTranslationParserPlugin : EditorTranslationParserPlugin
                 if (msgValue.HasValue && msgValue.Value is string message &&
                     ctxValue.HasValue && ctxValue.Value is string context)
                 {
-                    _msgidsContextPlural.Add(new Array { message, context, "" });
-                    _msgidsContextPluralComment.Add(comment);
+                    _msgidsContextPlural?.Add(new Array { message, context, "" });
+                    _msgidsContextPluralComment?.Add(comment);
                 }
 
                 break;
@@ -297,18 +343,18 @@ public partial class CsTranslationParserPlugin : EditorTranslationParserPlugin
                 context = ctx;
             }
         }
-        _msgidsContextPlural.Add(new Array { singular, context, plural });
-        _msgidsContextPluralComment.Add(comment);
+        _msgidsContextPlural?.Add(new Array { singular, context, plural });
+        _msgidsContextPluralComment?.Add(comment);
     }
 
-    private List<MetadataReference> GetProjectReferences(string projectPath)
+    private List<MetadataReference> GetProjectReferences(string projectPath, string configuration = "Debug", string? targetPlatform = null)
     {
         if (!MSBuildLocator.IsRegistered)
         {
             MSBuildLocator.RegisterDefaults();
         }
 
-        var referencePaths = GetProjectReferencePaths(projectPath);
+        var referencePaths = GetProjectReferencePaths(projectPath, configuration, targetPlatform ?? OS.GetName());
 
         var metadataReferences = new List<MetadataReference>();
         foreach (var dllPath in referencePaths)
@@ -323,15 +369,16 @@ public partial class CsTranslationParserPlugin : EditorTranslationParserPlugin
         return metadataReferences;
     }
 
-    private List<string> GetProjectReferencePaths(string projectPath)
+    private List<string> GetProjectReferencePaths(string projectPath, string configuration, string targetPlatform)
     {
         var referencePaths = new List<string>();
 
         var projectCollection = new ProjectCollection();
         var project = projectCollection.LoadProject(projectPath);
 
-        project.SetProperty("Configuration", "Debug");
+        project.SetProperty("Configuration", configuration);
         project.SetProperty("Platform", "Any CPU");
+        project.SetProperty("GodotTargetPlatform", targetPlatform);
 
         var buildParameters = new BuildParameters(projectCollection);
         var buildRequest = new BuildRequestData(project.FullPath, project.GlobalProperties, null, new[] { "GetTargetPath" }, null);
@@ -346,5 +393,52 @@ public partial class CsTranslationParserPlugin : EditorTranslationParserPlugin
         projectCollection.Dispose();
 
         return referencePaths;
+    }
+
+    private string[] GetProjectDefineConstants(string projectPath, string configuration = "Debug", string? targetPlatform = null){
+        if (!MSBuildLocator.IsRegistered)
+        {
+            MSBuildLocator.RegisterDefaults();
+        }
+        string[] defineConstants = new string[]{};
+
+        var projectCollection = new ProjectCollection();
+        var project = projectCollection.LoadProject(projectPath);
+
+        project.SetProperty("Configuration", configuration);
+        project.SetProperty("Platform", "Any CPU");
+        project.SetProperty("GodotTargetPlatform", targetPlatform ?? OS.GetName());
+
+        var target = project.Xml.AddTarget("GetDefineConstants");
+        var propertyGroup = target.AddPropertyGroup();
+        propertyGroup.AddProperty("DefineConstantsValue", "$(DefineConstants)");
+        var itemGroup = target.AddItemGroup();
+        itemGroup.AddItem("DefineConstantsItem", "$(DefineConstantsValue)");
+        var task = target.AddTask("WriteLinesToFile");
+        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+        task.SetParameter("File", tempFilePath);
+        task.SetParameter("Lines", "@(DefineConstantsItem)");
+        task.SetParameter("Overwrite", "true");
+        
+        var buildParameters = new BuildParameters(projectCollection);
+        var buildRequest = new BuildRequestData(project.FullPath, project.GlobalProperties, null, new[] { "GetDefineConstants" }, null);
+        var buildResult = BuildManager.DefaultBuildManager.Build(buildParameters, buildRequest);
+
+        if (buildResult.OverallResult == BuildResultCode.Success)
+        {
+            var defineConstantsOutput = File.ReadAllText(tempFilePath);
+            if (defineConstantsOutput != null)
+            {
+                defineConstants = defineConstantsOutput.Split('\n')
+                    .Select(symbol => symbol.Trim('\r').Trim('\n'))
+                    .Where(defineConstant => defineConstant != "").ToArray();
+            }
+            File.Delete(tempFilePath);
+        }
+
+        projectCollection.UnloadAllProjects();
+        projectCollection.Dispose();
+
+        return defineConstants;
     }
 }
