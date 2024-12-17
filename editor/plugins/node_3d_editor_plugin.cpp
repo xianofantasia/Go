@@ -2401,6 +2401,12 @@ void Node3DEditorViewport::_sinput(const Ref<InputEvent> &p_event) {
 		if (ED_IS_SHORTCUT("spatial_editor/align_rotation_with_view", p_event)) {
 			_menu_option(VIEW_ALIGN_ROTATION_WITH_VIEW);
 		}
+		if (ED_IS_SHORTCUT("spatial_editor/create_cam_from_view", p_event)) {
+			Ref<InputEventKey> key = p_event;
+			if (key->is_released()) {
+				_menu_option(VIEW_CREATE_CAM);
+			}
+		}
 		if (ED_IS_SHORTCUT("spatial_editor/insert_anim_key", p_event)) {
 			if (!get_selected_count() || _edit.mode != TRANSFORM_NONE) {
 				return;
@@ -3618,6 +3624,9 @@ void Node3DEditorViewport::_menu_option(int p_option) {
 			}
 			undo_redo->commit_action();
 
+		} break;
+		case VIEW_CREATE_CAM: {
+			_create_cam_from_view();
 		} break;
 		case VIEW_ENVIRONMENT: {
 			int idx = view_menu->get_popup()->get_item_index(VIEW_ENVIRONMENT);
@@ -5468,6 +5477,63 @@ void Node3DEditorViewport::_set_lock_view_rotation(bool p_lock_rotation) {
 	}
 }
 
+void Node3DEditorViewport::_create_cam_from_view() {
+	const List<Node *> &selection = editor_selection->get_selected_node_list();
+	if (selection.size() > 1) {
+		return;
+	}
+	Node *base = get_tree()->get_edited_scene_root();
+	Camera3D *new_cam = memnew(Camera3D);
+	new_cam->set_as_top_level(true);
+
+	if (!base) {
+		// Create a root node so we can add child nodes to it.
+		SceneTreeDock::get_singleton()->add_root_node(memnew(Node3D));
+		base = get_tree()->get_edited_scene_root();
+	}
+	ERR_FAIL_NULL(base);
+
+	Transform3D camera_transform = camera->get_global_transform();
+	Transform3D xform;
+	if (orthogonal) {
+		new_cam->set_orthogonal(camera->get_size(), camera->get_near(), camera->get_far());
+		xform = camera_transform;
+		// Fix from @ydeltastar PR #99099
+		Vector3 offset = camera_transform.basis.xform(Vector3(0, 0, cursor.distance));
+		xform.origin = cursor.pos + offset;
+	} else {
+		new_cam->set_fov(camera->get_fov());
+		new_cam->set_near(camera->get_near());
+		new_cam->set_far(camera->get_far());
+		xform = camera_transform;
+		xform.scale_basis(new_cam->get_scale());
+	}
+	// Check if any nodes is selected
+	bool is_selected = false;
+	if (selection.size() == 1) {
+		is_selected = true;
+	}
+
+	EditorUndoRedoManager *undo_redo = EditorUndoRedoManager::get_singleton();
+	undo_redo->create_action(TTR("Add Camera to Scene"));
+	if (!is_selected) {
+		undo_redo->add_do_method(base, "add_child", new_cam, true);
+		undo_redo->add_do_method(new_cam, "set_owner", base);
+		undo_redo->add_undo_method(base, "remove_child", new_cam);
+	} else {
+		Node *sp = selection.front()->get();
+		if (!sp) {
+			return;
+		}
+		undo_redo->add_do_method(sp, "add_child", new_cam, true);
+		undo_redo->add_do_method(new_cam, "set_owner", base);
+		undo_redo->add_undo_method(sp, "remove_child", new_cam);
+	}
+	undo_redo->add_do_method(new_cam, "set_transform", xform);
+	undo_redo->add_do_reference(new_cam);
+	undo_redo->commit_action();
+}
+
 Node3DEditorViewport::Node3DEditorViewport(Node3DEditor *p_spatial_editor, int p_index) {
 	cpu_time_history_index = 0;
 	gpu_time_history_index = 0;
@@ -5609,6 +5675,7 @@ Node3DEditorViewport::Node3DEditorViewport(Node3DEditor *p_spatial_editor, int p
 	view_menu->get_popup()->add_shortcut(ED_GET_SHORTCUT("spatial_editor/focus_selection"), VIEW_CENTER_TO_SELECTION);
 	view_menu->get_popup()->add_shortcut(ED_GET_SHORTCUT("spatial_editor/align_transform_with_view"), VIEW_ALIGN_TRANSFORM_WITH_VIEW);
 	view_menu->get_popup()->add_shortcut(ED_GET_SHORTCUT("spatial_editor/align_rotation_with_view"), VIEW_ALIGN_ROTATION_WITH_VIEW);
+	view_menu->get_popup()->add_shortcut(ED_GET_SHORTCUT("spatial_editor/create_cam_from_view"), VIEW_CREATE_CAM);
 	view_menu->get_popup()->connect(SceneStringName(id_pressed), callable_mp(this, &Node3DEditorViewport::_menu_option));
 	display_submenu->connect(SceneStringName(id_pressed), callable_mp(this, &Node3DEditorViewport::_menu_option));
 	view_menu->set_disable_shortcuts(true);
@@ -8992,6 +9059,7 @@ Node3DEditor::Node3DEditor() {
 	ED_SHORTCUT("spatial_editor/decrease_fov", TTR("Decrease Field of View"), KeyModifierMask::CMD_OR_CTRL + Key::EQUAL); // Usually direct access key for `KEY_PLUS`.
 	ED_SHORTCUT("spatial_editor/increase_fov", TTR("Increase Field of View"), KeyModifierMask::CMD_OR_CTRL + Key::MINUS);
 	ED_SHORTCUT("spatial_editor/reset_fov", TTR("Reset Field of View to Default"), KeyModifierMask::CMD_OR_CTRL + Key::KEY_0);
+	ED_SHORTCUT("spatial_editor/create_cam_from_view", TTR("Create Camera From View"), KeyModifierMask::CMD_OR_CTRL + KeyModifierMask::ALT + Key::C);
 
 	PopupMenu *p;
 
