@@ -390,7 +390,7 @@ bool AudioStreamMicrophone::is_monophonic() const {
 int AudioStreamPlaybackMicrophone::_mix_internal(AudioFrame *p_buffer, int p_frames) {
 	AudioDriver::get_singleton()->lock();
 
-	Vector<int32_t> buf = AudioDriver::get_singleton()->get_input_buffer();
+	Vector<int32_t>& buf = AudioDriver::get_singleton()->get_input_buffer();
 	unsigned int input_size = AudioDriver::get_singleton()->get_input_size();
 	int mix_rate = AudioDriver::get_singleton()->get_input_mix_rate();
 	unsigned int playback_delay = MIN(((50 * mix_rate) / 1000) * 2, buf.size() >> 1);
@@ -438,6 +438,24 @@ int AudioStreamPlaybackMicrophone::_mix_internal(AudioFrame *p_buffer, int p_fra
 	return mixed_frames;
 }
 
+PackedVector2Array AudioStreamPlaybackMicrophone::get_microphone_buffer(int p_frames) {
+	PackedVector2Array ret;
+	unsigned int input_position = AudioDriver::get_singleton()->get_input_position();
+	Vector<int32_t>& buf = AudioDriver::get_singleton()->get_input_buffer();
+	if (input_position < input_ofs)
+		input_position += buf.size();
+	if (input_position < input_ofs + p_frames * 2)
+		return ret;
+	Vector<AudioFrame> streaming_data;
+	streaming_data.resize(p_frames);
+	int mixed_frames = _mix_internal(streaming_data.ptrw(), p_frames);
+	ret.resize(mixed_frames);
+	for (int32_t i = 0; i < mixed_frames; i++) {
+		ret.write[i] = Vector2(streaming_data[i].left, streaming_data[i].right);
+	}
+	return ret;
+}
+
 int AudioStreamPlaybackMicrophone::mix(AudioFrame *p_buffer, float p_rate_scale, int p_frames) {
 	return AudioStreamPlaybackResampled::mix(p_buffer, p_rate_scale, p_frames);
 }
@@ -458,15 +476,24 @@ void AudioStreamPlaybackMicrophone::start(double p_from_pos) {
 
 	input_ofs = 0;
 
-	if (AudioDriver::get_singleton()->input_start() == OK) {
+	if (AudioDriver::get_singleton()->input_start_count == 0) {
+		if (AudioDriver::get_singleton()->input_start() == OK) {
+			active = true;
+			begin_resample();
+			AudioDriver::get_singleton()->input_start_count++;
+		}
+	} else {
 		active = true;
 		begin_resample();
+		AudioDriver::get_singleton()->input_start_count++;
 	}
 }
 
 void AudioStreamPlaybackMicrophone::stop() {
 	if (active) {
-		AudioDriver::get_singleton()->input_stop();
+		AudioDriver::get_singleton()->input_start_count--;
+		if (AudioDriver::get_singleton()->input_start_count == 0)
+			AudioDriver::get_singleton()->input_stop();
 		active = false;
 	}
 }
@@ -489,6 +516,16 @@ void AudioStreamPlaybackMicrophone::seek(double p_time) {
 
 void AudioStreamPlaybackMicrophone::tag_used_streams() {
 	microphone->tag_used(0);
+}
+
+void AudioStreamPlaybackMicrophone::_bind_methods() {
+	ClassDB::bind_method(D_METHOD("start"), &AudioStreamPlaybackMicrophone::start);
+	ClassDB::bind_method(D_METHOD("stop"), &AudioStreamPlaybackMicrophone::stop);
+	ClassDB::bind_method(D_METHOD("is_playing"), &AudioStreamPlaybackMicrophone::is_playing);
+	ClassDB::bind_method(D_METHOD("get_microphone_buffer", "p_frames"), &AudioStreamPlaybackMicrophone::get_microphone_buffer);
+
+	// how do we get this one in and available to GDExtensions that has AudioFrame* as a parameter type?
+	//ClassDB::bind_method(D_METHOD("mix", "p_buffer", "p_rate_scale", "p_frames"), &AudioStreamPlaybackResampled::mix);
 }
 
 AudioStreamPlaybackMicrophone::~AudioStreamPlaybackMicrophone() {
