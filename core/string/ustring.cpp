@@ -300,7 +300,7 @@ Error String::parse_url(String &r_scheme, String &r_host, int &r_port, String &r
 }
 
 void String::parse_latin1(const Span<const char> &p_cstr) {
-	if (p_cstr.len == 0) {
+	if (p_cstr.size() == 0) {
 		resize(0);
 		return;
 	}
@@ -319,7 +319,7 @@ void String::parse_latin1(const Span<const char> &p_cstr) {
 }
 
 void String::parse_utf32(const Span<const char32_t> &p_cstr) {
-	if (p_cstr.len == 0) {
+	if (p_cstr.size() == 0) {
 		resize(0);
 		return;
 	}

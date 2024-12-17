@@ -33,10 +33,12 @@
 
 #include "core/typedefs.h"
 
+#include <type_traits>
+
 // Equivalent of std::span.
 // Represents a view into a contiguous memory space.
 // DISCLAIMER: This data type does not own the underlying buffer. DO NOT STORE IT.
-//  Additionally, for the lifetime of the Span, do not resize the buffer, and do not insert or remove elements from it.
+//  Additionally, for the lifetime of the Span, do not add elements to or remove from the buffer.
 //  Failure to respect this may lead to crashes or undefined behavior.
 template <typename T>
 class Span {
@@ -44,35 +46,32 @@ class Span {
 	size_t _len = 0;
 
 public:
-	Span() = default;
-	Span(T *p_ptr, size_t p_len) :
-			_ptr(p_ptr), _len(p_len) {}
+	static constexpr bool is_mutable = std::negation_v<std::is_const<T>>;
 
-	// Copy semantics are explicitly disabled, because Span should usually not be stored.
-	// When passing around Span instances across functions, use references to emphasize it's not owned.
-	Span(const Span &p_span) = delete;
-	void operator=(const Span &span) = delete;
+	constexpr Span() = default;
+	constexpr Span(T *p_ptr, size_t p_len) :
+			_ptr(p_ptr), _len(p_len) {}
 
 	// A ptrw() call explicitly asks for write access.
 	// As such, it makes no sense to call it on a read-only span (e.g. Span<const int>).
 	// To help reduce confusion, it is disabled with SFINAE if the element type is const.
-	std::enable_if<std::negation_v<std::is_const<T>>, T> *ptrw() { return _ptr; }
-	const T *ptr() const { return _ptr; }
+	constexpr std::enable_if<is_mutable, T> *ptrw() { return _ptr; }
+	constexpr const T *ptr() const { return _ptr; }
 
-	T &operator[](int i) { return _ptr[i]; }
-	const T &operator[](int i) const { return _ptr[i]; }
+	constexpr T &operator[](int i) { return _ptr[i]; }
+	constexpr const T &operator[](int i) const { return _ptr[i]; }
 
-	size_t size() const { return _len; }
-	bool is_empty() const { return _len == 0; }
+	constexpr size_t size() const { return _len; }
+	constexpr bool is_empty() const { return _len == 0; }
 
 	// Algorithms.
-	size_t find(const T &p_val, std::ptrdiff_t p_from = 0) const;
-	size_t rfind(const T &p_val, std::ptrdiff_t p_from = -1) const;
-	size_t count(const T &p_val) const;
+	constexpr size_t find(const T &p_val, std::ptrdiff_t p_from = 0) const;
+	constexpr size_t rfind(const T &p_val, std::ptrdiff_t p_from = -1) const;
+	constexpr size_t count(const T &p_val) const;
 };
 
 template <typename T>
-size_t Span<T>::find(const T &p_val, std::ptrdiff_t p_from) const {
+constexpr size_t Span<T>::find(const T &p_val, std::ptrdiff_t p_from) const {
 	if (p_from < 0 || _len == 0) {
 		return -1;
 	}
@@ -87,7 +86,7 @@ size_t Span<T>::find(const T &p_val, std::ptrdiff_t p_from) const {
 }
 
 template <typename T>
-size_t Span<T>::rfind(const T &p_val, std::ptrdiff_t p_from) const {
+constexpr size_t Span<T>::rfind(const T &p_val, std::ptrdiff_t p_from) const {
 	if (p_from < 0) {
 		p_from = _len + p_from;
 	}
@@ -104,7 +103,7 @@ size_t Span<T>::rfind(const T &p_val, std::ptrdiff_t p_from) const {
 }
 
 template <typename T>
-size_t Span<T>::count(const T &p_val) const {
+constexpr size_t Span<T>::count(const T &p_val) const {
 	size_t amount = 0;
 	for (size_t i = 0; i < _len; i++) {
 		if (_ptr[i] == p_val) {
