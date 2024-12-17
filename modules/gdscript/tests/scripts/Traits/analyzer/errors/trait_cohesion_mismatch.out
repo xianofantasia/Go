@@ -1,0 +1,2 @@
+GDTEST_ANALYZER_ERROR
+>> ERROR at line 1: Can not uses "OtherTrait" trait since shadows members from previous traits.
