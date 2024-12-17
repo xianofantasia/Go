@@ -39,8 +39,8 @@ public partial class CsTranslationParserPlugin : EditorTranslationParserPlugin
     private const string TranslationClass = "Godot.GodotObject";
     private const string TranslationMethodTr = "Tr";
     private const string TranslationMethodTrN = "TrN";
-    private static readonly string[] Configurations = new string[]{ "Debug", "Release" };
-    private static readonly string[] TargetPlatforms = new string[]{ "windows", "linuxbsd", "macos", "android", "ios", "web" };
+    private static readonly string[] Configurations = new string[] { "Debug", "Release" };
+    private static readonly string[] TargetPlatforms = new string[] { "windows", "linuxbsd", "macos", "android", "ios", "web" };
 
     public override string[] _GetRecognizedExtensions()
     {
@@ -57,9 +57,12 @@ public partial class CsTranslationParserPlugin : EditorTranslationParserPlugin
         if (_projectReferences == null)
         {
             _projectReferences = new List<MetadataReference>();
-            foreach (string configuration in Configurations){
-                foreach (string targetPlatform in TargetPlatforms){
-                    GetProjectReferences(GodotSharpDirs.ProjectCsProjPath, configuration, targetPlatform).ForEach(reference => {
+            foreach (string configuration in Configurations)
+            {
+                foreach (string targetPlatform in TargetPlatforms)
+                {
+                    GetProjectReferences(GodotSharpDirs.ProjectCsProjPath, configuration, targetPlatform).ForEach(reference =>
+                    {
                         if (!_projectReferences.Contains(reference)) _projectReferences.Add(reference);
                     });
                 }
@@ -70,7 +73,8 @@ public partial class CsTranslationParserPlugin : EditorTranslationParserPlugin
                 .Select(a => MetadataReference.CreateFromFile(a.Location))
                 .Cast<MetadataReference>()
                 .ToList()
-                .ForEach(reference => {
+                .ForEach(reference =>
+                {
                     if (!_projectReferences.Contains(reference)) _projectReferences.Add(reference);
                 });
         }
@@ -78,9 +82,11 @@ public partial class CsTranslationParserPlugin : EditorTranslationParserPlugin
         var res = ResourceLoader.Load<CSharpScript>(path, "Script");
         var text = res.SourceCode;
 
-        string[] symbols = new string[]{};
-        foreach (string configuration in Configurations){
-            foreach (string targetPlatform in TargetPlatforms){
+        string[] symbols = new string[] { };
+        foreach (string configuration in Configurations)
+        {
+            foreach (string targetPlatform in TargetPlatforms)
+            {
                 symbols = GetProjectDefineConstants(GodotSharpDirs.ProjectCsProjPath, configuration, targetPlatform);
                 ParseCode(text, symbols, _projectReferences);
             }
@@ -102,11 +108,12 @@ public partial class CsTranslationParserPlugin : EditorTranslationParserPlugin
         }
     }
 
-    private void ParseCode(string  code, string[] symbols, List<MetadataReference> references) {
+    private void ParseCode(string code, string[] symbols, List<MetadataReference> references)
+    {
         var options = new CSharpParseOptions(LanguageVersion.Default, DocumentationMode.Parse, SourceCodeKind.Script, symbols);
         var tree = CSharpSyntaxTree.ParseText(code, options);
         if (SyntaxTreeContains(tree) || tree == null) return;
-         _syntaxTreeCaches.Add(tree);
+        _syntaxTreeCaches.Add(tree);
         var compilation = CSharpCompilation.Create("TranslationParser", options: new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary))
             .AddReferences(references)
             .AddSyntaxTrees(tree);
@@ -197,7 +204,7 @@ public partial class CsTranslationParserPlugin : EditorTranslationParserPlugin
                         break;
                     }
                 }
-            }     
+            }
 
             SymbolInfo? symbolInfo = null;
             if (invocation.Expression is IdentifierNameSyntax identifierNameSyntax)
@@ -395,12 +402,13 @@ public partial class CsTranslationParserPlugin : EditorTranslationParserPlugin
         return referencePaths;
     }
 
-    private string[] GetProjectDefineConstants(string projectPath, string configuration = "Debug", string? targetPlatform = null){
+    private string[] GetProjectDefineConstants(string projectPath, string configuration = "Debug", string? targetPlatform = null)
+    {
         if (!MSBuildLocator.IsRegistered)
         {
             MSBuildLocator.RegisterDefaults();
         }
-        string[] defineConstants = new string[]{};
+        string[] defineConstants = new string[] { };
 
         var projectCollection = new ProjectCollection();
         var project = projectCollection.LoadProject(projectPath);
@@ -419,7 +427,7 @@ public partial class CsTranslationParserPlugin : EditorTranslationParserPlugin
         task.SetParameter("File", tempFilePath);
         task.SetParameter("Lines", "@(DefineConstantsItem)");
         task.SetParameter("Overwrite", "true");
-        
+
         var buildParameters = new BuildParameters(projectCollection);
         var buildRequest = new BuildRequestData(project.FullPath, project.GlobalProperties, null, new[] { "GetDefineConstants" }, null);
         var buildResult = BuildManager.DefaultBuildManager.Build(buildParameters, buildRequest);
