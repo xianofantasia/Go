@@ -4,7 +4,7 @@
 		Playback instance for [AudioStreamMicrophone].
 	</brief_description>
 	<description>
-		Playback instance for [AudioStreamMicrophone]. When this class is instantiated on its own it can be used to control adn extract the microphone audio data directly.
+		Playback instance for [AudioStreamMicrophone]. When this class is instantiated on its own it can be used to control and extract the microphone audio data directly.
 	</description>
 	<tutorials>
 	</tutorials>
