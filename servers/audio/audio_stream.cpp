@@ -390,7 +390,7 @@ bool AudioStreamMicrophone::is_monophonic() const {
 int AudioStreamPlaybackMicrophone::_mix_internal(AudioFrame *p_buffer, int p_frames) {
 	AudioDriver::get_singleton()->lock();
 
-	Vector<int32_t>& buf = AudioDriver::get_singleton()->get_input_buffer();
+	Vector<int32_t> &buf = AudioDriver::get_singleton()->get_input_buffer();
 	unsigned int input_size = AudioDriver::get_singleton()->get_input_size();
 	int mix_rate = AudioDriver::get_singleton()->get_input_mix_rate();
 	unsigned int playback_delay = MIN(((50 * mix_rate) / 1000) * 2, buf.size() >> 1);
@@ -441,7 +441,7 @@ int AudioStreamPlaybackMicrophone::_mix_internal(AudioFrame *p_buffer, int p_fra
 PackedVector2Array AudioStreamPlaybackMicrophone::get_microphone_buffer(int p_frames) {
 	PackedVector2Array ret;
 	unsigned int input_position = AudioDriver::get_singleton()->get_input_position();
-	Vector<int32_t>& buf = AudioDriver::get_singleton()->get_input_buffer();
+	Vector<int32_t> &buf = AudioDriver::get_singleton()->get_input_buffer();
 	if (input_position < input_ofs)
 		input_position += buf.size();
 	if (input_position < input_ofs + p_frames * 2)
