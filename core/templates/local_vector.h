@@ -49,13 +49,9 @@ private:
 	T *data = nullptr;
 
 public:
-	T *ptr() {
-		return data;
-	}
-
-	const T *ptr() const {
-		return data;
-	}
+	T *ptrw() { return data; }
+	T *ptr() { return data; }
+	const T *ptr() const { return data; }
 
 	_FORCE_INLINE_ void push_back(T p_elem) {
 		if (unlikely(count == capacity)) {
