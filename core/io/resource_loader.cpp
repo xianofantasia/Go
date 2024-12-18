@@ -361,7 +361,7 @@ void ResourceLoader::_run_load_task(void *p_userdata) {
 	bool xl_remapped = false;
 	const String &remapped_path = _path_remap(load_task.local_path, &xl_remapped);
 
-	print_verbose("Loading resource: " + remapped_path);
+	PRINT_VERBOSE("Loading resource: " + remapped_path);
 
 	Error load_err = OK;
 	Ref<Resource> res = _load(remapped_path, remapped_path != load_task.local_path ? load_task.local_path : String(), load_task.type_hint, load_task.cache_mode, &load_err, load_task.use_sub_threads, &load_task.progress);
@@ -370,7 +370,7 @@ void ResourceLoader::_run_load_task(void *p_userdata) {
 	}
 
 	if (res.is_null()) {
-		print_verbose("Failed loading resource: " + remapped_path);
+		PRINT_VERBOSE("Failed loading resource: " + remapped_path);
 	}
 
 	thread_load_mutex.lock();
@@ -496,7 +496,7 @@ Error ResourceLoader::load_threaded_request(const String &p_path, const String &
 ResourceLoader::LoadToken *ResourceLoader::_load_threaded_request_reuse_user_token(const String &p_path) {
 	HashMap<String, LoadToken *>::Iterator E = user_load_tokens.find(p_path);
 	if (E) {
-		print_verbose("load_threaded_request(): Another threaded load for resource path '" + p_path + "' has been initiated. Not an error.");
+		PRINT_VERBOSE("load_threaded_request(): Another threaded load for resource path '" + p_path + "' has been initiated. Not an error.");
 		LoadToken *token = E->value;
 		token->user_rc++;
 		return token;
@@ -666,7 +666,7 @@ ResourceLoader::ThreadLoadStatus ResourceLoader::load_threaded_get_status(const 
 		MutexLock thread_load_lock(thread_load_mutex);
 
 		if (!user_load_tokens.has(p_path)) {
-			print_verbose("load_threaded_get_status(): No threaded load for resource path '" + p_path + "' has been initiated or its result has already been collected.");
+			PRINT_VERBOSE("load_threaded_get_status(): No threaded load for resource path '" + p_path + "' has been initiated or its result has already been collected.");
 			return THREAD_LOAD_INVALID_RESOURCE;
 		}
 
@@ -707,7 +707,7 @@ Ref<Resource> ResourceLoader::load_threaded_get(const String &p_path, Error *r_e
 		MutexLock thread_load_lock(thread_load_mutex);
 
 		if (!user_load_tokens.has(p_path)) {
-			print_verbose("load_threaded_get(): No threaded load for resource path '" + p_path + "' has been initiated or its result has already been collected.");
+			PRINT_VERBOSE("load_threaded_get(): No threaded load for resource path '" + p_path + "' has been initiated or its result has already been collected.");
 			if (r_error) {
 				*r_error = ERR_INVALID_PARAMETER;
 			}
