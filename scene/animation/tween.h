@@ -112,7 +112,7 @@ private:
 	EaseType default_ease = EaseType::EASE_IN_OUT;
 	ObjectID bound_node;
 
-	SceneTree *parent_tree;
+	SceneTree *parent_tree = nullptr;
 	Vector<List<Ref<Tweener>>> tweeners;
 	double total_time = 0;
 	int current_step = -1;
