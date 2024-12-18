@@ -612,6 +612,7 @@ public:
 	Vector<uint8_t> to_utf16_buffer() const;
 	Vector<uint8_t> to_utf32_buffer() const;
 	Vector<uint8_t> to_wchar_buffer() const;
+	Vector<uint8_t> to_multibyte_char_buffer(int p_encoding = 0) const;
 
 	// Constructors for NULL terminated C strings.
 	String(const char *p_cstr) {

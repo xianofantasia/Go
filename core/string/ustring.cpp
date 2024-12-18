@@ -35,6 +35,7 @@
 #include "core/math/math_funcs.h"
 #include "core/object/object.h"
 #include "core/os/memory.h"
+#include "core/os/os.h"
 #include "core/string/print_string.h"
 #include "core/string/string_name.h"
 #include "core/string/translation_server.h"
@@ -5882,6 +5883,10 @@ Vector<uint8_t> String::to_wchar_buffer() const {
 #else
 	return to_utf32_buffer();
 #endif
+}
+
+Vector<uint8_t> String::to_multibyte_char_buffer(int p_encoding) const {
+	return OS::get_singleton()->string_to_multibyte(p_encoding, *this);
 }
 
 #ifdef TOOLS_ENABLED
