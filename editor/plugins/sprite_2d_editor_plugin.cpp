@@ -50,13 +50,6 @@
 
 #define PRECISION 1
 
-void Sprite2DEditor::_node_removed(Node *p_node) {
-	if (p_node == node) {
-		node = nullptr;
-		options->hide();
-	}
-}
-
 void Sprite2DEditor::edit(Sprite2D *p_sprite) {
 	node = p_sprite;
 }
@@ -558,7 +551,6 @@ void Sprite2DEditor::_notification(int p_what) {
 		case EditorSettings::NOTIFICATION_EDITOR_SETTINGS_CHANGED: {
 			panner->setup((ViewPanner::ControlScheme)EDITOR_GET("editors/panning/sub_editors_panning_scheme").operator int(), ED_GET_SHORTCUT("canvas_item_editor/pan_view"), bool(EDITOR_GET("editors/panning/simple_panning")));
 		} break;
-		case NOTIFICATION_ENTER_TREE:
 		case NOTIFICATION_THEME_CHANGED: {
 			options->set_button_icon(get_editor_theme_icon(SNAME("Sprite2D")));
 
@@ -576,8 +568,7 @@ void Sprite2DEditor::_bind_methods() {
 
 Sprite2DEditor::Sprite2DEditor() {
 	options = memnew(MenuButton);
-
-	CanvasItemEditor::get_singleton()->add_control_to_menu_panel(options);
+	options->hide();
 
 	options->set_text(TTR("Sprite2D"));
 
@@ -587,6 +578,7 @@ Sprite2DEditor::Sprite2DEditor() {
 	options->get_popup()->add_item(TTR("Create LightOccluder2D Sibling"), MENU_OPTION_CREATE_LIGHT_OCCLUDER_2D);
 	options->set_switch_on_hover(true);
 
+	CanvasItemEditor::get_singleton()->add_control_to_menu_panel(options);
 	options->get_popup()->connect(SceneStringName(id_pressed), callable_mp(this, &Sprite2DEditor::_menu_option));
 
 	err_dialog = memnew(AcceptDialog);
@@ -663,21 +655,10 @@ bool Sprite2DEditorPlugin::handles(Object *p_object) const {
 }
 
 void Sprite2DEditorPlugin::make_visible(bool p_visible) {
-	if (p_visible) {
-		sprite_editor->options->show();
-	} else {
-		sprite_editor->options->hide();
-		sprite_editor->edit(nullptr);
-	}
+	sprite_editor->options->set_visible(p_visible);
 }
 
 Sprite2DEditorPlugin::Sprite2DEditorPlugin() {
 	sprite_editor = memnew(Sprite2DEditor);
 	EditorNode::get_singleton()->get_gui_base()->add_child(sprite_editor);
-	make_visible(false);
-
-	//sprite_editor->options->hide();
-}
-
-Sprite2DEditorPlugin::~Sprite2DEditorPlugin() {
 }
