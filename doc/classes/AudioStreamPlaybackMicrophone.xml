@@ -11,27 +11,26 @@
 	<methods>
 		<method name="get_microphone_buffer">
 			<return type="PackedVector2Array" />
-			<param index="0" name="p_frames" type="int" />
+			<param index="0" name="frames" type="int" />
 			<description>
 				Gets the next [param p_frames] audio samples from the AudioDevice ring buffer.
 				Returns a [PackedVector2Array] containing exactly [param p_frames] audio samples if available, or an empty [PackedVector2Array] if insufficient data was available.
 				The samples are signed floating-point PCM between [code]-1[/code] and [code]1[/code]. You will have to scale them if you want to use them as 8 or 16-bit integer samples. ([code]v = 0x7fff * samples[0].x[/code])
 			</description>
 		</method>
-		<method name="is_playing" qualifiers="const">
+		<method name="is_microphone_playing" qualifiers="const">
 			<return type="bool" />
 			<description>
 				Check if this object has instructed the AudioDevice to record.
 			</description>
 		</method>
-		<method name="start">
+		<method name="start_microphone">
 			<return type="void" />
-			<param index="0" name="p_from_pos" type="float" />
 			<description>
-				Instruct the AudioDevice to begin recording if it has not already doing so. The [param p_from_pos] argument is not used and should be 0.0.
+				Instruct the AudioDevice to begin recording if it has not already doing so.
 			</description>
 		</method>
-		<method name="stop">
+		<method name="stop_microphone">
 			<return type="void" />
 			<description>
 				Instruct the AudioDevice to stop recording if no other [AudioStreamPlaybackMicrophone] instances are active.

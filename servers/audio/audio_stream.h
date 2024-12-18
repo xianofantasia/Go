@@ -259,6 +259,8 @@ public:
 	virtual void stop() override;
 	virtual bool is_playing() const override;
 
+	void start_microphone();
+	void stop_microphone();
 	PackedVector2Array get_microphone_buffer(int p_frames);
 
 	virtual int get_loop_count() const override; //times it looped

@@ -440,6 +440,8 @@ int AudioStreamPlaybackMicrophone::_mix_internal(AudioFrame *p_buffer, int p_fra
 
 PackedVector2Array AudioStreamPlaybackMicrophone::get_microphone_buffer(int p_frames) {
 	PackedVector2Array ret;
+	if (!microphone.is_null())
+		return ret;
 	unsigned int input_position = AudioDriver::get_singleton()->get_input_position();
 	Vector<int32_t> &buf = AudioDriver::get_singleton()->get_input_buffer();
 	if (input_position < input_ofs)
@@ -489,6 +491,14 @@ void AudioStreamPlaybackMicrophone::start(double p_from_pos) {
 	}
 }
 
+void AudioStreamPlaybackMicrophone::start_microphone() {
+	if (!microphone.is_null()) {
+		WARN_PRINT("You cannot externally start the microphone on AudioStreamPlaybackMicrophone if it is part of a stream.");
+		return;
+	}
+	start(0.0);
+}
+
 void AudioStreamPlaybackMicrophone::stop() {
 	if (active) {
 		AudioDriver::get_singleton()->input_start_count--;
@@ -496,6 +506,14 @@ void AudioStreamPlaybackMicrophone::stop() {
 			AudioDriver::get_singleton()->input_stop();
 		active = false;
 	}
+}
+
+void AudioStreamPlaybackMicrophone::stop_microphone() {
+	if (!microphone.is_null()) {
+		WARN_PRINT("You cannot externally stop the microphone on AudioStreamPlaybackMicrophone if it is part of a stream.");
+		return;
+	}
+	stop();
 }
 
 bool AudioStreamPlaybackMicrophone::is_playing() const {
@@ -519,10 +537,10 @@ void AudioStreamPlaybackMicrophone::tag_used_streams() {
 }
 
 void AudioStreamPlaybackMicrophone::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("start"), &AudioStreamPlaybackMicrophone::start);
-	ClassDB::bind_method(D_METHOD("stop"), &AudioStreamPlaybackMicrophone::stop);
-	ClassDB::bind_method(D_METHOD("is_playing"), &AudioStreamPlaybackMicrophone::is_playing);
-	ClassDB::bind_method(D_METHOD("get_microphone_buffer", "p_frames"), &AudioStreamPlaybackMicrophone::get_microphone_buffer);
+	ClassDB::bind_method(D_METHOD("start_microphone"), &AudioStreamPlaybackMicrophone::start_microphone);
+	ClassDB::bind_method(D_METHOD("stop_microphone"), &AudioStreamPlaybackMicrophone::stop_microphone);
+	ClassDB::bind_method(D_METHOD("is_microphone_playing"), &AudioStreamPlaybackMicrophone::is_playing);
+	ClassDB::bind_method(D_METHOD("get_microphone_buffer", "frames"), &AudioStreamPlaybackMicrophone::get_microphone_buffer);
 
 	// how do we get this one in and available to GDExtensions that has AudioFrame* as a parameter type?
 	//ClassDB::bind_method(D_METHOD("mix", "p_buffer", "p_rate_scale", "p_frames"), &AudioStreamPlaybackResampled::mix);
