@@ -32,10 +32,10 @@
 #define TWEEN_H
 
 #include "core/object/ref_counted.h"
-#include "scene/main/scene_tree.h"
 
 class Tween;
 class Node;
+class SceneTree;
 
 class Tweener : public RefCounted {
 	GDCLASS(Tweener, RefCounted);
@@ -189,6 +189,7 @@ public:
 
 	Tween();
 	Tween(bool p_valid);
+	Tween(SceneTree *p_parent_tree);
 };
 
 VARIANT_ENUM_CAST(Tween::TweenPauseMode);
@@ -310,9 +311,8 @@ private:
 class SubtweenTweener : public Tweener {
 	GDCLASS(SubtweenTweener, Tweener);
 
-	friend class Tween;
-
 public:
+	Ref<Tween> subtween;
 	void start() override;
 	bool step(double &r_delta) override;
 
@@ -325,7 +325,6 @@ protected:
 	static void _bind_methods();
 
 private:
-	Ref<Tween> subtween;
 	double delay = 0;
 };
 

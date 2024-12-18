@@ -159,11 +159,12 @@ Ref<SubtweenTweener> Tween::tween_subtween(const Ref<Tween> &p_subtween) {
 
 	Ref<SubtweenTweener> tweener = memnew(SubtweenTweener(p_subtween));
 
-	// NOTE: Feels a bit hacky. Is there a better way to accomplish this?
-	// (We want to remove this tween from the SceneTree's list of tweens, so
-	// that it doesn't process it, since the processing will be handled by
-	// the SubtweenTweener instead.)
-	tweener->subtween->parent_tree->remove_tween(tweener->subtween);
+	// Remove the tween from its parent tree, if it has one.
+	// If the user created this tween without a parent tree attached,
+	// then this step isn't necessary.
+	if (tweener->subtween->parent_tree != nullptr) {
+		tweener->subtween->parent_tree->remove_tween(tweener->subtween);
+	}
 	append(tweener);
 	return tweener;
 }
@@ -515,6 +516,11 @@ Tween::Tween() {
 
 Tween::Tween(bool p_valid) {
 	valid = p_valid;
+}
+
+Tween::Tween(SceneTree *p_parent_tree) {
+	parent_tree = p_parent_tree;
+	valid = true;
 }
 
 Ref<PropertyTweener> PropertyTweener::from(const Variant &p_value) {
