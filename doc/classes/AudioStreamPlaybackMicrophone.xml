@@ -13,8 +13,8 @@
 			<return type="PackedVector2Array" />
 			<param index="0" name="frames" type="int" />
 			<description>
-				Gets the next [param p_frames] audio samples from the AudioDevice ring buffer.
-				Returns a [PackedVector2Array] containing exactly [param p_frames] audio samples if available, or an empty [PackedVector2Array] if insufficient data was available.
+				Gets the next [param frames] audio samples from the AudioDevice ring buffer.
+				Returns a [PackedVector2Array] containing exactly [param frames] audio samples if available, or an empty [PackedVector2Array] if insufficient data was available.
 				The samples are signed floating-point PCM between [code]-1[/code] and [code]1[/code]. You will have to scale them if you want to use them as 8 or 16-bit integer samples. ([code]v = 0x7fff * samples[0].x[/code])
 			</description>
 		</method>
