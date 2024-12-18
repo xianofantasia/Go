@@ -1,5 +1,5 @@
 /**************************************************************************/
-/*  file_access_windows.h                                                 */
+/*  filesystem_protocol_os_windows.h                                      */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                             GODOT ENGINE                               */
@@ -28,61 +28,46 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef FILE_ACCESS_WINDOWS_H
-#define FILE_ACCESS_WINDOWS_H
+#ifndef FILESYSTEM_PROTOCOL_OS_WINDOWS_H
+#define FILESYSTEM_PROTOCOL_OS_WINDOWS_H
 
 #ifdef WINDOWS_ENABLED
 
-#include "core/io/file_access.h"
-#include "core/os/memory.h"
+#include "core/io/filesystem_protocol.h"
 
-#include <stdio.h>
-
-class FileAccessWindows : public FileAccess {
-	FILE *f = nullptr;
-	int flags = 0;
-	void check_errors(bool p_write = false) const;
-	mutable int prev_op = 0;
-	mutable Error last_error = OK;
-	String path;
-	String path_src;
-	String save_path;
-
-	void _close();
-
-protected:
-	virtual String _get_path() const override; /// returns the path for the current open file
+class FileSystemProtocolOSWindows : public FileSystemProtocol {
+private:
+	static HashSet<String> invalid_files;
 
 public:
-	// TODO: Remove this friend after access_type is deprecated
-	friend class FileSystemProtocolOSWindows;
+	static void initialize();
+	static void finalize();
 
-	virtual Error open_internal(const String &p_path, int p_mode_flags) override; ///< open a file
-	virtual bool is_open() const override; ///< true when file is open
+	static String fix_path(const String &p_path);
+	static bool is_path_invalid(const String &p_path);
+	static bool file_exists_static(const String &p_path);
+	static uint64_t get_modified_time_static(const String &p_path);
+	static BitField<FileAccess::UnixPermissionFlags> get_unix_permissions_static(const String &p_path);
+	static Error set_unix_permissions_static(const String &p_path, BitField<FileAccess::UnixPermissionFlags> p_permissions);
+	static bool get_hidden_attribute_static(const String &p_path);
+	static Error set_hidden_attribute_static(const String &p_path, bool p_hidden);
+	static bool get_read_only_attribute_static(const String &p_path);
+	static Error set_read_only_attribute_static(const String &p_path, bool p_ro);
 
-	virtual String get_path_absolute() const override; /// returns the absolute path for the current open file
+	virtual Ref<FileAccess> open_file(const String &p_path, int p_mode_flags, Error &r_error) const override;
+	virtual bool file_exists(const String &p_path) const override;
 
-	virtual void seek(uint64_t p_position) override; ///< seek to a given position
-	virtual void seek_end(int64_t p_position = 0) override; ///< seek from the end of file
-	virtual uint64_t get_position() const override; ///< get position in the file
-	virtual uint64_t get_length() const override; ///< get size of the file
+	// OS files don't need to be disguised when they are opened directly.
+	virtual void disguise_file(const Ref<FileAccess> &p_file, const String &p_protocol_name, const String &p_path) const override {}
 
-	virtual bool eof_reached() const override; ///< reading passed EOF
-
-	virtual uint64_t get_buffer(uint8_t *p_dst, uint64_t p_length) const override;
-
-	virtual Error get_error() const override; ///< get last error
-
-	virtual Error resize(int64_t p_length) override;
-	virtual void flush() override;
-	virtual bool store_buffer(const uint8_t *p_src, uint64_t p_length) override; ///< store an array of bytes
-
-	virtual void close() override;
-
-	FileAccessWindows() {}
-	virtual ~FileAccessWindows();
+	virtual uint64_t get_modified_time(const String &p_path) const override;
+	virtual BitField<FileAccess::UnixPermissionFlags> get_unix_permissions(const String &p_path) const override;
+	virtual Error set_unix_permissions(const String &p_path, BitField<FileAccess::UnixPermissionFlags> p_permissions) const override;
+	virtual bool get_hidden_attribute(const String &p_path) const override;
+	virtual Error set_hidden_attribute(const String &p_path, bool p_hidden) const override;
+	virtual bool get_read_only_attribute(const String &p_path) const override;
+	virtual Error set_read_only_attribute(const String &p_path, bool p_ro) const override;
 };
-
 #endif // WINDOWS_ENABLED
 
-#endif // FILE_ACCESS_WINDOWS_H
+#endif // FILESYSTEM_PROTOCOL_OS_WINDOWS_H

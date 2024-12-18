@@ -1,5 +1,5 @@
 /**************************************************************************/
-/*  file_access_memory.h                                                  */
+/*  filesystem_protocol.cpp                                               */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                             GODOT ENGINE                               */
@@ -28,47 +28,31 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef FILE_ACCESS_MEMORY_H
-#define FILE_ACCESS_MEMORY_H
+#include "filesystem_protocol.h"
 
-#include "core/io/file_access.h"
+Error FileSystemProtocol::get_open_error() const {
+	return open_error;
+}
+Ref<FileAccess> FileSystemProtocol::_open_file(const String &p_path, int p_mode_flags) {
+	return open_file(p_path, p_mode_flags, open_error);
+}
 
-class FileAccessMemory : public FileAccess {
-	uint8_t *data = nullptr;
-	uint64_t length = 0;
-	mutable uint64_t pos = 0;
+void FileSystemProtocol::disguise_file(const Ref<FileAccess> &p_file, const String &p_protocol_name, const String &p_path) const {
+	p_file->set_path_disguise(p_protocol_name + "://" + p_path);
+}
 
-	static Ref<FileAccess> create();
+void FileSystemProtocol::_bind_methods() {
+	ClassDB::bind_method(D_METHOD("globalize_path", "path"), &FileSystemProtocol::globalize_path);
 
-public:
-	static void register_file(const String &p_name, const Vector<uint8_t> &p_data);
-	static void cleanup();
+	ClassDB::bind_method(D_METHOD("get_open_error"), &FileSystemProtocol::get_open_error);
+	ClassDB::bind_method(D_METHOD("open_file", "path", "mode_flags"), &FileSystemProtocol::_open_file);
+	ClassDB::bind_method(D_METHOD("file_exists", "name"), &FileSystemProtocol::file_exists);
 
-	virtual Error open_custom(const uint8_t *p_data, uint64_t p_len); ///< open a file
-	virtual Error open_internal(const String &p_path, int p_mode_flags) override; ///< open a file
-	virtual bool is_open() const override; ///< true when file is open
-
-	virtual void seek(uint64_t p_position) override; ///< seek to a given position
-	virtual void seek_end(int64_t p_position) override; ///< seek from the end of file
-	virtual uint64_t get_position() const override; ///< get position in the file
-	virtual uint64_t get_length() const override; ///< get size of the file
-
-	virtual bool eof_reached() const override; ///< reading passed EOF
-
-	virtual uint64_t get_buffer(uint8_t *p_dst, uint64_t p_length) const override; ///< get an array of bytes
-
-	virtual Error get_error() const override; ///< get last error
-
-	virtual Error resize(int64_t p_length) override { return ERR_UNAVAILABLE; }
-	virtual void flush() override;
-	virtual bool store_buffer(const uint8_t *p_src, uint64_t p_length) override; ///< store an array of bytes
-
-	//TODO: Move to mem protocol
-	bool file_exists(const String &p_name); ///< return true if a file exists
-
-	virtual void close() override {}
-
-	FileAccessMemory() {}
-};
-
-#endif // FILE_ACCESS_MEMORY_H
+	ClassDB::bind_method(D_METHOD("get_modified_time", "path"), &FileSystemProtocol::get_modified_time);
+	ClassDB::bind_method(D_METHOD("get_unix_permissions", "path"), &FileSystemProtocol::get_unix_permissions);
+	ClassDB::bind_method(D_METHOD("set_unix_permissions", "path", "permissions"), &FileSystemProtocol::set_unix_permissions);
+	ClassDB::bind_method(D_METHOD("get_hidden_attribute", "path"), &FileSystemProtocol::get_hidden_attribute);
+	ClassDB::bind_method(D_METHOD("set_hidden_attribute", "path", "hidden"), &FileSystemProtocol::set_hidden_attribute);
+	ClassDB::bind_method(D_METHOD("get_read_only_attribute", "path"), &FileSystemProtocol::get_read_only_attribute);
+	ClassDB::bind_method(D_METHOD("set_read_only_attribute", "path", "ro"), &FileSystemProtocol::set_read_only_attribute);
+}
