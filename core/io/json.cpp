@@ -31,8 +31,13 @@
 #include "json.h"
 
 #include "core/config/engine.h"
+
+#include "core/math/math_funcs.h"
+#include "core/string/print_string.h"
+
 #include "core/object/script_language.h"
 #include "core/variant/container_type_validate.h"
+
 
 const char *JSON::tk_name[TK_MAX] = {
 	"'{'",
@@ -71,6 +76,11 @@ String JSON::_stringify(const Variant &p_var, const String &p_indent, int p_cur_
 			return itos(p_var);
 		case Variant::FLOAT: {
 			double num = p_var;
+
+			if (!Math::is_finite(num)) {
+				return "\"" + String::num(num) + "\"";
+			}
+
 			if (p_full_precision) {
 				// Store unreliable digits (17) instead of just reliable
 				// digits (14) so that the value can be decoded exactly.
