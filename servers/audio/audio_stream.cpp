@@ -547,7 +547,8 @@ void AudioStreamPlaybackMicrophone::_bind_methods() {
 }
 
 AudioStreamPlaybackMicrophone::~AudioStreamPlaybackMicrophone() {
-	microphone->playbacks.erase(this);
+	if (!microphone.is_null())
+		microphone->playbacks.erase(this);
 	stop();
 }
 
