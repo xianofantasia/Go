@@ -323,8 +323,8 @@ public:
 
 	virtual void soft_body_set_transform(RID p_body, const Transform3D &p_transform) override;
 
-	virtual void soft_body_apply_point_impulse(RID p_body, const Vector3 p_impulse, int point_index) override;
-	virtual void soft_body_apply_point_force(RID p_body, const Vector3 p_force, int point_index) override;
+	virtual void soft_body_apply_point_impulse(RID p_body, const Vector3 p_impulse, int p_point_index) override;
+	virtual void soft_body_apply_point_force(RID p_body, const Vector3 p_force, int p_point_index) override;
 	virtual void soft_body_apply_central_impulse(RID p_body, const Vector3 p_impulse) override;
 	virtual void soft_body_apply_central_force(RID p_body, const Vector3 p_force) override;
 
