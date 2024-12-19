@@ -261,11 +261,11 @@ Variant Resource::_duplicate_recursive_impl(const Variant &p_variant, const Dupl
 				}
 			}
 			if (should_duplicate) {
-				if (p_params.remap_cache->has(sr)) {
-					return p_params.remap_cache->get(sr);
+				if (thread_duplicate_remap_cache->has(sr)) {
+					return thread_duplicate_remap_cache->get(sr);
 				} else {
 					const Ref<Resource> &dupe = sr->_duplicate_impl(p_params);
-					p_params.remap_cache->insert(sr, dupe);
+					thread_duplicate_remap_cache->insert(sr, dupe);
 					return dupe;
 				}
 			} else {
@@ -313,13 +313,22 @@ Variant Resource::_duplicate_recursive_impl(const Variant &p_variant, const Dupl
 }
 
 Ref<Resource> Resource::_duplicate_impl(const DuplicateParams &p_params) const {
+	DuplicateRemapCacheT *remap_cache_backup = thread_duplicate_remap_cache;
+
+// These are for avoiding potential duplicates that can happen in custom code
+// from participating in the same duplication session (remap cache).
+#define BEFORE_USER_CODE thread_duplicate_remap_cache = nullptr;
+#define AFTER_USER_CODE thread_duplicate_remap_cache = remap_cache_backup;
+
 	List<PropertyInfo> plist;
 	get_property_list(&plist);
 
+	BEFORE_USER_CODE
 	Ref<Resource> r = Object::cast_to<Resource>(ClassDB::instantiate(get_class()));
+	AFTER_USER_CODE
 	ERR_FAIL_COND_V(r.is_null(), Ref<Resource>());
 
-	p_params.remap_cache->insert(Ref<Resource>(this), r);
+	thread_duplicate_remap_cache->insert(Ref<Resource>(this), r);
 
 	if (p_params.local_scene) {
 		r->local_scene = p_params.local_scene;
@@ -330,7 +339,9 @@ Ref<Resource> Resource::_duplicate_impl(const DuplicateParams &p_params) const {
 			continue;
 		}
 
+		BEFORE_USER_CODE
 		Variant p = get(E.name);
+		AFTER_USER_CODE
 
 		if (p_params.deep) {
 			p = _duplicate_recursive_impl(p, p_params, E.usage);
@@ -338,23 +349,48 @@ Ref<Resource> Resource::_duplicate_impl(const DuplicateParams &p_params) const {
 			if ((E.usage & PROPERTY_USAGE_ALWAYS_DUPLICATE)) {
 				const Ref<Resource> &sr = p;
 				if (sr.is_valid()) {
+					// Subclasses may override duplicate(). They will have to be
+					// aware of the remap cache if they need to change their behavior somehow.
 					p = sr->duplicate(true);
 				}
 			}
 		}
 
+		BEFORE_USER_CODE
 		r->set(E.name, p);
+		AFTER_USER_CODE
 	}
 
 	return r;
+
+#undef BEFORE_USER_CODE
+#undef AFTER_USER_CODE
 }
 
-Ref<Resource> Resource::duplicate_for_local_scene(Node *p_for_scene, HashMap<Ref<Resource>, Ref<Resource>> &p_remap_cache) const {
+Ref<Resource> Resource::duplicate_for_local_scene(Node *p_for_scene, DuplicateRemapCacheT &p_remap_cache) const {
+#ifdef DEBUG_ENABLED
+	// Since this is an entry point, it should always be able to start a duplication session.
+	// This check failing means that this function is being called during an ongoing duplication,
+	// likely due to custom instantiation or setter code. It would be an engine bug because code
+	// starting or joining a duplicate session must ensure to exit it temporarily making calls
+	// that may in turn invoke such custom code.
+	if (thread_duplicate_remap_cache) {
+		ERR_PRINT("Resource::duplicate_for_local_scene() called during an ongoing duplication session. This is an engine bug.");
+	}
+#endif
+
+	// Since we can handle it gracefully anyway, we do.
+	DuplicateRemapCacheT *remap_cache_backup = thread_duplicate_remap_cache;
+	thread_duplicate_remap_cache = &p_remap_cache;
+
 	DuplicateParams params;
 	params.deep = true;
 	params.local_scene = p_for_scene;
-	params.remap_cache = &p_remap_cache;
-	return _duplicate_impl(params);
+	const Ref<Resource> &dupe = _duplicate_impl(params);
+
+	thread_duplicate_remap_cache = remap_cache_backup;
+
+	return dupe;
 }
 
 void Resource::_find_sub_resources(const Variant &p_variant, HashSet<Ref<Resource>> &p_resources_found) {
@@ -385,7 +421,7 @@ void Resource::_find_sub_resources(const Variant &p_variant, HashSet<Ref<Resourc
 	}
 }
 
-void Resource::configure_for_local_scene(Node *p_for_scene, HashMap<Ref<Resource>, Ref<Resource>> &p_remap_cache) {
+void Resource::configure_for_local_scene(Node *p_for_scene, DuplicateRemapCacheT &p_remap_cache) {
 	List<PropertyInfo> plist;
 	get_property_list(&plist);
 
@@ -413,11 +449,58 @@ void Resource::configure_for_local_scene(Node *p_for_scene, HashMap<Ref<Resource
 }
 
 Ref<Resource> Resource::duplicate(bool p_subresources) const {
-	HashMap<Ref<Resource>, Ref<Resource>> remap_cache;
+	DuplicateRemapCacheT remap_cache;
+	bool started_session = false;
+	if (!thread_duplicate_remap_cache) {
+		thread_duplicate_remap_cache = &remap_cache;
+		started_session = true;
+	}
+
 	DuplicateParams params;
 	params.deep = p_subresources;
-	params.remap_cache = &remap_cache;
-	return _duplicate_impl(params);
+	const Ref<Resource> dupe = _duplicate_impl(params);
+
+	if (started_session) {
+		thread_duplicate_remap_cache = nullptr;
+	}
+
+	return dupe;
+}
+
+Ref<Resource> Resource::_duplicate_from_variant(bool p_subresources, int p_recursion_count) const {
+	// When duplicating from Variant, this function may be called multiple times from
+	// different parts of the data structure being copied. Therefore, we need to create
+	// a remap cache instance in a way that can be shared among all of the calls.
+	// Whatever Variant, Array or Dictionary that initiated the call chain will eventually
+	// claim it, when the stack unwinds up to the root call.
+	// One exception is that this is the root call.
+
+	if (p_recursion_count == 0) {
+		return duplicate(p_subresources);
+	}
+
+	if (thread_duplicate_remap_cache) {
+		Resource::DuplicateRemapCacheT::Iterator E = thread_duplicate_remap_cache->find(Ref<Resource>(this));
+		if (E) {
+			return E->value;
+		}
+	} else {
+		thread_duplicate_remap_cache = memnew(DuplicateRemapCacheT);
+	}
+
+	DuplicateParams params;
+	params.deep = p_subresources;
+
+	const Ref<Resource> dupe = _duplicate_impl(params);
+
+	return dupe;
+}
+
+void Resource::_teardown_duplicate_from_variant() {
+	if (thread_duplicate_remap_cache) {
+		memdelete(thread_duplicate_remap_cache);
+		thread_duplicate_remap_cache = nullptr;
+	}
 }
 
 void Resource::_set_path(const String &p_path) {

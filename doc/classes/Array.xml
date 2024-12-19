@@ -331,8 +331,9 @@
 			<return type="Array" />
 			<param index="0" name="deep" type="bool" default="false" />
 			<description>
-				Returns a new copy of the array.
-				By default, a [b]shallow[/b] copy is returned: all nested [Array] and [Dictionary] elements are shared with the original array. Modifying them in one array will also affect them in the other.[br]If [param deep] is [code]true[/code], a [b]deep[/b] copy is returned: all nested arrays and dictionaries are also duplicated (recursively).
+				Creates and returns a new copy of the array.
+				By default, a [b]shallow[/b] copy is returned: all nested [Array], [Dictionary] and [Resource] elements are shared with the original array. Modifying them in one array will also affect them in the other.
+				If [param deep] is [code]true[/code], a [b]deep[/b] copy is returned: all nested arrays, dictionaries and resources are also duplicated (recursively). See [method Dictionary.duplicate] and [method Resource.duplicate] for more information.
 			</description>
 		</method>
 		<method name="erase">

@@ -32,6 +32,8 @@
 
 #include "variant_callable.h"
 
+#include "core/io/resource.h"
+
 struct VariantSetterGetterInfo {
 	void (*setter)(Variant *base, const Variant *value, bool &valid);
 	void (*getter)(const Variant *base, Variant *value);
@@ -1940,15 +1942,12 @@ Variant Variant::duplicate(bool p_deep) const {
 Variant Variant::recursive_duplicate(bool p_deep, int recursion_count) const {
 	switch (type) {
 		case OBJECT: {
-			/*  breaks stuff :(
-			if (p_deep && !_get_obj().ref.is_null()) {
-				Ref<Resource> resource = _get_obj().ref;
-				if (resource.is_valid()) {
-					return resource->duplicate(true);
-				}
+			Resource *res = Object::cast_to<Resource>(_get_obj().obj);
+			if (res) {
+				return res->_duplicate_from_variant(p_deep, recursion_count);
+			} else {
+				return *this;
 			}
-			*/
-			return *this;
 		} break;
 		case DICTIONARY:
 			return operator Dictionary().recursive_duplicate(p_deep, recursion_count);
