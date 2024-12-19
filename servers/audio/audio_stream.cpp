@@ -475,7 +475,6 @@ bool AudioStreamPlaybackMicrophone::mix_microphone(GDExtensionPtr<AudioFrame> p_
 	return true;
 }
 
-
 int AudioStreamPlaybackMicrophone::mix(AudioFrame *p_buffer, float p_rate_scale, int p_frames) {
 	return AudioStreamPlaybackResampled::mix(p_buffer, p_rate_scale, p_frames);
 }
