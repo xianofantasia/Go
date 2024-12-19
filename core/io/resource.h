@@ -74,7 +74,13 @@ private:
 
 	SelfList<Resource> remapped_list;
 
-	Variant _duplicate_recursive_for_local_scene(const Variant &p_variant, Node *p_for_scene, HashMap<Ref<Resource>, Ref<Resource>> &p_remap_cache);
+	struct DuplicateParams {
+		bool deep = false; // With subresources?
+		Node *local_scene = nullptr;
+		HashMap<Ref<Resource>, Ref<Resource>> *remap_cache = nullptr;
+	};
+	Ref<Resource> _duplicate_impl(const DuplicateParams &p_params) const;
+	Variant _duplicate_recursive_impl(const Variant &p_variant, const DuplicateParams &p_params, uint32_t p_usage = 0) const;
 	void _find_sub_resources(const Variant &p_variant, HashSet<Ref<Resource>> &p_resources_found);
 
 protected:
@@ -120,7 +126,7 @@ public:
 	String get_scene_unique_id() const;
 
 	virtual Ref<Resource> duplicate(bool p_subresources = false) const;
-	Ref<Resource> duplicate_for_local_scene(Node *p_for_scene, HashMap<Ref<Resource>, Ref<Resource>> &p_remap_cache);
+	Ref<Resource> duplicate_for_local_scene(Node *p_for_scene, HashMap<Ref<Resource>, Ref<Resource>> &p_remap_cache) const;
 	void configure_for_local_scene(Node *p_for_scene, HashMap<Ref<Resource>, Ref<Resource>> &p_remap_cache);
 
 	void set_local_to_scene(bool p_enable);
