@@ -262,6 +262,7 @@ public:
 	void start_microphone();
 	void stop_microphone();
 	PackedVector2Array get_microphone_buffer(int p_frames);
+	bool mix_microphone(GDExtensionPtr<AudioFrame> p_buffer, int p_frames);
 
 	virtual int get_loop_count() const override; //times it looped
 
