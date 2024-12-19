@@ -451,12 +451,30 @@ PackedVector2Array AudioStreamPlaybackMicrophone::get_microphone_buffer(int p_fr
 	Vector<AudioFrame> streaming_data;
 	streaming_data.resize(p_frames);
 	int mixed_frames = _mix_internal(streaming_data.ptrw(), p_frames);
+	DEV_ASSERT(mixed_frames == p_frames);
 	ret.resize(mixed_frames);
 	for (int32_t i = 0; i < mixed_frames; i++) {
 		ret.write[i] = Vector2(streaming_data[i].left, streaming_data[i].right);
 	}
 	return ret;
 }
+
+bool AudioStreamPlaybackMicrophone::mix_microphone(GDExtensionPtr<AudioFrame> p_buffer, int p_frames) {
+	DEV_ASSERT(p_buffer != nullptr);
+	if (!microphone.is_null())
+		return false;
+	unsigned int input_position = AudioDriver::get_singleton()->get_input_position();
+	Vector<int32_t> &buf = AudioDriver::get_singleton()->get_input_buffer();
+	if (input_position < input_ofs)
+		input_position += buf.size();
+	if (input_position < input_ofs + p_frames * 2)
+		return false;
+	int mixed_frames = _mix_internal(p_buffer, p_frames);
+	(void)mixed_frames;
+	DEV_ASSERT(mixed_frames == p_frames);
+	return true;
+}
+
 
 int AudioStreamPlaybackMicrophone::mix(AudioFrame *p_buffer, float p_rate_scale, int p_frames) {
 	return AudioStreamPlaybackResampled::mix(p_buffer, p_rate_scale, p_frames);
@@ -541,9 +559,7 @@ void AudioStreamPlaybackMicrophone::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("stop_microphone"), &AudioStreamPlaybackMicrophone::stop_microphone);
 	ClassDB::bind_method(D_METHOD("is_microphone_playing"), &AudioStreamPlaybackMicrophone::is_playing);
 	ClassDB::bind_method(D_METHOD("get_microphone_buffer", "frames"), &AudioStreamPlaybackMicrophone::get_microphone_buffer);
-
-	// how do we get this one in and available to GDExtensions that has AudioFrame* as a parameter type?
-	//ClassDB::bind_method(D_METHOD("mix", "p_buffer", "p_rate_scale", "p_frames"), &AudioStreamPlaybackResampled::mix);
+	//ClassDB::bind_method(D_METHOD("mix_microphone", "p_buffer", "frames"), &AudioStreamPlaybackMicrophone::mix_microphone);
 }
 
 AudioStreamPlaybackMicrophone::~AudioStreamPlaybackMicrophone() {
@@ -554,6 +570,7 @@ AudioStreamPlaybackMicrophone::~AudioStreamPlaybackMicrophone() {
 
 AudioStreamPlaybackMicrophone::AudioStreamPlaybackMicrophone() {
 }
+
 
 ////////////////////////////////
 
