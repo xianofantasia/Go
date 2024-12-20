@@ -479,7 +479,8 @@ void JoltSoftBody3D::apply_node_force(int p_index, const Vector3 &p_force) {
 	JPH::SoftBodyVertex &physics_vertex = physics_vertices[physics_index];
 
 	const JPH::Vec3 force = to_jolt(p_force);
-	physics_vertex.mForce += force;
+	const JPH::Vec3 impulse = force * last_step;
+	physics_vertex.mVelocity += impulse * physics_vertex.mInvMass;
 }
 
 void JoltSoftBody3D::apply_central_impulse(const Vector3 &p_impulse) {
@@ -518,38 +519,38 @@ void JoltSoftBody3D::apply_central_impulse(const Vector3 &p_impulse) {
 }
 
 void JoltSoftBody3D::apply_central_force(const Vector3 &p_force) {
-	ERR_FAIL_COND_MSG(!in_space(), vformat("Failed to apply central force for '%s'. Doing so without a physics space is not supported when using Jolt Physics. If this relates to a node, try adding the node to a scene tree first.", to_string()));
+	// ERR_FAIL_COND_MSG(!in_space(), vformat("Failed to apply central force for '%s'. Doing so without a physics space is not supported when using Jolt Physics. If this relates to a node, try adding the node to a scene tree first.", to_string()));
 
-	ERR_FAIL_NULL(shared);
+	// ERR_FAIL_NULL(shared);
 
-	const float last_step = space->get_last_step();
-	if (unlikely(last_step == 0.0f)) {
-		return;
-	}
-	wake_up();
+	// const float last_step = space->get_last_step();
+	// if (unlikely(last_step == 0.0f)) {
+	// return;
+	// }
+	// wake_up();
 
-	JoltWritableBody3D body = space->write_body(jolt_id);
-	ERR_FAIL_COND(body.is_invalid());
+	// JoltWritableBody3D body = space->write_body(jolt_id);
+	// ERR_FAIL_COND(body.is_invalid());
 
-	JPH::SoftBodyMotionProperties &motion_properties = static_cast<JPH::SoftBodyMotionProperties &>(*body->GetMotionPropertiesUnchecked());
+	// JPH::SoftBodyMotionProperties &motion_properties = static_cast<JPH::SoftBodyMotionProperties &>(*body->GetMotionPropertiesUnchecked());
 
-	JPH::Array<JPH::SoftBodyVertex> &physics_vertices = motion_properties.GetVertices();
+	// JPH::Array<JPH::SoftBodyVertex> &physics_vertices = motion_properties.GetVertices();
 
-	const int mesh_vertex_count = shared->mesh_to_physics.size();
+	// const int mesh_vertex_count = shared->mesh_to_physics.size();
 
-	const JPH::Vec3 force = to_jolt(p_force) / mesh_vertex_count;
+	// const JPH::Vec3 force = to_jolt(p_force) / mesh_vertex_count;
 
-	for (int i = 0; i < mesh_vertex_count; ++i) {
-		const size_t physics_index = (size_t)shared->mesh_to_physics[i];
+	// for (int i = 0; i < mesh_vertex_count; ++i) {
+	// const size_t physics_index = (size_t)shared->mesh_to_physics[i];
 
-		if (pinned_vertices.has(physics_index)) {
-			continue;
-		}
+	// if (pinned_vertices.has(physics_index)) {
+	// continue;
+	// }
 
-		JPH::SoftBodyVertex &physics_vertex = physics_vertices[physics_index];
+	// JPH::SoftBodyVertex &physics_vertex = physics_vertices[physics_index];
 
-		physics_vertex.mForce += force;
-	}
+	// physics_vertex.mForce += force;
+	// }
 }
 
 void JoltSoftBody3D::set_is_sleeping(bool p_enabled) {

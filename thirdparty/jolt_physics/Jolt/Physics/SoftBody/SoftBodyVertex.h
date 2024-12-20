@@ -31,7 +31,6 @@ public:
 	bool			mHasContact;						///< True if the vertex has collided with anything in the last update
 	float			mLargestPenetration;				///< Internal use only. Used while finding the collision plane, stores the largest penetration found so far
 	float			mInvMass;							///< Inverse mass (1 / mass)
-	Vec3			mForce;								///< Applied force
 };
 
 JPH_NAMESPACE_END

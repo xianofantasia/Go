@@ -75,7 +75,6 @@ void SoftBodyMotionProperties::Initialize(const SoftBodyCreationSettings &inSett
 		out_vertex.mVelocity = rotation.Multiply3x3(Vec3(in_vertex.mVelocity));
 		out_vertex.ResetCollision();
 		out_vertex.mInvMass = in_vertex.mInvMass;
-		out_vertex.mForce = Vec3::sZero();
 		mLocalBounds.Encapsulate(out_vertex.mPosition);
 	}
 
@@ -322,9 +321,6 @@ void SoftBodyMotionProperties::IntegratePositions(const SoftBodyUpdateContext &i
 		{
 			// Gravity
 			v.mVelocity += sub_step_gravity + sub_step_impulse * v.mInvMass;
-
-			// Force
-			v.mVelocity += v.mForce * v.mInvMass * dt;
 
 			// Damping
 			v.mVelocity *= linear_damping;
@@ -765,9 +761,6 @@ void SoftBodyMotionProperties::UpdateSoftBodyState(SoftBodyUpdateContext &ioCont
 
 		// Reset collision data for the next iteration
 		v.ResetCollision();
-
-		// Reset force
-		v.mForce = Vec3::sZero();
 	}
 
 	// Calculate linear/angular velocity of the body by averaging all vertices and bringing the value to world space
