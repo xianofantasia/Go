@@ -1,0 +1,4 @@
+GDTEST_OK
+~~ WARNING at line 7: (UNUSED_PARAMETER) The parameter "param" is never used in the function "some_func()". If this is intended, prefix it with an underscore: "_param".
+overridden some func
+ok
