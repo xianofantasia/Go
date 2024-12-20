@@ -59,6 +59,10 @@ void SpinBox::_update_text(bool p_keep_line_edit) {
 		}
 	}
 
+	if (!accepted && update_on_text_changed && !line_edit->get_text().contains(".")) {
+		value = String::num(get_value(), 0);
+	}
+
 	if (p_keep_line_edit && value == last_updated_text && value != line_edit->get_text()) {
 		return;
 	}
@@ -68,7 +72,13 @@ void SpinBox::_update_text(bool p_keep_line_edit) {
 }
 
 void SpinBox::_text_submitted(const String &p_string) {
-	if (p_string.is_empty()) {
+	if (p_string.is_empty() || (update_on_text_changed && !p_string.begins_with(".") && p_string.ends_with("."))) {
+		return;
+	}
+
+	if (update_on_text_changed && p_string.begins_with(".")) {
+		line_edit->set_text("0.");
+		line_edit->set_caret_column(line_edit->get_text().length());
 		return;
 	}
 
@@ -107,12 +117,15 @@ void SpinBox::_text_submitted(const String &p_string) {
 }
 
 void SpinBox::_text_changed(const String &p_string) {
+	accepted = false;
 	int cursor_pos = line_edit->get_caret_column();
 
 	_text_submitted(p_string);
 
 	// Line edit 'set_text' method resets the cursor position so we need to undo that.
-	line_edit->set_caret_column(cursor_pos);
+	if (update_on_text_changed && !p_string.begins_with(".")) {
+		line_edit->set_caret_column(cursor_pos);
+	}
 }
 
 LineEdit *SpinBox::get_line_edit() {
@@ -189,6 +202,7 @@ void SpinBox::gui_input(const Ref<InputEvent> &p_event) {
 	if (mb.is_valid() && mb->is_pressed()) {
 		switch (mb->get_button_index()) {
 			case MouseButton::LEFT: {
+				accepted = true;
 				line_edit->grab_focus();
 
 				if (mouse_on_up_button || mouse_on_down_button) {
@@ -288,10 +302,16 @@ void SpinBox::_line_edit_editing_toggled(bool p_toggled_on) {
 			line_edit->select_all();
 		}
 	} else {
+		accepted = true;
+
 		// Discontinue because the focus_exit was caused by canceling or the text is empty.
 		if (Input::get_singleton()->is_action_pressed("ui_cancel") || line_edit->get_text().is_empty()) {
 			_update_text();
 			return;
+		}
+
+		if (line_edit->get_text().ends_with(".")) {
+			line_edit->set_text(line_edit->get_text().trim_suffix("."));
 		}
 
 		line_edit->deselect();
