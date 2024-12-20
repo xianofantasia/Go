@@ -86,6 +86,9 @@ private:
 	bool editor_hint = false;
 	bool project_manager_hint = false;
 	bool extension_reloading = false;
+#ifdef TOOLS_ENABLED
+	bool cmdline_tool = false;
+#endif // TOOLS_ENABLED
 
 	bool _print_header = true;
 
@@ -159,6 +162,9 @@ public:
 	_FORCE_INLINE_ void set_project_manager_hint(bool p_enabled) { project_manager_hint = p_enabled; }
 	_FORCE_INLINE_ bool is_project_manager_hint() const { return project_manager_hint; }
 
+	_FORCE_INLINE_ void set_cmdline_tool(bool p_enabled) { cmdline_tool = p_enabled; }
+	_FORCE_INLINE_ bool is_cmdline_tool() const { return cmdline_tool; }
+
 	_FORCE_INLINE_ void set_extension_reloading_enabled(bool p_enabled) { extension_reloading = p_enabled; }
 	_FORCE_INLINE_ bool is_extension_reloading_enabled() const { return extension_reloading; }
 #else
@@ -170,6 +176,9 @@ public:
 
 	_FORCE_INLINE_ void set_extension_reloading_enabled(bool p_enabled) {}
 	_FORCE_INLINE_ bool is_extension_reloading_enabled() const { return false; }
+
+	_FORCE_INLINE_ void set_cmdline_tool(bool p_enabled) {}
+	_FORCE_INLINE_ bool is_cmdline_tool() const { return false; }
 #endif
 
 	Dictionary get_version_info() const;

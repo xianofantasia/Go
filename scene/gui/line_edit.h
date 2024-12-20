@@ -87,6 +87,7 @@ private:
 	HorizontalAlignment alignment = HORIZONTAL_ALIGNMENT_LEFT;
 
 	bool editing = false;
+	bool editing_on_text_submit = true;
 	bool editable = false;
 	bool pass = false;
 	bool text_changed_dirty = false;
@@ -266,6 +267,8 @@ public:
 	void edit();
 	void unedit();
 	bool is_editing() const;
+	void set_editing_on_text_submit(bool p_enabled);
+	bool is_editing_on_text_submit() const;
 
 	bool has_ime_text() const;
 	void cancel_ime();

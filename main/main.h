@@ -60,7 +60,6 @@ class Main {
 	static int iterating;
 
 public:
-	static bool is_cmdline_tool();
 #ifdef TOOLS_ENABLED
 	enum CLIScope {
 		CLI_SCOPE_TOOL, // Editor and project manager.
