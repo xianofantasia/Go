@@ -496,7 +496,9 @@ void AudioStreamPlaybackMicrophone::start(double p_from_pos) {
 	input_ofs = 0;
 
 	if (AudioDriver::get_singleton()->input_start_count == 0) {
-		if (AudioDriver::get_singleton()->input_start() == OK) {
+		Error err = AudioDriver::get_singleton()->input_start();
+		//WARN_PRINT(vformat("input microphone started e=%d", err));
+		if (err == OK) {
 			active = true;
 			begin_resample();
 			AudioDriver::get_singleton()->input_start_count++;
@@ -519,8 +521,11 @@ void AudioStreamPlaybackMicrophone::start_microphone() {
 void AudioStreamPlaybackMicrophone::stop() {
 	if (active) {
 		AudioDriver::get_singleton()->input_start_count--;
-		if (AudioDriver::get_singleton()->input_start_count == 0)
-			AudioDriver::get_singleton()->input_stop();
+		if (AudioDriver::get_singleton()->input_start_count == 0) {
+			Error err = AudioDriver::get_singleton()->input_stop();
+			(void)err;
+			//WARN_PRINT(vformat("input microphone stopped e=%d", err));
+		}
 		active = false;
 	}
 }
@@ -569,7 +574,6 @@ AudioStreamPlaybackMicrophone::~AudioStreamPlaybackMicrophone() {
 
 AudioStreamPlaybackMicrophone::AudioStreamPlaybackMicrophone() {
 }
-
 
 ////////////////////////////////
 
