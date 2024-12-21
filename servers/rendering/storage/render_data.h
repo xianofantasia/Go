@@ -34,6 +34,7 @@
 #include "core/object/object.h"
 #include "render_scene_buffers.h"
 #include "render_scene_data.h"
+#include "light_storage.h"
 
 class RenderData : public Object {
 	GDCLASS(RenderData, Object);
@@ -44,6 +45,7 @@ protected:
 public:
 	virtual Ref<RenderSceneBuffers> get_render_scene_buffers() const = 0;
 	virtual RenderSceneData *get_render_scene_data() const = 0;
+	virtual RendererLightStorage *get_light_storage() const = 0;
 
 	virtual RID get_environment() const = 0;
 	virtual RID get_camera_attributes() const = 0;
@@ -57,12 +59,14 @@ protected:
 
 	virtual Ref<RenderSceneBuffers> get_render_scene_buffers() const override;
 	virtual RenderSceneData *get_render_scene_data() const override;
+	virtual RendererLightStorage *get_light_storage() const override;
 
 	virtual RID get_environment() const override;
 	virtual RID get_camera_attributes() const override;
 
 	GDVIRTUAL0RC(Ref<RenderSceneBuffers>, _get_render_scene_buffers)
 	GDVIRTUAL0RC(RenderSceneData *, _get_render_scene_data)
+	GDVIRTUAL0RC(RendererLightStorage *, _get_light_storage)
 	GDVIRTUAL0RC(RID, _get_environment)
 	GDVIRTUAL0RC(RID, _get_camera_attributes)
 };

@@ -29,6 +29,7 @@
 /**************************************************************************/
 
 #include "render_data_rd.h"
+#include "servers/rendering/renderer_rd/storage_rd/light_storage.h"
 
 Ref<RenderSceneBuffers> RenderDataRD::get_render_scene_buffers() const {
 	return render_buffers;
@@ -46,6 +47,10 @@ RID RenderDataRD::get_camera_attributes() const {
 	return camera_attributes;
 }
 
-Ref<LightStorage> RenderDataRD::get_light_storage() const {
-	return light_storage;
+//RendererRD::LightStorage *RenderDataRD::get_light_storage() const {
+//	return RendererRD::LightStorage::get_singleton();
+//}
+
+RendererLightStorage *RenderDataRD::get_light_storage() const {
+	return static_cast<RendererLightStorage *>(RendererRD::LightStorage::get_singleton());
 }
