@@ -269,22 +269,28 @@ void CowData<T>::_unref() {
 
 	SafeNumeric<USize> *refc = _get_refcount();
 	if (refc->decrement() > 0) {
-		return; // still in use
+		// Data are still in use elsewhere.
+		_ptr = nullptr;
+		return;
 	}
-	// clean up
+	// Clean up.
+	// First, invalidate our own reference.
+	// If we are involved in a cyclic reference, we may otherwise accidentally
+	//  expose the buffer even though it's in the middle of being destructed.
+	// This is illegal behavior anyway, but we can mitigate the damage by
+	//  invalidating our own reference before calling the destructors.
+	USize current_size = *_get_size();
+	T *ptr = _ptr;
+	_ptr = nullptr;
 
 	if constexpr (!std::is_trivially_destructible_v<T>) {
-		USize current_size = *_get_size();
-
 		for (USize i = 0; i < current_size; ++i) {
-			// call destructors
-			T *t = &_ptr[i];
-			t->~T();
+			ptr[i].~T();
 		}
 	}
 
 	// free mem
-	Memory::free_static(((uint8_t *)_ptr) - DATA_OFFSET, false);
+	Memory::free_static(((uint8_t *)ptr) - DATA_OFFSET, false);
 }
 
 template <typename T>
@@ -341,7 +347,6 @@ Error CowData<T>::resize(Size p_size) {
 	if (p_size == 0) {
 		// wants to clean up
 		_unref();
-		_ptr = nullptr;
 		return OK;
 	}
 
@@ -485,7 +490,6 @@ void CowData<T>::_ref(const CowData &p_from) {
 	}
 
 	_unref();
-	_ptr = nullptr;
 
 	if (!p_from._ptr) {
 		return; //nothing to do
