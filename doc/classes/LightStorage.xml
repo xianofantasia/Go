@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="LightStorage" inherits="RendererLightStorage" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../class.xsd">
+	<brief_description>
+		Light storage object.
+		[b]Note:[/b] This is an internal rendering server object, do not instantiate this from script.
+	</brief_description>
+	<description>
+		[b]Note:[/b] This is an internal rendering server object only exposed for GDExtension plugins.
+	</description>
+	<tutorials>
+	</tutorials>
+	<methods>
+		<method name="get_directional_light_buffer" qualifiers="const">
+			<return type="RID" />
+			<description>
+				Return the [RID] of the uniform buffer containing the directional light data as a UBO.
+			</description>
+		</method>
+		<method name="get_omni_light_buffer" qualifiers="const">
+			<return type="RID" />
+			<description>
+				Return the [RID] of the storage buffer containing the omni light data as a Storage Buffer.
+			</description>
+		</method>
+	</methods>
+</class>
