@@ -52,17 +52,17 @@ body {
 	margin: auto;
 }
 
-#status-splash.no-show-img {
+#status-splash.show-image_false {
 	display: none;
 }
 
-#status-splash.fullsize {
+#status-splash.fullsize_true {
 	height: 100%;
 	width: 100%;
 	object-fit: contain;
 }
 
-#status-splash.nearest-neighbor {
+#status-splash.use-filter_false {
 	image-rendering: pixelated;
 }
 
@@ -102,7 +102,7 @@ body {
 		</noscript>
 
 		<div id="status">
-			<img id="status-splash" class="$GODOT_SPLASH_SHOW $GODOT_SPLASH_FULLSIZE $GODOT_SPLASH_FILTER" src="$GODOT_SPLASH" alt="">
+			<img id="status-splash" class="$GODOT_SPLASH_CLASSES" src="$GODOT_SPLASH" alt="">
 			<progress id="status-progress"></progress>
 			<div id="status-notice"></div>
 		</div>
