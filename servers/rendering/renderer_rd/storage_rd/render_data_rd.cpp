@@ -45,3 +45,7 @@ RID RenderDataRD::get_environment() const {
 RID RenderDataRD::get_camera_attributes() const {
 	return camera_attributes;
 }
+
+Ref<LightStorage> RenderDataRD::get_light_storage() const {
+	return light_storage;
+}

@@ -1190,6 +1190,7 @@ void RendererSceneRenderRD::render_scene(const Ref<RenderSceneBuffers> &p_render
 	{
 		render_data.render_buffers = rb;
 		render_data.scene_data = &scene_data;
+		//render_data.light_storage = &light_storage;
 
 		render_data.instances = &p_instances;
 		render_data.lights = &p_lights;
