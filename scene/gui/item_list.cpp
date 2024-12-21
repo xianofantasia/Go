@@ -756,6 +756,17 @@ void ItemList::gui_input(const Ref<InputEvent> &p_event) {
 					}
 				}
 
+				// Because the above signal handler might have modified the list of Items, we need to
+				// check if we are empty now, in which case we should not emit a signal with a now
+				// faulty index.
+				if (items.is_empty()) {
+					return;
+				}
+
+				// We also need to re-check what item was actually clicked as that might have changed
+				// now. The old index might be out of bounds, or just wrong now.
+				i = get_item_at_position(mb->get_position(), true);
+
 				if (items[i].selectable && select_mode == SELECT_TOGGLE) {
 					if (items[i].selected) {
 						deselect(i);
