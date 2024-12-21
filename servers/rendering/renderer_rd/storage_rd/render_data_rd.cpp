@@ -47,10 +47,6 @@ RID RenderDataRD::get_camera_attributes() const {
 	return camera_attributes;
 }
 
-//RendererRD::LightStorage *RenderDataRD::get_light_storage() const {
-//	return RendererRD::LightStorage::get_singleton();
-//}
-
 RendererLightStorage *RenderDataRD::get_light_storage() const {
 	return static_cast<RendererLightStorage *>(RendererRD::LightStorage::get_singleton());
 }

@@ -32,9 +32,9 @@
 #define RENDER_DATA_H
 
 #include "core/object/object.h"
+#include "light_storage.h"
 #include "render_scene_buffers.h"
 #include "render_scene_data.h"
-#include "light_storage.h"
 
 class RenderData : public Object {
 	GDCLASS(RenderData, Object);

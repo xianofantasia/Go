@@ -52,7 +52,6 @@ RendererLightStorage *RenderDataExtension::get_light_storage() const {
 	return ret;
 }
 
-
 Ref<RenderSceneBuffers> RenderDataExtension::get_render_scene_buffers() const {
 	Ref<RenderSceneBuffers> ret;
 	GDVIRTUAL_CALL(_get_render_scene_buffers, ret);
