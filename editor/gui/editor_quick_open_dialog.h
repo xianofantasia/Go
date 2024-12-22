@@ -33,6 +33,7 @@
 
 #include "core/templates/oa_hash_map.h"
 #include "scene/gui/dialogs.h"
+#include "scene/gui/popup_menu.h"
 
 class Button;
 class CenterContainer;
@@ -81,6 +82,11 @@ protected:
 class QuickOpenResultContainer : public VBoxContainer {
 	GDCLASS(QuickOpenResultContainer, VBoxContainer)
 
+	enum {
+		FILE_SHOW_IN_FILESYSTEM,
+		FILE_SHOW_IN_EXPLORER
+	};
+
 public:
 	void init(const Vector<StringName> &p_base_types);
 	void handle_search_box_input(const Ref<InputEvent> &p_ie);
@@ -124,6 +130,7 @@ private:
 	ScrollContainer *scroll_container = nullptr;
 	VBoxContainer *list = nullptr;
 	HFlowContainer *grid = nullptr;
+	PopupMenu *file_context_menu = nullptr;
 
 	PanelContainer *panel_container = nullptr;
 	CenterContainer *no_results_container = nullptr;
@@ -160,6 +167,7 @@ private:
 	void _toggle_display_mode();
 	void _toggle_include_addons(bool p_pressed);
 	void _toggle_fuzzy_search(bool p_pressed);
+	void _menu_option(int p_option);
 
 	static void _bind_methods();
 };
