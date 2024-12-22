@@ -62,6 +62,9 @@
 #include "scene/gui/rich_text_label.h"
 #include "scene/gui/split_container.h"
 #include "scene/gui/tab_container.h"
+#ifdef ANDROID_ENABLED
+#include "editor/gui/touch_actions_panel.h"
+#endif
 #include "scene/main/window.h"
 #include "scene/property_utils.h"
 #include "scene/resources/image_texture.h"
@@ -7609,6 +7612,12 @@ EditorNode::EditorNode() {
 	default_layout->set_value(docks_section, "dock_hsplit_4", 0);
 
 	_update_layouts_menu();
+
+#ifdef ANDROID_ENABLED
+	// Add floating TouchActionsPanel.
+	TouchActionsPanel *touch_actions_panel = memnew(TouchActionsPanel);
+	add_child(touch_actions_panel);
+#endif
 
 	// Bottom panels.
 
