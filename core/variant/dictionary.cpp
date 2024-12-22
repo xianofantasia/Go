@@ -582,9 +582,16 @@ Dictionary Dictionary::recursive_duplicate(bool p_deep, int recursion_count) con
 	}
 
 	if (p_deep) {
+		bool is_call_chain_end = recursion_count == 0;
+
 		recursion_count++;
 		for (const KeyValue<Variant, Variant> &E : _p->variant_map) {
 			n[E.key.recursive_duplicate(true, recursion_count)] = E.value.recursive_duplicate(true, recursion_count);
+		}
+
+		// Variant::recursive_duplicate() may have created a remap cache by now.
+		if (is_call_chain_end) {
+			Resource::_teardown_duplicate_from_variant();
 		}
 	} else {
 		for (const KeyValue<Variant, Variant> &E : _p->variant_map) {
@@ -631,6 +638,10 @@ bool Dictionary::is_typed_key() const {
 
 bool Dictionary::is_typed_value() const {
 	return _p->typed_value.type != Variant::NIL;
+}
+
+bool Dictionary::is_same_instance(const Dictionary &p_other) const {
+	return _p == p_other._p;
 }
 
 bool Dictionary::is_same_typed(const Dictionary &p_other) const {

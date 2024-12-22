@@ -510,11 +510,18 @@ Array Array::recursive_duplicate(bool p_deep, int recursion_count) const {
 	}
 
 	if (p_deep) {
+		bool is_call_chain_end = recursion_count == 0;
+
 		recursion_count++;
 		int element_count = size();
 		new_arr.resize(element_count);
 		for (int i = 0; i < element_count; i++) {
 			new_arr[i] = get(i).recursive_duplicate(true, recursion_count);
+		}
+
+		// Variant::recursive_duplicate() may have created a remap cache by now.
+		if (is_call_chain_end) {
+			Resource::_teardown_duplicate_from_variant();
 		}
 	} else {
 		new_arr._p->array = _p->array;

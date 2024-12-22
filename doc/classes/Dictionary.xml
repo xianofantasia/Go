@@ -187,7 +187,9 @@
 			<return type="Dictionary" />
 			<param index="0" name="deep" type="bool" default="false" />
 			<description>
-				Creates and returns a new copy of the dictionary. If [param deep] is [code]true[/code], inner [Dictionary] and [Array] keys and values are also copied, recursively.
+				Creates and returns a new copy of the dictionary.
+				By default, a [b]shallow[/b] copy is returned: all nested [Array], [Dictionary] and [Resource] elements are shared with the original dictionary. Modifying them in one array will also affect them in the other.
+				If [param deep] is [code]true[/code], a [b]deep[/b] copy is returned: all nested arrays, dictionaries and resources are also duplicated (recursively). See [method Array.duplicate] and [method Resource.duplicate] for more information.
 			</description>
 		</method>
 		<method name="erase">
