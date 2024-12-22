@@ -41,9 +41,17 @@ bool ResourceSaver::timestamp_on_save = false;
 ResourceSavedCallback ResourceSaver::save_callback = nullptr;
 ResourceSaverGetResourceIDForPath ResourceSaver::save_get_id_for_path = nullptr;
 
-Error ResourceFormatSaver::save(const Ref<Resource> &p_resource, const String &p_path, uint32_t p_flags) {
+Error ResourceFormatSaver::save(const Ref<Resource> &p_resource, const String &p_path, uint32_t p_flags, FileAccess::SaveIntegrityLevel p_integrity_level) {
 	Error err = ERR_METHOD_NOT_FOUND;
-	GDVIRTUAL_CALL(_save, p_resource, p_path, p_flags, err);
+
+	if (GDVIRTUAL_CALL(_save, p_resource, p_path, p_flags, p_integrity_level, err)) {
+		return err;
+	}
+
+#ifndef DISABLE_DEPRECATED
+	GDVIRTUAL_CALL(_save_compat_100447, p_resource, p_path, p_flags, err);
+#endif // DISABLE_DEPRECATED
+
 	return err;
 }
 
@@ -90,14 +98,18 @@ bool ResourceFormatSaver::recognize_path(const Ref<Resource> &p_resource, const 
 }
 
 void ResourceFormatSaver::_bind_methods() {
-	GDVIRTUAL_BIND(_save, "resource", "path", "flags");
+	GDVIRTUAL_BIND(_save, "resource", "path", "flags", "integrity_level");
 	GDVIRTUAL_BIND(_set_uid, "path", "uid");
 	GDVIRTUAL_BIND(_recognize, "resource");
 	GDVIRTUAL_BIND(_get_recognized_extensions, "resource");
 	GDVIRTUAL_BIND(_recognize_path, "resource", "path");
+
+#ifndef DISABLE_DEPRECATED
+	GDVIRTUAL_BIND_COMPAT(_save_compat_100447, "resource", "path", "flags");
+#endif
 }
 
-Error ResourceSaver::save(const Ref<Resource> &p_resource, const String &p_path, uint32_t p_flags) {
+Error ResourceSaver::save(const Ref<Resource> &p_resource, const String &p_path, uint32_t p_flags, FileAccess::SaveIntegrityLevel p_integrity_level) {
 	ERR_FAIL_COND_V_MSG(p_resource.is_null(), ERR_INVALID_PARAMETER, vformat("Can't save empty resource to path '%s'.", p_path));
 	String path = p_path;
 	if (path.is_empty()) {
@@ -125,7 +137,7 @@ Error ResourceSaver::save(const Ref<Resource> &p_resource, const String &p_path,
 			p_resource->set_path(local_path);
 		}
 
-		err = saver[i]->save(p_resource, path, p_flags);
+		err = saver[i]->save(p_resource, path, p_flags, p_integrity_level);
 
 		if (err == OK) {
 #ifdef TOOLS_ENABLED
