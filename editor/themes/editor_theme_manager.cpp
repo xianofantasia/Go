@@ -1017,6 +1017,13 @@ void EditorThemeManager::_populate_standard_styles(const Ref<EditorTheme> &p_the
 			style_tree_hover_dimmed->set_border_width_all(0);
 			p_theme->set_stylebox("hovered_dimmed", "Tree", style_tree_hover_dimmed);
 
+			Ref<StyleBoxFlat> style_tree_hover_selected = style_tree_selected->duplicate();
+			style_tree_hover_selected->set_bg_color(p_config.highlight_color * Color(1, 1, 1, 1.2));
+			style_tree_hover_selected->set_border_width_all(0);
+
+			p_theme->set_stylebox("hovered_selected", "Tree", style_tree_hover_selected);
+			p_theme->set_stylebox("hovered_selected_focus", "Tree", style_tree_hover_selected);
+
 			p_theme->set_stylebox("selected_focus", "Tree", style_tree_focus);
 			p_theme->set_stylebox("selected", "Tree", style_tree_selected);
 
