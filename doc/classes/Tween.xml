@@ -228,6 +228,13 @@
 				[/codeblock]
 			</description>
 		</method>
+		<method name="set_ignore_time_scale">
+			<return type="Tween" />
+			<param index="0" name="ignore" type="bool" default="true" />
+			<description>
+				If [param ignore] is [code]true[/code], the speed of tweening will not be affected by [member Engine.time_scale]. This affects all [Tweener]s and their delays. Default value is [code]false[/code].
+			</description>
+		</method>
 		<method name="set_loops">
 			<return type="Tween" />
 			<param index="0" name="loops" type="int" default="0" />
