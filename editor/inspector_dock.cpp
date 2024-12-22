@@ -30,6 +30,7 @@
 
 #include "inspector_dock.h"
 
+#include "editor/debugger/editor_debugger_inspector.h"
 #include "editor/editor_main_screen.h"
 #include "editor/editor_node.h"
 #include "editor/editor_settings.h"
@@ -38,6 +39,7 @@
 #include "editor/filesystem_dock.h"
 #include "editor/gui/editor_file_dialog.h"
 #include "editor/gui/editor_object_selector.h"
+#include "editor/multi_node_edit.h"
 #include "editor/plugins/script_editor_plugin.h"
 #include "editor/themes/editor_scale.h"
 
@@ -313,6 +315,7 @@ Ref<Resource> InspectorDock::_get_current_resource() const {
 
 void InspectorDock::_prepare_history() {
 	EditorSelectionHistory *editor_history = EditorNode::get_singleton()->get_editor_selection_history();
+	editor_history->cleanup_history();
 
 	int history_to = MAX(0, editor_history->get_history_len() - 25);
 
@@ -331,7 +334,25 @@ void InspectorDock::_prepare_history() {
 
 		already.insert(id);
 
-		Ref<Texture2D> icon = EditorNode::get_singleton()->get_object_icon(obj, "Object");
+		Ref<Texture2D> icon;
+		if (Object::cast_to<MultiNodeEdit>(obj)) {
+			icon = EditorNode::get_singleton()->get_class_icon(Object::cast_to<MultiNodeEdit>(obj)->get_edited_class_name());
+		} else if (Object::cast_to<EditorDebuggerRemoteObject>(obj)) {
+			String class_name;
+			Ref<Script> base_script = obj->get_script();
+			if (base_script.is_valid()) {
+				class_name = base_script->get_global_name();
+
+				if (class_name.is_empty()) {
+					// If there is no class_name in this script we just take the script path.
+					class_name = base_script->get_path();
+				}
+			}
+
+			icon = EditorNode::get_singleton()->get_class_icon(class_name.is_empty() ? Object::cast_to<EditorDebuggerRemoteObject>(obj)->type_name : class_name);
+		} else {
+			icon = EditorNode::get_singleton()->get_object_icon(obj);
+		}
 
 		String text;
 		if (obj->has_method("_get_editor_name")) {
@@ -502,6 +523,7 @@ void InspectorDock::clear() {
 
 void InspectorDock::update(Object *p_object) {
 	EditorSelectionHistory *editor_history = EditorNode::get_singleton()->get_editor_selection_history();
+
 	backward_button->set_disabled(editor_history->is_at_beginning());
 	forward_button->set_disabled(editor_history->is_at_end());
 
