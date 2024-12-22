@@ -40,6 +40,7 @@ class SpinBox : public Range {
 
 	LineEdit *line_edit = nullptr;
 	bool update_on_text_changed = false;
+	bool accepted = false;
 
 	struct SizingCache {
 		int buttons_block_width = 0;
