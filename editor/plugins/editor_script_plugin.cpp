@@ -1,5 +1,5 @@
 /**************************************************************************/
-/*  editor_script.cpp                                                     */
+/*  editor_script_plugin.cpp                                              */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                             GODOT ENGINE                               */
@@ -28,70 +28,42 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "editor_script.h"
+#include "editor_script_plugin.h"
 
+#include "core/io/resource_loader.h"
+#include "editor/editor_command_palette.h"
 #include "editor/editor_interface.h"
-#include "editor/editor_node.h"
-#include "editor/editor_undo_redo_manager.h"
-#include "editor/gui/editor_scene_tabs.h"
-#include "scene/main/node.h"
-#include "scene/resources/packed_scene.h"
+#include "editor/editor_script.h"
 
-void EditorScript::add_root_node(Node *p_node) {
-	if (!EditorNode::get_singleton()) {
-		EditorNode::add_io_error("EditorScript::add_root_node: " + TTR("Write your logic in the _run() method."));
-		return;
+Ref<EditorScript> create_instance(const StringName &p_name) {
+	Ref<EditorScript> es;
+	es.instantiate();
+	Ref<Script> scr = ResourceLoader::load(ScriptServer::get_global_class_path(p_name), "Script", ResourceFormatLoader::CACHE_MODE_REUSE);
+	if (scr.is_valid()) {
+		es->set_script(scr);
 	}
+	return es;
+}
 
-	if (EditorNode::get_singleton()->get_edited_scene()) {
-		EditorNode::add_io_error("EditorScript::add_root_node: " + TTR("The current scene already has a root node."));
-		return;
+void EditorScriptPlugin::run_command(const StringName &p_name) {
+	create_instance(p_name)->run();
+}
+
+void EditorScriptPlugin::command_palette_about_to_popup() {
+	for (const StringName &command : commands) {
+		EditorInterface::get_singleton()->get_command_palette()->remove_command("editor_scripts/" + command);
 	}
-
-	const String &scene_path = p_node->get_scene_file_path();
-	if (!scene_path.is_empty()) {
-		Ref<PackedScene> scene = ResourceLoader::load(scene_path);
-		if (scene.is_valid()) {
-			memfree(scene->instantiate(PackedScene::GEN_EDIT_STATE_INSTANCE)); // Ensure node cache.
-
-			p_node->set_scene_inherited_state(scene->get_state());
-			p_node->set_scene_file_path(String());
+	commands.clear();
+	ScriptServer::get_inheriters_list(SNAME("EditorScript"), &commands);
+	for (const StringName &command : commands) {
+		String name = create_instance(command)->get_name();
+		if (name.is_empty()) {
+			name = command;
 		}
+		EditorInterface::get_singleton()->get_command_palette()->add_command(name, "editor_scripts/" + command, callable_mp(this, &EditorScriptPlugin::run_command), varray(command), nullptr);
 	}
-
-	EditorNode::get_singleton()->set_edited_scene(p_node);
-	EditorUndoRedoManager::get_singleton()->set_history_as_unsaved(EditorNode::get_editor_data().get_current_edited_scene_history_id());
-	EditorSceneTabs::get_singleton()->update_scene_tabs();
 }
 
-Node *EditorScript::get_scene() const {
-	if (!EditorNode::get_singleton()) {
-		EditorNode::add_io_error("EditorScript::get_scene: " + TTR("Write your logic in the _run() method."));
-		return nullptr;
-	}
-
-	return EditorNode::get_singleton()->get_edited_scene();
-}
-
-EditorInterface *EditorScript::get_editor_interface() const {
-	return EditorInterface::get_singleton();
-}
-
-void EditorScript::run() {
-	GDVIRTUAL_CALL(_run);
-}
-
-String EditorScript::get_name() {
-	String ret;
-	GDVIRTUAL_CALL(_get_name, ret);
-	return ret;
-}
-
-void EditorScript::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("add_root_node", "node"), &EditorScript::add_root_node);
-	ClassDB::bind_method(D_METHOD("get_scene"), &EditorScript::get_scene);
-	ClassDB::bind_method(D_METHOD("get_editor_interface"), &EditorScript::get_editor_interface);
-
-	GDVIRTUAL_BIND(_run);
-	GDVIRTUAL_BIND(_get_name);
+EditorScriptPlugin::EditorScriptPlugin() {
+	EditorInterface::get_singleton()->get_command_palette()->connect("about_to_popup", callable_mp(this, &EditorScriptPlugin::command_palette_about_to_popup));
 }
