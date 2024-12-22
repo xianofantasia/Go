@@ -112,6 +112,24 @@ bool CreateDialog::_is_type_preferred(const String &p_type) const {
 	return EditorNode::get_editor_data().script_class_is_parent(p_type, preferred_search_result_type);
 }
 
+void CreateDialog::_script_button_clicked(TreeItem *p_item, int p_column, int p_button_id, MouseButton p_mouse_button_index) {
+	if (p_mouse_button_index != MouseButton::LEFT) {
+		return;
+	}
+	// The id of opening-script button is 1.
+	if (p_button_id != 1) {
+		return;
+	}
+
+	String scr_path = ScriptServer::get_global_class_path(p_item->get_text(0));
+	Ref<Script> scr = ResourceLoader::load(scr_path, "Script");
+	ERR_FAIL_COND_MSG(!scr.is_valid(), vformat("Could not load the script from resource path: %s", scr_path));
+	EditorNode::get_singleton()->push_item_no_inspector(scr.ptr());
+
+	hide();
+	_cleanup();
+}
+
 bool CreateDialog::_is_class_disabled_by_feature_profile(const StringName &p_class) const {
 	Ref<EditorFeatureProfile> profile = EditorFeatureProfileManager::get_singleton()->get_current_profile();
 
@@ -305,16 +323,22 @@ void CreateDialog::_configure_search_option_item(TreeItem *r_item, const StringN
 		r_item->set_text(0, p_type);
 		String script_path = ScriptServer::get_global_class_path(p_type);
 		Ref<Script> scr = ResourceLoader::load(script_path, "Script");
-		String suffix = script_path.get_file();
-		if (scr.is_valid() && custom_type_suffixes.has(p_type)) {
-			suffix = custom_type_suffixes.get(p_type);
-		}
-		if (!suffix.is_empty()) {
-			r_item->set_suffix(0, "(" + suffix + ")");
-		}
+		//String suffix = script_path.get_file();
+		//if (scr.is_valid() && custom_type_suffixes.has(p_type)) {
+		//	suffix = custom_type_suffixes.get(p_type);
+		//}
+		//if (!suffix.is_empty()) {
+		//	r_item->set_suffix(0, "(" + suffix + ")");
+		//}
 
 		ERR_FAIL_COND(!scr.is_valid());
 		is_abstract = scr->is_abstract();
+		r_item->add_button(0, get_editor_theme_icon("Script"), 1, false, TTR(vformat("Script Path: %s", script_path)));
+		if (scr->is_tool()) {
+			const int button_index = r_item->get_button_count(0) - 1;
+			r_item->set_button_color(0, button_index, get_theme_color(SNAME("accent_color"), EditorStringName(Editor)));
+			r_item->set_button_tooltip_text(0, button_index, TTR(vformat("The script will run in the editor.\nScript Path: %s", script_path)));
+		}
 	} else {
 		r_item->set_metadata(0, custom_type_parents[p_type]);
 		r_item->set_text(0, p_type);
@@ -828,6 +852,7 @@ CreateDialog::CreateDialog() {
 	search_options->set_auto_translate_mode(AUTO_TRANSLATE_MODE_DISABLED);
 	search_options->connect("item_activated", callable_mp(this, &CreateDialog::_confirmed));
 	search_options->connect("cell_selected", callable_mp(this, &CreateDialog::_item_selected));
+	search_options->connect("button_clicked", callable_mp(this, &CreateDialog::_script_button_clicked));
 	vbc->add_margin_child(TTR("Matches:"), search_options, true);
 
 	help_bit = memnew(EditorHelpBit);
