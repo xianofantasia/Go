@@ -283,6 +283,23 @@
 			If [code]true[/code], the [LineEdit] doesn't display decoration.
 		</member>
 		<member name="focus_mode" type="int" setter="set_focus_mode" getter="get_focus_mode" overrides="Control" enum="Control.FocusMode" default="2" />
+		<member name="input_mask" type="String" setter="set_input_mask" getter="get_input_mask" default="&quot;&quot;">
+			The text input mask. Input mask is a template string composed of the following characters:
+			- [code]A[/code] - mask for ASCII alphabet character, [code]A-Z, a-z[/code].
+			- [code]N[/code] - mask for ASCII alphanumeric character, [code]0-9, A-Z, a-z[/code].
+			- [code]9[/code] - mask for ASCII number character, [code]0-9[/code].
+			- [code]D[/code] - mask for ASCII number character larger than zero, [code]1-9[/code].
+			- [code]#[/code] - mask for plus/minus sign, [code]+, -[/code].
+			- [code]H[/code] - mask for hexadecimal number character, [code]0-9, A-F, a-f[/code].
+			- [code]B[/code] - mask for binary number character, [code]0, 1[/code].
+			- [code]X[/code] - mask for any other character.
+			- [code]&gt;[/code] - control character, all following characters are converted to upper case.
+			- [code]&lt;[/code] - control character, all following characters are converted to lower case.
+			- [code]![/code] - control character, disable case conversion for all following characters.
+			- [code];[/code] - control character, followed by the single character, terminates the mask and sets blank character (default blank character is space).
+			- [code]\[/code] - control character, used to escape mask and control characters.
+			- All other characters are used as separators.
+		</member>
 		<member name="language" type="String" setter="set_language" getter="get_language" default="&quot;&quot;">
 			Language code used for line-breaking and text shaping algorithms. If left empty, current locale is used instead.
 		</member>
@@ -316,6 +333,9 @@
 			[b]Note:[/b] This method is only implemented on Linux.
 		</member>
 		<member name="mouse_default_cursor_shape" type="int" setter="set_default_cursor_shape" getter="get_default_cursor_shape" overrides="Control" enum="Control.CursorShape" default="1" />
+		<member name="overtype_mode_enabled" type="bool" setter="set_overtype_mode_enabled" getter="is_overtype_mode_enabled" default="false">
+			If [code]true[/code], sets the user into overtype mode. When the user types in this mode, it will override existing text.
+		</member>
 		<member name="placeholder_text" type="String" setter="set_placeholder" getter="get_placeholder" default="&quot;&quot;">
 			Text shown when the [LineEdit] is empty. It is [b]not[/b] the [LineEdit]'s default value (see [member text]).
 		</member>
@@ -516,6 +536,9 @@
 		</theme_item>
 		<theme_item name="font_color" data_type="color" type="Color" default="Color(0.875, 0.875, 0.875, 1)">
 			Default font color.
+		</theme_item>
+		<theme_item name="font_mask_color" data_type="color" type="Color" default="Color(0.875, 0.875, 0.875, 0.6)">
+			Font color for static [member input_mask] parts.
 		</theme_item>
 		<theme_item name="font_outline_color" data_type="color" type="Color" default="Color(0, 0, 0, 1)">
 			The tint of text outline of the [LineEdit].
