@@ -480,6 +480,7 @@ private:
 	int current_char_ofs = 0;
 	int visible_paragraph_count = 0;
 	int visible_line_count = 0;
+	bool text_processed = false;
 
 	int tab_size = 4;
 	bool underline_meta = true;
@@ -808,6 +809,7 @@ public:
 
 	int get_pending_paragraphs() const;
 	bool is_finished() const;
+	bool is_text_processed() const;
 	bool is_updating() const;
 	void wait_until_finished();
 

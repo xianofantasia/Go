@@ -1898,6 +1898,10 @@ void RichTextLabel::_notification(int p_what) {
 
 			// Start text shaping.
 			if (_validate_line_caches()) {
+				if (!text_processed) {
+					text_processed = true;
+					emit_signal(SNAME("text_processed"));
+				}
 				set_physics_process_internal(false); // Disable auto refresh, if text is fully processed.
 			} else {
 				// Draw loading progress bar.
@@ -2901,6 +2905,10 @@ bool RichTextLabel::is_finished() const {
 	return (main->first_invalid_line.load() == (int)main->lines.size() && main->first_resized_line.load() == (int)main->lines.size() && main->first_invalid_font_line.load() == (int)main->lines.size());
 }
 
+bool RichTextLabel::is_text_processed() const {
+	return is_finished() && text_processed;
+}
+
 bool RichTextLabel::is_updating() const {
 	return updating.load() || validating.load();
 }
@@ -2971,6 +2979,7 @@ _FORCE_INLINE_ float RichTextLabel::_update_scroll_exceeds(float p_total_height,
 
 bool RichTextLabel::_validate_line_caches() {
 	if (updating.load()) {
+		text_processed = false;
 		return false;
 	}
 	validating.store(true);
@@ -3028,6 +3037,7 @@ bool RichTextLabel::_validate_line_caches() {
 		task = WorkerThreadPool::get_singleton()->add_template_task(this, &RichTextLabel::_thread_function, nullptr, true, vformat("RichTextLabelShape:%x", (int64_t)get_instance_id()));
 		set_physics_process_internal(true);
 		loading_started = OS::get_singleton()->get_ticks_msec();
+		text_processed = false;
 		return false;
 	} else {
 		updating.store(true);
@@ -6462,6 +6472,7 @@ void RichTextLabel::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("is_ready"), &RichTextLabel::is_finished);
 #endif // DISABLE_DEPRECATED
 	ClassDB::bind_method(D_METHOD("is_finished"), &RichTextLabel::is_finished);
+	ClassDB::bind_method(D_METHOD("is_text_processed"), &RichTextLabel::is_text_processed);
 
 	ClassDB::bind_method(D_METHOD("set_threaded", "threaded"), &RichTextLabel::set_threaded);
 	ClassDB::bind_method(D_METHOD("is_threaded"), &RichTextLabel::is_threaded);
@@ -6561,6 +6572,7 @@ void RichTextLabel::_bind_methods() {
 	ADD_SIGNAL(MethodInfo("meta_hover_ended", PropertyInfo(Variant::NIL, "meta", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_NIL_IS_VARIANT)));
 
 	ADD_SIGNAL(MethodInfo("finished"));
+	ADD_SIGNAL(MethodInfo("text_processed"));
 
 	BIND_ENUM_CONSTANT(LIST_NUMBERS);
 	BIND_ENUM_CONSTANT(LIST_LETTERS);

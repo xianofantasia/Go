@@ -285,6 +285,12 @@
 				If [member threaded] is enabled, returns [code]true[/code] if the background thread has finished text processing, otherwise always return [code]true[/code].
 			</description>
 		</method>
+		<method name="is_text_processed" qualifiers="const">
+			<return type="bool" />
+			<description>
+				Returns [code]true[/code] if the document has finished loading, text processing, and validation after the first draw.
+			</description>
+		</method>
 		<method name="menu_option">
 			<return type="void" />
 			<param index="0" name="option" type="int" />
@@ -712,6 +718,7 @@
 		<signal name="finished">
 			<description>
 				Triggered when the document is fully loaded.
+				[b]Note:[/b] This can happen before the text is ready for scrolling. For a valid state for drawing or scrolling, use [signal text_processed] instead.
 			</description>
 		</signal>
 		<signal name="meta_clicked">
@@ -740,6 +747,11 @@
 			<param index="0" name="meta" type="Variant" />
 			<description>
 				Triggers when the mouse enters a meta tag.
+			</description>
+		</signal>
+		<signal name="text_processed">
+			<description>
+				Triggered when the text is fully loaded and processed for drawing. This happens when the document is draw for the first time after loading.
 			</description>
 		</signal>
 	</signals>
