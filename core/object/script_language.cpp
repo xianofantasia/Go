@@ -481,7 +481,8 @@ StringName ScriptServer::get_global_class_native_base(const String &p_class) {
 }
 
 void ScriptServer::get_global_class_list(List<StringName> *r_global_classes) {
-	List<StringName> classes;
+	LocalVector<StringName> classes;
+	classes.reserve(r_global_classes->size());
 	for (const KeyValue<StringName, GlobalScriptClass> &E : global_classes) {
 		classes.push_back(E.key);
 	}
@@ -762,7 +763,7 @@ void PlaceHolderScriptInstance::update(const List<PropertyInfo> &p_properties, c
 	}
 
 	properties = p_properties;
-	List<StringName> to_remove;
+	LocalVector<StringName> to_remove;
 
 	for (KeyValue<StringName, Variant> &E : values) {
 		if (!new_values.has(E.key)) {
@@ -778,9 +779,8 @@ void PlaceHolderScriptInstance::update(const List<PropertyInfo> &p_properties, c
 		}
 	}
 
-	while (to_remove.size()) {
-		values.erase(to_remove.front()->get());
-		to_remove.pop_front();
+	for (const StringName &E : to_remove) {
+		values.erase(E);
 	}
 
 	if (owner && owner->get_script_instance() == this) {

@@ -3723,7 +3723,8 @@ void CodeEdit::_text_changed() {
 	line_number_digits = new_line_number_digits;
 	_update_line_number_gutter_width();
 
-	List<int> breakpoints;
+	LocalVector<int> breakpoints;
+	breakpoints.reserve(breakpointed_lines.size());
 	for (const KeyValue<int, bool> &E : breakpointed_lines) {
 		breakpoints.push_back(E.key);
 	}

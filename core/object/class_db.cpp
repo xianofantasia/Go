@@ -380,7 +380,8 @@ uint32_t ClassDB::get_api_hash(APIType p_api) {
 
 	uint64_t hash = hash_murmur3_one_64(HashMapHasherDefault::hash(VERSION_FULL_CONFIG));
 
-	List<StringName> class_list;
+	LocalVector<StringName> class_list;
+	class_list.reserve(classes.size());
 	for (const KeyValue<StringName, ClassInfo> &E : classes) {
 		class_list.push_back(E.key);
 	}
@@ -398,7 +399,7 @@ uint32_t ClassDB::get_api_hash(APIType p_api) {
 
 		{ //methods
 
-			List<StringName> snames;
+			LocalVector<StringName> snames;
 
 			for (const KeyValue<StringName, MethodBind *> &F : t->method_map) {
 				String name = F.key.operator String();
@@ -443,7 +444,8 @@ uint32_t ClassDB::get_api_hash(APIType p_api) {
 
 		{ //constants
 
-			List<StringName> snames;
+			LocalVector<StringName> snames;
+			snames.reserve(t->constant_map.size());
 
 			for (const KeyValue<StringName, int64_t> &F : t->constant_map) {
 				snames.push_back(F.key);
@@ -459,7 +461,8 @@ uint32_t ClassDB::get_api_hash(APIType p_api) {
 
 		{ //signals
 
-			List<StringName> snames;
+			LocalVector<StringName> snames;
+			snames.reserve(t->signal_map.size());
 
 			for (const KeyValue<StringName, MethodInfo> &F : t->signal_map) {
 				snames.push_back(F.key);
@@ -478,7 +481,8 @@ uint32_t ClassDB::get_api_hash(APIType p_api) {
 
 		{ //properties
 
-			List<StringName> snames;
+			LocalVector<StringName> snames;
+			snames.reserve(t->property_setget.size());
 
 			for (const KeyValue<StringName, PropertySetGet> &F : t->property_setget) {
 				snames.push_back(F.key);
