@@ -55,34 +55,27 @@ void Logger::log_error(const char *p_function, const char *p_file, int p_line, c
 		return;
 	}
 
-	const char *err_type = "ERROR";
+	const char *err_details = p_rationale && p_rationale[0] ? p_rationale : p_code;
+
 	switch (p_type) {
-		case ERR_ERROR:
-			err_type = "ERROR";
-			break;
 		case ERR_WARNING:
-			err_type = "WARNING";
+			logf_error("WARNING: %s\n", err_details);
+			logf_error("     at: %s (%s:%i)\n", p_function, p_file, p_line);
 			break;
 		case ERR_SCRIPT:
-			err_type = "SCRIPT ERROR";
+			logf_error("SCRIPT ERROR: %s\n", err_details);
+			logf_error("          at: %s (%s:%i)\n", p_function, p_file, p_line);
 			break;
 		case ERR_SHADER:
-			err_type = "SHADER ERROR";
+			logf_error("SHADER ERROR: %s\n", err_details);
+			logf_error("          at: %s (%s:%i)\n", p_function, p_file, p_line);
 			break;
+		case ERR_ERROR:
 		default:
-			ERR_PRINT("Unknown error type");
+			logf_error("ERROR: %s\n", err_details);
+			logf_error("   at: %s (%s:%i)\n", p_function, p_file, p_line);
 			break;
 	}
-
-	const char *err_details;
-	if (p_rationale && *p_rationale) {
-		err_details = p_rationale;
-	} else {
-		err_details = p_code;
-	}
-
-	logf_error("%s: %s\n", err_type, err_details);
-	logf_error("   at: %s (%s:%i)\n", p_function, p_file, p_line);
 }
 
 void Logger::logf(const char *p_format, ...) {

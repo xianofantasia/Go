@@ -1050,27 +1050,22 @@ void UnixTerminalLogger::log_error(const char *p_function, const char *p_file, i
 		return;
 	}
 
-	const char *err_details;
-	if (p_rationale && p_rationale[0]) {
-		err_details = p_rationale;
-	} else {
-		err_details = p_code;
-	}
+	const char *err_details = p_rationale && p_rationale[0] ? p_rationale : p_code;
 
-	// Disable color codes if stdout is not a TTY.
+	// Disable color codes if stdout is not a TTY or CI.
 	// This prevents Godot from writing ANSI escape codes when redirecting
 	// stdout and stderr to a file.
-	const bool tty = isatty(fileno(stdout));
-	const char *gray = tty ? "\E[0;90m" : "";
-	const char *red = tty ? "\E[0;91m" : "";
-	const char *red_bold = tty ? "\E[1;31m" : "";
-	const char *yellow = tty ? "\E[0;93m" : "";
-	const char *yellow_bold = tty ? "\E[1;33m" : "";
-	const char *magenta = tty ? "\E[0;95m" : "";
-	const char *magenta_bold = tty ? "\E[1;35m" : "";
-	const char *cyan = tty ? "\E[0;96m" : "";
-	const char *cyan_bold = tty ? "\E[1;36m" : "";
-	const char *reset = tty ? "\E[0m" : "";
+	const bool color = OS::get_singleton()->has_environment("CI") || OS::get_singleton()->get_stdout_type() == OS::STD_HANDLE_CONSOLE;
+	const char *gray = color ? "\u001b[0;90m" : "";
+	const char *red = color ? "\u001b[0;31m" : "";
+	const char *red_bold = color ? "\u001b[1;31m" : "";
+	const char *yellow = color ? "\u001b[0;33m" : "";
+	const char *yellow_bold = color ? "\u001b[1;33m" : "";
+	const char *magenta = color ? "\u001b[0;35m" : "";
+	const char *magenta_bold = color ? "\u001b[1;35m" : "";
+	const char *cyan = color ? "\u001b[0;36m" : "";
+	const char *cyan_bold = color ? "\u001b[1;36m" : "";
+	const char *reset = color ? "\u001b[0m" : "";
 
 	switch (p_type) {
 		case ERR_WARNING:
