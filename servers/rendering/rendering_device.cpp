@@ -1018,7 +1018,7 @@ RID RenderingDevice::texture_create_shared(const TextureView &p_view, RID p_with
 
 	// Create view.
 
-	Texture texture = *src_texture;
+	Texture texture = src_texture->duplicate_as_shared_texture();
 	texture.shared_fallback = nullptr;
 
 	RDD::TextureView tv;
@@ -1076,8 +1076,6 @@ RID RenderingDevice::texture_create_shared(const TextureView &p_view, RID p_with
 	}
 
 	ERR_FAIL_COND_V(!texture.driver_id, RID());
-
-	texture.slice_trackers.clear();
 
 	if (texture.draw_tracker != nullptr) {
 		texture.draw_tracker->reference_count++;
@@ -1172,7 +1170,7 @@ RID RenderingDevice::texture_create_shared_from_slice(const TextureView &p_view,
 		slice_layers = 6;
 	}
 
-	Texture texture = *src_texture;
+	Texture texture = src_texture->duplicate_as_shared_texture();
 	texture.shared_fallback = nullptr;
 
 	get_image_format_required_size(texture.format, texture.width, texture.height, texture.depth, p_mipmap + 1, &texture.width, &texture.height);
