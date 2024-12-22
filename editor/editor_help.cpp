@@ -4323,7 +4323,6 @@ EditorHelpBitTooltip::EditorHelpBitTooltip(Control *p_target) {
 	set_process_internal(true);
 }
 
-#if defined(MODULE_GDSCRIPT_ENABLED) || defined(MODULE_MONO_ENABLED)
 /// EditorHelpHighlighter ///
 
 EditorHelpHighlighter *EditorHelpHighlighter::singleton = nullptr;
@@ -4488,8 +4487,6 @@ EditorHelpHighlighter::~EditorHelpHighlighter() {
 	memdelete(text_edits[LANGUAGE_CSHARP]);
 #endif
 }
-
-#endif // defined(MODULE_GDSCRIPT_ENABLED) || defined(MODULE_MONO_ENABLED)
 
 /// FindBar ///
 
