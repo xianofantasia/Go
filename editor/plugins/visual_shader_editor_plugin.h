@@ -215,6 +215,8 @@ class VisualShaderEditor : public ShaderEditor {
 	String param_filter_name;
 	EditorProperty *current_prop = nullptr;
 	VBoxContainer *shader_preview_vbox = nullptr;
+	HBoxContainer *top_hbox = nullptr;
+	Button *site_search = nullptr;
 	GraphEdit *graph = nullptr;
 	Button *add_node = nullptr;
 	MenuButton *varying_button = nullptr;
@@ -634,6 +636,8 @@ class VisualShaderEditor : public ShaderEditor {
 	void _param_selected();
 	void _param_unselected();
 
+	void _help_open();
+
 protected:
 	void _notification(int p_what);
 	static void _bind_methods();
@@ -644,6 +648,7 @@ public:
 	virtual bool is_unsaved() const override;
 	virtual void save_external_data(const String &p_str = "") override;
 	virtual void validate_script() override;
+	virtual Control *get_top_bar() override;
 
 	void add_plugin(const Ref<VisualShaderNodePlugin> &p_plugin);
 	void remove_plugin(const Ref<VisualShaderNodePlugin> &p_plugin);

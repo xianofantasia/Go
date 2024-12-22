@@ -34,6 +34,7 @@
 #include "core/io/resource_loader.h"
 #include "core/math/math_defs.h"
 #include "core/os/keyboard.h"
+#include "core/version_generated.gen.h"
 #include "editor/editor_node.h"
 #include "editor/editor_properties.h"
 #include "editor/editor_properties_vector.h"
@@ -1573,6 +1574,10 @@ void VisualShaderEditor::validate_script() {
 	if (visual_shader.is_valid()) {
 		_update_nodes();
 	}
+}
+
+Control *VisualShaderEditor::get_top_bar() {
+	return top_hbox;
 }
 
 void VisualShaderEditor::add_plugin(const Ref<VisualShaderNodePlugin> &p_plugin) {
@@ -5151,6 +5156,10 @@ void VisualShaderEditor::_param_unselected() {
 	_clear_preview_param();
 }
 
+void VisualShaderEditor::_help_open() {
+	OS::get_singleton()->shell_open(vformat("%s/tutorials/shaders/visual_shaders.html", VERSION_DOCS_URL));
+}
+
 void VisualShaderEditor::_notification(int p_what) {
 	switch (p_what) {
 		case NOTIFICATION_POSTINITIALIZE: {
@@ -5193,6 +5202,7 @@ void VisualShaderEditor::_notification(int p_what) {
 		} break;
 
 		case NOTIFICATION_THEME_CHANGED: {
+			site_search->set_button_icon(get_editor_theme_icon(SNAME("ExternalLink")));
 			highend_label->set_modulate(get_theme_color(SNAME("highend_color"), EditorStringName(Editor)));
 
 			param_filter->set_right_icon(Control::get_editor_theme_icon(SNAME("Search")));
@@ -6357,9 +6367,26 @@ VisualShaderEditor::VisualShaderEditor() {
 	FileSystemDock::get_singleton()->get_script_create_dialog()->connect("script_created", callable_mp(this, &VisualShaderEditor::_script_created));
 	FileSystemDock::get_singleton()->connect("resource_removed", callable_mp(this, &VisualShaderEditor::_resource_removed));
 
+	VBoxContainer *main_vbox = memnew(VBoxContainer);
+	main_vbox->set_anchors_and_offsets_preset(Control::PRESET_FULL_RECT);
+	add_child(main_vbox);
+
+	top_hbox = memnew(HBoxContainer);
+	top_hbox->add_spacer();
+	main_vbox->add_child(top_hbox);
+
+	site_search = memnew(Button);
+	site_search->set_flat(true);
+	site_search->connect(SceneStringName(pressed), callable_mp(this, &VisualShaderEditor::_help_open));
+	site_search->set_text(TTR("Online Docs"));
+	site_search->set_tooltip_text(TTR("Open Godot online documentation."));
+	top_hbox->add_child(site_search);
+	top_hbox->add_child(memnew(VSeparator));
+
 	HSplitContainer *main_box = memnew(HSplitContainer);
-	main_box->set_anchors_and_offsets_preset(Control::PRESET_FULL_RECT);
-	add_child(main_box);
+	main_box->set_v_size_flags(SIZE_EXPAND_FILL);
+	main_box->set_h_size_flags(SIZE_EXPAND_FILL);
+	main_vbox->add_child(main_box);
 
 	graph = memnew(GraphEdit);
 	graph->set_v_size_flags(SIZE_EXPAND_FILL);
