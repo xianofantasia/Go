@@ -42,6 +42,7 @@ public:
 	// Access methods to expose data externally
 	virtual Ref<RenderSceneBuffers> get_render_scene_buffers() const override;
 	virtual RenderSceneData *get_render_scene_data() const override;
+	virtual RendererLightStorage *get_light_storage() const override;
 
 	virtual RID get_environment() const override;
 	virtual RID get_camera_attributes() const override;
@@ -57,6 +58,7 @@ public:
 	const PagedArray<RID> *decals = nullptr;
 	const PagedArray<RID> *lightmaps = nullptr;
 	const PagedArray<RID> *fog_volumes = nullptr;
+
 	RID environment;
 	RID camera_attributes;
 	RID compositor;

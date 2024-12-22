@@ -48,6 +48,11 @@ class RenderDataRD;
 namespace RendererRD {
 
 class LightStorage : public RendererLightStorage {
+	GDCLASS(LightStorage, RendererLightStorage);
+
+protected:
+	static void _bind_methods();
+
 public:
 	enum ShadowAtlastQuadrant : uint32_t {
 		QUADRANT_SHIFT = 27,

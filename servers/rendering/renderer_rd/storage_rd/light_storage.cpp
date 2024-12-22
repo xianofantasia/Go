@@ -41,6 +41,11 @@ LightStorage *LightStorage::get_singleton() {
 	return singleton;
 }
 
+void LightStorage::_bind_methods() {
+	ClassDB::bind_method(D_METHOD("get_directional_light_buffer"), &LightStorage::get_directional_light_buffer);
+	ClassDB::bind_method(D_METHOD("get_omni_light_buffer"), &LightStorage::get_omni_light_buffer);
+}
+
 LightStorage::LightStorage() {
 	singleton = this;
 
