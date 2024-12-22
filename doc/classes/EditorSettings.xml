@@ -483,6 +483,9 @@
 		<member name="editors/3d_gizmos/gizmo_colors/voxel_gi" type="Color" setter="" getter="">
 			The 3D editor gizmo color used for [VoxelGI] nodes.
 		</member>
+		<member name="editors/3d_gizmos/gizmo_settings/always_show_collision_shapes" type="bool" setter="" getter="">
+			If [code]true[/code], collision shapes in the 3D editor are always visible. If [code]false[/code], collision shapes are only displayed when selected.
+		</member>
 		<member name="editors/3d_gizmos/gizmo_settings/bone_axis_length" type="float" setter="" getter="">
 			The length of [Skeleton3D] bone gizmos in the 3D editor.
 		</member>

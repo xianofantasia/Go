@@ -356,6 +356,12 @@ void CollisionShape3DGizmoPlugin::redraw(EditorNode3DGizmo *p_gizmo) {
 		}
 	}
 
+	const bool show_collision_shapes_always = EDITOR_GET("editors/3d_gizmos/gizmo_settings/always_show_collision_shapes");
+
+	if (!p_gizmo->is_selected() && !show_collision_shapes_always) {
+		return;
+	}
+
 	if (Object::cast_to<SphereShape3D>(*s)) {
 		Ref<SphereShape3D> sp = s;
 		float r = sp->get_radius();
