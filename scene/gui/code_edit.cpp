@@ -1320,7 +1320,7 @@ bool CodeEdit::is_drawing_executing_lines_gutter() const {
 
 void CodeEdit::_main_gutter_draw_callback(int p_line, int p_gutter, const Rect2 &p_region) {
 	bool hovering = get_hovered_gutter() == Vector2i(main_gutter, p_line);
-	if (draw_breakpoints && theme_cache.breakpoint_icon.is_valid()) {
+	if (draw_breakpoints && (theme_cache.breakpoint_icon.is_valid() && theme_cache.breakpoint_conditional_icon.is_valid())) {
 		bool breakpointed = is_line_breakpointed(p_line);
 		bool shift_pressed = Input::get_singleton()->is_key_pressed(Key::SHIFT);
 
@@ -1328,13 +1328,23 @@ void CodeEdit::_main_gutter_draw_callback(int p_line, int p_gutter, const Rect2 
 			int padding = p_region.size.x / 6;
 
 			Color use_color = theme_cache.breakpoint_color;
+			Dictionary dict = get_line_gutter_metadata(p_line, p_gutter);
+			if (!(bool)dict["bp_enabled"]) {
+				use_color = theme_cache.breakpoint_disabled_color;
+			} else if (!((String)dict["bp_print"]).is_empty() && !(bool)dict["bp_suspend"]) {
+				use_color = theme_cache.breakpoint_print_color;
+			}
 			if (hovering && !shift_pressed) {
 				use_color = breakpointed ? use_color.lightened(0.3) : use_color.darkened(0.5);
 			}
 			Rect2 icon_region = p_region;
 			icon_region.position += Point2(padding, padding);
 			icon_region.size -= Point2(padding, padding) * 2;
-			theme_cache.breakpoint_icon->draw_rect(get_canvas_item(), icon_region, false, use_color);
+			if (((String)dict["bp_condition"]).is_empty()) {
+				theme_cache.breakpoint_icon->draw_rect(get_canvas_item(), icon_region, false, use_color);
+			} else {
+				theme_cache.breakpoint_conditional_icon->draw_rect(get_canvas_item(), icon_region, false, use_color);
+			}
 		}
 	}
 
@@ -1372,19 +1382,52 @@ void CodeEdit::_main_gutter_draw_callback(int p_line, int p_gutter, const Rect2 
 void CodeEdit::set_line_as_breakpoint(int p_line, bool p_breakpointed) {
 	ERR_FAIL_INDEX(p_line, get_line_count());
 
-	int mask = get_line_gutter_metadata(p_line, main_gutter);
-	set_line_gutter_metadata(p_line, main_gutter, p_breakpointed ? mask | MAIN_GUTTER_BREAKPOINT : mask & ~MAIN_GUTTER_BREAKPOINT);
+	bool toggled = p_breakpointed != is_line_breakpointed(p_line);
+
+	Dictionary dict = get_line_gutter_metadata(p_line, main_gutter);
+	int mask = dict["type"];
+	dict["type"] = p_breakpointed ? mask | MAIN_GUTTER_BREAKPOINT : mask & ~MAIN_GUTTER_BREAKPOINT;
+
 	if (p_breakpointed) {
 		breakpointed_lines[p_line] = true;
+		dict["bp_enabled"] = true;
+		dict["bp_suspend"] = true;
+		dict["bp_condition"] = "";
+		dict["bp_print"] = "";
 	} else if (breakpointed_lines.has(p_line)) {
+		if (breakpointed_lines[p_line]) {
+			dict.erase("bp_enabled");
+			dict.erase("bp_suspend");
+			dict.erase("bp_condition");
+			dict.erase("bp_print");
+		}
 		breakpointed_lines.erase(p_line);
 	}
-	emit_signal(SNAME("breakpoint_toggled"), p_line);
+
+	set_line_gutter_metadata(p_line, main_gutter, dict);
+
+	if (toggled) {
+		emit_signal(SNAME("breakpoint_toggled"), p_line);
+	}
+	queue_redraw();
+}
+
+void CodeEdit::set_breakpoint_data(int p_line, const Dictionary &p_data) {
+	ERR_FAIL_COND_MSG(!is_line_breakpointed(p_line), vformat("Line %s is not a breakpoint.", p_line));
+
+	Dictionary dict = get_line_gutter_metadata(p_line, main_gutter);
+	dict["bp_enabled"] = p_data["enabled"];
+	dict["bp_suspend"] = p_data["suspend"];
+	dict["bp_condition"] = p_data["condition"];
+	dict["bp_print"] = p_data["print"];
+
+	set_line_gutter_metadata(p_line, main_gutter, dict);
 	queue_redraw();
 }
 
 bool CodeEdit::is_line_breakpointed(int p_line) const {
-	return (int)get_line_gutter_metadata(p_line, main_gutter) & MAIN_GUTTER_BREAKPOINT;
+	Dictionary dict = get_line_gutter_metadata(p_line, main_gutter);
+	return (int)(dict["type"]) & MAIN_GUTTER_BREAKPOINT;
 }
 
 void CodeEdit::clear_breakpointed_lines() {
@@ -1407,13 +1450,16 @@ PackedInt32Array CodeEdit::get_breakpointed_lines() const {
 
 // Bookmarks
 void CodeEdit::set_line_as_bookmarked(int p_line, bool p_bookmarked) {
-	int mask = get_line_gutter_metadata(p_line, main_gutter);
-	set_line_gutter_metadata(p_line, main_gutter, p_bookmarked ? mask | MAIN_GUTTER_BOOKMARK : mask & ~MAIN_GUTTER_BOOKMARK);
+	Dictionary dict = get_line_gutter_metadata(p_line, main_gutter);
+	int mask = dict["type"];
+	dict["type"] = p_bookmarked ? mask | MAIN_GUTTER_BOOKMARK : mask & ~MAIN_GUTTER_BOOKMARK;
+	set_line_gutter_metadata(p_line, main_gutter, dict);
 	queue_redraw();
 }
 
 bool CodeEdit::is_line_bookmarked(int p_line) const {
-	return (int)get_line_gutter_metadata(p_line, main_gutter) & MAIN_GUTTER_BOOKMARK;
+	Dictionary dict = get_line_gutter_metadata(p_line, main_gutter);
+	return (int)(dict["type"]) & MAIN_GUTTER_BOOKMARK;
 }
 
 void CodeEdit::clear_bookmarked_lines() {
@@ -1436,13 +1482,16 @@ PackedInt32Array CodeEdit::get_bookmarked_lines() const {
 
 // Executing lines
 void CodeEdit::set_line_as_executing(int p_line, bool p_executing) {
-	int mask = get_line_gutter_metadata(p_line, main_gutter);
-	set_line_gutter_metadata(p_line, main_gutter, p_executing ? mask | MAIN_GUTTER_EXECUTING : mask & ~MAIN_GUTTER_EXECUTING);
+	Dictionary dict = get_line_gutter_metadata(p_line, main_gutter);
+	int mask = dict["type"];
+	dict["type"] = p_executing ? mask | MAIN_GUTTER_EXECUTING : mask & ~MAIN_GUTTER_EXECUTING;
+	set_line_gutter_metadata(p_line, main_gutter, dict);
 	queue_redraw();
 }
 
 bool CodeEdit::is_line_executing(int p_line) const {
-	return (int)get_line_gutter_metadata(p_line, main_gutter) & MAIN_GUTTER_EXECUTING;
+	Dictionary dict = get_line_gutter_metadata(p_line, main_gutter);
+	return (int)(dict["type"]) & MAIN_GUTTER_EXECUTING;
 }
 
 void CodeEdit::clear_executing_lines() {
@@ -2864,6 +2913,7 @@ void CodeEdit::_bind_methods() {
 	/* Signals */
 	/* Gutters */
 	ADD_SIGNAL(MethodInfo("breakpoint_toggled", PropertyInfo(Variant::INT, "line")));
+	ADD_SIGNAL(MethodInfo("breakpoint_moved", PropertyInfo(Variant::INT, "line"), PropertyInfo(Variant::INT, "new_line")));
 
 	/* Code Completion */
 	ADD_SIGNAL(MethodInfo("code_completion_requested"));
@@ -2887,7 +2937,10 @@ void CodeEdit::_bind_methods() {
 	BIND_THEME_ITEM(Theme::DATA_TYPE_ICON, CodeEdit, completion_color_bg);
 
 	BIND_THEME_ITEM(Theme::DATA_TYPE_COLOR, CodeEdit, breakpoint_color);
+	BIND_THEME_ITEM(Theme::DATA_TYPE_COLOR, CodeEdit, breakpoint_disabled_color);
+	BIND_THEME_ITEM(Theme::DATA_TYPE_COLOR, CodeEdit, breakpoint_print_color);
 	BIND_THEME_ITEM_CUSTOM(Theme::DATA_TYPE_ICON, CodeEdit, breakpoint_icon, "breakpoint");
+	BIND_THEME_ITEM_CUSTOM(Theme::DATA_TYPE_ICON, CodeEdit, breakpoint_conditional_icon, "breakpoint_conditional");
 
 	BIND_THEME_ITEM(Theme::DATA_TYPE_COLOR, CodeEdit, bookmark_color);
 	BIND_THEME_ITEM_CUSTOM(Theme::DATA_TYPE_ICON, CodeEdit, bookmark_icon, "bookmark");
@@ -3732,14 +3785,22 @@ void CodeEdit::_text_changed() {
 			continue;
 		}
 
-		breakpointed_lines.erase(line);
-		emit_signal(SNAME("breakpoint_toggled"), line);
-
 		int next_line = line + lines_edited_changed;
 		if (next_line > -1 && next_line < lc && is_line_breakpointed(next_line)) {
-			emit_signal(SNAME("breakpoint_toggled"), next_line);
+			emit_signal(SNAME("breakpoint_moved"), line, next_line);
+			breakpointed_lines.erase(line);
 			breakpointed_lines[next_line] = true;
+
+			// HACK: Simulate the previous behavior of emitting `breakpoint_toggled` for both lines.
+			// This should probably be removed in favor of emitting only `breakpoint_moved` as it can
+			// cause issues with moving breakpoints with custom configurations.
+			emit_signal(SNAME("breakpoint_toggled"), line);
+			emit_signal(SNAME("breakpoint_toggled"), next_line);
+
 			continue;
+		} else {
+			breakpointed_lines.erase(line);
+			emit_signal(SNAME("breakpoint_toggled"), line);
 		}
 	}
 

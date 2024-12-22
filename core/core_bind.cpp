@@ -2133,7 +2133,7 @@ bool EngineDebugger::is_skipping_breakpoints() const {
 
 void EngineDebugger::insert_breakpoint(int p_line, const StringName &p_source) {
 	ERR_FAIL_COND_MSG(!::EngineDebugger::get_script_debugger(), "Can't insert breakpoint. No active debugger");
-	::EngineDebugger::get_script_debugger()->insert_breakpoint(p_line, p_source);
+	::EngineDebugger::get_script_debugger()->insert_breakpoint(p_line, p_source, Breakpoint(p_source, p_line));
 }
 
 void EngineDebugger::remove_breakpoint(int p_line, const StringName &p_source) {

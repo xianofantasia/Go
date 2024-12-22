@@ -62,7 +62,8 @@ public:
 	bool is_debuggable();
 	bool is_active();
 
-	void set_breakpoint(const String &p_path, int p_line, bool p_enabled);
+	void set_breakpoint(const String &p_path, int p_line, bool p_breakpointed);
+	void set_breakpoint_data(const String &p_path, int p_line, const Dictionary &data);
 
 	EditorDebuggerSession(ScriptEditorDebugger *p_debugger);
 	~EditorDebuggerSession();
@@ -94,7 +95,7 @@ public:
 
 	virtual void goto_script_line(const Ref<Script> &p_script, int p_line);
 	virtual void breakpoints_cleared_in_tree();
-	virtual void breakpoint_set_in_tree(const Ref<Script> &p_script, int p_line, bool p_enabled);
+	virtual void breakpoint_set_in_tree(const Ref<Script> &p_script, int p_line, bool p_breakpointed, bool p_enabled, bool p_suspend, const String &p_condition, const String &p_print);
 
 	GDVIRTUAL2(_goto_script_line, const Ref<Script> &, int);
 	GDVIRTUAL0(_breakpoints_cleared_in_tree);

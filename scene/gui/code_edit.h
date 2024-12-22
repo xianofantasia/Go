@@ -257,7 +257,10 @@ private:
 		Ref<Texture2D> completion_color_bg;
 
 		Color breakpoint_color = Color(1, 1, 1);
+		Color breakpoint_disabled_color = Color(1, 1, 1);
+		Color breakpoint_print_color = Color(1, 1, 1);
 		Ref<Texture2D> breakpoint_icon;
+		Ref<Texture2D> breakpoint_conditional_icon;
 
 		Color bookmark_color = Color(1, 1, 1);
 		Ref<Texture2D> bookmark_icon;
@@ -388,6 +391,7 @@ public:
 
 	// breakpoints
 	void set_line_as_breakpoint(int p_line, bool p_breakpointed);
+	void set_breakpoint_data(int p_line, const Dictionary &data);
 	bool is_line_breakpointed(int p_line) const;
 	void clear_breakpointed_lines();
 	PackedInt32Array get_breakpointed_lines() const;

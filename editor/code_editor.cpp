@@ -33,6 +33,7 @@
 #include "core/input/input.h"
 #include "core/os/keyboard.h"
 #include "core/string/string_builder.h"
+#include "editor/debugger/editor_debugger_node.h"
 #include "editor/editor_node.h"
 #include "editor/editor_settings.h"
 #include "editor/editor_string_names.h"
@@ -1376,9 +1377,7 @@ Variant CodeTextEditor::get_edit_state() {
 	state.merge(get_navigation_state());
 
 	state["folded_lines"] = text_editor->get_folded_lines();
-	state["breakpoints"] = text_editor->get_breakpointed_lines();
 	state["bookmarks"] = text_editor->get_bookmarked_lines();
-
 	Ref<EditorSyntaxHighlighter> syntax_highlighter = text_editor->get_syntax_highlighter();
 	state["syntax_highlighter"] = syntax_highlighter->_get_name();
 
@@ -1417,13 +1416,6 @@ void CodeTextEditor::set_edit_state(const Variant &p_state) {
 		Vector<int> folded_lines = state["folded_lines"];
 		for (int i = 0; i < folded_lines.size(); i++) {
 			text_editor->fold_line(folded_lines[i]);
-		}
-	}
-
-	if (state.has("breakpoints")) {
-		Array breakpoints = state["breakpoints"];
-		for (int i = 0; i < breakpoints.size(); i++) {
-			text_editor->set_line_as_breakpoint(breakpoints[i], true);
 		}
 	}
 

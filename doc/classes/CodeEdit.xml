@@ -593,6 +593,13 @@
 		<member name="text_direction" type="int" setter="set_text_direction" getter="get_text_direction" overrides="TextEdit" enum="Control.TextDirection" default="1" />
 	</members>
 	<signals>
+		<signal name="breakpoint_moved">
+			<param index="0" name="line" type="int" />
+			<param index="1" name="new_line" type="int" />
+			<description>
+				Emitted when a breakpoint changes position.
+			</description>
+		</signal>
 		<signal name="breakpoint_toggled">
 			<param index="0" name="line" type="int" />
 			<description>
@@ -683,6 +690,12 @@
 		<theme_item name="breakpoint_color" data_type="color" type="Color" default="Color(0.9, 0.29, 0.3, 1)">
 			[Color] of the breakpoint icon for bookmarked lines.
 		</theme_item>
+		<theme_item name="breakpoint_disabled_color" data_type="color" type="Color" default="Color(0.52, 0.52, 0.52, 1)">
+			[Color] of the disabled breakpoint icons.
+		</theme_item>
+		<theme_item name="breakpoint_print_color" data_type="color" type="Color" default="Color(0.816, 0.684, 0.213, 1)">
+			[Color] of the print-only breakpoint icons.
+		</theme_item>
 		<theme_item name="code_folding_color" data_type="color" type="Color" default="Color(0.8, 0.8, 0.8, 0.8)">
 			[Color] for all icons related to line folding.
 		</theme_item>
@@ -727,6 +740,9 @@
 		</theme_item>
 		<theme_item name="breakpoint" data_type="icon" type="Texture2D">
 			Sets a custom [Texture2D] to draw in the breakpoint gutter for breakpointed lines.
+		</theme_item>
+		<theme_item name="breakpoint_conditional" data_type="icon" type="Texture2D">
+			Sets a custom [Texture2D] to draw in the breakpoint gutter for conditional breakpoints.
 		</theme_item>
 		<theme_item name="can_fold" data_type="icon" type="Texture2D">
 			Sets a custom [Texture2D] to draw in the line folding gutter when a line can be folded.
