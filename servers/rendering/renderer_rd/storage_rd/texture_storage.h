@@ -393,6 +393,7 @@ private:
 			RID color;
 			RID depth;
 			RID velocity;
+			RID velocity_depth;
 
 			// In a multiview scenario, which is the most likely where we
 			// override our destination textures, we need to obtain slices
@@ -784,7 +785,7 @@ public:
 	RID render_target_get_override_depth_slice(RID p_render_target, const uint32_t p_layer) const;
 	virtual RID render_target_get_override_velocity(RID p_render_target) const override;
 	RID render_target_get_override_velocity_slice(RID p_render_target, const uint32_t p_layer) const;
-	virtual RID render_target_get_override_velocity_depth(RID p_render_target) const override { return RID(); }
+	virtual RID render_target_get_override_velocity_depth(RID p_render_target) const override;
 
 	virtual RID render_target_get_texture(RID p_render_target) override;
 
