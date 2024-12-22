@@ -4376,6 +4376,7 @@ bool Main::iteration() {
 
 	Engine::get_singleton()->_process_step = process_step;
 	Engine::get_singleton()->_physics_interpolation_fraction = advance.interpolation_fraction;
+	Engine::get_singleton()->_physics_steps_this_frame = advance.physics_steps;
 
 	uint64_t physics_process_ticks = 0;
 	uint64_t process_ticks = 0;
