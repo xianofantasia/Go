@@ -261,3 +261,12 @@ Validate extension JSON: Error: Field 'classes/PointLight2D/properties/texture':
 
 Property hints modified to disallow resource types that don't work. The types allowed are now more restricted, but this change only impacts the editor and not the actual exposed API. No adjustments should be necessary.
 Decal properties were previously changed from Texture to Texture2D in 4.2, so we need to silence those warnings too.
+
+
+GH-100062
+--------
+Validate extension JSON: Error: Field 'classes/RenderingDevice/methods/index_buffer_create/arguments': size changed value in new API, from 4 to 5.
+Validate extension JSON: Error: Field 'classes/RenderingDevice/methods/uniform_buffer_create/arguments': size changed value in new API, from 2 to 3.
+Validate extension JSON: Error: Field 'classes/RenderingDevice/methods/vertex_buffer_create/arguments': size changed value in new API, from 3 to 4.
+
+Optional argument added. Compatibility method registered.

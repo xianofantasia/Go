@@ -158,6 +158,15 @@ void RenderingDeviceDriverMetal::buffer_unmap(BufferID p_buffer) {
 	// Nothing to do.
 }
 
+uint64_t RenderingDeviceDriverMetal::buffer_get_device_address(BufferID p_buffer) {
+	if (@available(iOS 16.0, macOS 13.0, *)) {
+		id<MTLBuffer> obj = rid::get(p_buffer);
+		return obj.gpuAddress;
+	} else {
+		return 0;
+	}
+}
+
 #pragma mark - Texture
 
 #pragma mark - Format Conversions
@@ -4017,6 +4026,8 @@ bool RenderingDeviceDriverMetal::has_feature(Features p_feature) {
 			return false;
 		case SUPPORTS_FRAGMENT_SHADER_WITH_ONLY_SIDE_EFFECTS:
 			return true;
+		case SUPPORTS_BUFFER_ADDRESS:
+			return false;
 		default:
 			return false;
 	}
