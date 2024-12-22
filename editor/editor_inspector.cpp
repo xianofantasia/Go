@@ -3535,13 +3535,6 @@ void EditorInspector::update_tree() {
 					}
 				}
 
-				ep->set_draw_warning(draw_warning);
-				ep->set_use_folding(use_folding);
-				ep->set_favoritable(can_favorite && !disable_favorite);
-				ep->set_checkable(checkable);
-				ep->set_checked(checked);
-				ep->set_keying(keying);
-				ep->set_read_only(property_read_only || all_read_only);
 				if (p.name.begins_with("metadata/")) {
 					Variant _default = Variant();
 					if (node != nullptr) {
@@ -3551,6 +3544,14 @@ void EditorInspector::update_tree() {
 				} else {
 					ep->set_deletable(deletable_properties);
 				}
+
+				ep->set_draw_warning(draw_warning);
+				ep->set_use_folding(use_folding);
+				ep->set_favoritable(can_favorite && !disable_favorite && !ep->is_deletable());
+				ep->set_checkable(checkable);
+				ep->set_checked(checked);
+				ep->set_keying(keying);
+				ep->set_read_only(property_read_only || all_read_only);
 			}
 
 			if (ep && ep->is_favoritable() && current_favorites.has(p.name)) {
@@ -4350,17 +4351,37 @@ void EditorInspector::_set_property_favorited(const String &p_path, bool p_favor
 		return;
 	}
 
-	StringName class_name = object->get_class_name();
-	while (!class_name.is_empty()) {
+	StringName validate_name = object->get_class_name();
+	StringName class_name;
+	// Check if the property is built-in.
+	while (!validate_name.is_empty()) {
+		class_name = validate_name;
+
 		bool has_prop = ClassDB::has_property(class_name, p_path, true);
 		if (has_prop) {
 			break;
 		}
 
-		class_name = ClassDB::get_parent_class_nocheck(class_name);
+		validate_name = ClassDB::get_parent_class_nocheck(class_name);
+	}
+
+	if (validate_name.is_empty()) {
+		// "script" isn't a real property, so a hack is necessary.
+		if (p_path != "script") {
+			class_name = validate_name;
+		}
+
+		// Deal with theme properties.
+		if (p_path.begins_with("theme_override_")) {
+			const String slice = p_path.get_slice("/", 1);
+			if (!slice.is_empty()) {
+				class_name = validate_name;
+			}
+		}
 	}
 
 	if (class_name.is_empty()) {
+		// Check if it's part of a script.
 		Ref<Script> scr = object->get_script();
 		if (scr.is_valid()) {
 			List<PropertyInfo> plist;
