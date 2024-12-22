@@ -3,40 +3,50 @@
 using _BINDINGS_NAMESPACE_;
 using System;
 
-public partial class _CLASS_ : _BASE_
+public partial class CharacterBody2d : CharacterBody2D
 {
-    public const float Speed = 300.0f;
-    public const float JumpVelocity = -400.0f;
+	public const float Speed = 300.0f;
+	public const float Accel = 300.0f;
+	public const float JumpVelocity = -400.0f;
 
-    public override void _PhysicsProcess(double delta)
-    {
-        Vector2 velocity = Velocity;
+	public override void _PhysicsProcess(double delta)
+	{
+		Vector2 velocity = Velocity;
 
-        // Add the gravity.
-        if (!IsOnFloor())
-        {
-            velocity += GetGravity() * (float)delta;
-        }
+		// Handle gravity.
+		if (!IsOnFloor())
+		{
+			velocity += GetGravity() * (float)delta;
+		}
 
-        // Handle Jump.
-        if (Input.IsActionJustPressed("ui_accept") && IsOnFloor())
-        {
-            velocity.Y = JumpVelocity;
-        }
+		// Get the vertical velocity.
+		Vector2 verticalVelocity = velocity.Project(UpDirection);
 
-        // Get the input direction and handle the movement/deceleration.
-        // As good practice, you should replace UI actions with custom gameplay actions.
-        Vector2 direction = Input.GetVector("ui_left", "ui_right", "ui_up", "ui_down");
-        if (direction != Vector2.Zero)
-        {
-            velocity.X = direction.X * Speed;
-        }
-        else
-        {
-            velocity.X = Mathf.MoveToward(Velocity.X, 0, Speed);
-        }
+		// Get the horizontal velocity.
+		Vector2 horizontalVelocity = velocity - verticalVelocity;
 
-        Velocity = velocity;
-        MoveAndSlide();
-    }
+		// Handle Jump.
+		if (Input.IsActionJustPressed("ui_accept") && IsOnFloor())
+		{
+			verticalVelocity = UpDirection * JumpVelocity;
+		}
+
+		// As good practice, you should replace UI actions with custom gameplay actions.
+		float inputAxis = Input.GetAxis("ui_left", "ui_right");
+
+		// Calculate the intended direction in 2D plane.
+		Vector2 inputDirection = new Vector2(inputAxis, 0).Rotated(Rotation);
+
+		// Calculate the target horizontal velocity.
+		Vector2 targetHorizontalVelocity = inputDirection * Speed;
+
+		// Move the current horizontal velocity towards the target horizontal velocity.
+		horizontalVelocity = horizontalVelocity.MoveToward(targetHorizontalVelocity, Accel * (float)delta);
+
+		// Compose the final velocity.
+		velocity = horizontalVelocity + verticalVelocity;
+
+		Velocity = velocity;
+		MoveAndSlide();
+	}
 }
