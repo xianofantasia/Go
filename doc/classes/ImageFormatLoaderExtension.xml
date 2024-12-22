@@ -16,6 +16,13 @@
 				Returns the list of file extensions for this image format. Files with the given extensions will be treated as image file and loaded using this class.
 			</description>
 		</method>
+		<method name="_has_default_imports" qualifiers="virtual const">
+			<return type="bool" />
+			<param index="0" name="resource_types" type="PackedStringArray" />
+			<description>
+				Returns [code]true[/code] if this image format imports the default image resource types, otherwise returns [code]false[/code] if this image format only imports the image resource types specified by [param resource_types].
+			</description>
+		</method>
 		<method name="_load_image" qualifiers="virtual">
 			<return type="int" enum="Error" />
 			<param index="0" name="image" type="Image" />
