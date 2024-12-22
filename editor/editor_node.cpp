@@ -1113,6 +1113,17 @@ void EditorNode::_resources_reimported(const Vector<String> &p_resources) {
 		ap->stop(true);
 	}
 
+	// Only refresh the current scene tab if it's been reimported.
+	// Otherwise the scene tab will try to grab focus unnecessarily.
+	bool should_refresh_current_scene_tab = false;
+	String current_scene_tab = editor_data.get_scene_path(current_tab);
+	for (const String &E : scenes_reimported) {
+		if (E == current_scene_tab) {
+			should_refresh_current_scene_tab = true;
+			break;
+		}
+	}
+
 	for (const String &E : scenes_reimported) {
 		reload_scene(E);
 	}
@@ -1123,7 +1134,9 @@ void EditorNode::_resources_reimported(const Vector<String> &p_resources) {
 	scenes_reimported.clear();
 	resources_reimported.clear();
 
-	_set_current_scene_nocheck(current_tab);
+	if (should_refresh_current_scene_tab) {
+		_set_current_scene_nocheck(current_tab);
+	}
 }
 
 void EditorNode::_sources_changed(bool p_exist) {
