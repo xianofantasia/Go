@@ -76,6 +76,12 @@ PackedStringArray SceneTreeEditor::_get_node_configuration_warnings(Node *p_node
 	return warnings;
 }
 
+PackedStringArray SceneTreeEditor::_get_node_accessibility_configuration_warnings(Node *p_node) {
+	PackedStringArray warnings = p_node->get_accessibility_configuration_warnings();
+
+	return warnings;
+}
+
 void SceneTreeEditor::_cell_button_pressed(Object *p_item, int p_column, int p_id, MouseButton p_button) {
 	if (p_button != MouseButton::LEFT) {
 		return;
@@ -150,8 +156,10 @@ void SceneTreeEditor::_cell_button_pressed(Object *p_item, int p_column, int p_i
 		}
 		undo_redo->commit_action();
 	} else if (p_id == BUTTON_WARNING) {
-		const PackedStringArray warnings = _get_node_configuration_warnings(n);
-
+		PackedStringArray warnings = _get_node_configuration_warnings(n);
+		if (accessibility_warnings) {
+			warnings.append_array(_get_node_accessibility_configuration_warnings(n));
+		}
 		if (warnings.is_empty()) {
 			return;
 		}
@@ -472,7 +480,11 @@ void SceneTreeEditor::_update_node(Node *p_node, TreeItem *p_item, bool p_part_o
 	}
 
 	if (can_rename) { // TODO Should be can edit..
-		const PackedStringArray warnings = _get_node_configuration_warnings(p_node);
+		PackedStringArray warnings = _get_node_configuration_warnings(p_node);
+		if (accessibility_warnings) {
+			warnings.append_array(_get_node_accessibility_configuration_warnings(p_node));
+		}
+
 		const int num_warnings = warnings.size();
 		if (num_warnings > 0) {
 			StringName warning_icon;
@@ -1886,6 +1898,13 @@ void SceneTreeEditor::set_auto_expand_selected(bool p_auto, bool p_update_settin
 		EditorSettings::get_singleton()->set("docks/scene_tree/auto_expand_to_selected", p_auto);
 	}
 	auto_expand_selected = p_auto;
+}
+
+void SceneTreeEditor::set_accessibility_warnings(bool p_enable, bool p_update_settings) {
+	if (p_update_settings) {
+		EditorSettings::get_singleton()->set("docks/scene_tree/accessibility_warnings", p_enable);
+	}
+	accessibility_warnings = p_enable;
 }
 
 void SceneTreeEditor::set_connect_to_script_mode(bool p_enable) {

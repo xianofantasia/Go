@@ -4,7 +4,9 @@ default_language_version:
 exclude: |
   (?x)^(
     .*thirdparty/.*|
-    .*-so_wrap\.(h|c)$
+    .*-so_wrap\.(h|c)$|
+    .*-dll_wrap\.(h|c)$|
+    .*-dylib_wrap\.(h|c)$
   )
 
 repos:
