@@ -32,6 +32,7 @@
 
 #include "editor/editor_string_names.h"
 #include "editor/themes/editor_scale.h"
+#include "scene/gui/aspect_ratio_container.h"
 #include "scene/gui/label.h"
 #include "scene/gui/texture_rect.h"
 #include "scene/resources/animated_texture.h"
@@ -60,6 +61,9 @@ void TexturePreview::_notification(int p_what) {
 				Ref<Font> metadata_label_font = get_theme_font(SNAME("expression"), EditorStringName(EditorFonts));
 				metadata_label->add_theme_font_override(SceneStringName(font), metadata_label_font);
 			}
+
+			bg_rect->set_color(get_theme_color(SNAME("dark_color_2"), EditorStringName(Editor)));
+			borders_rect->set_border_color(get_theme_color(SNAME("extra_border_color_1"), EditorStringName(Editor)));
 
 			checkerboard->set_texture(get_editor_theme_icon(SNAME("Checkerboard")));
 		} break;
@@ -124,19 +128,36 @@ void TexturePreview::_update_metadata_label_text() {
 }
 
 TexturePreview::TexturePreview(Ref<Texture2D> p_texture, bool p_show_metadata) {
-	checkerboard = memnew(TextureRect);
-	checkerboard->set_stretch_mode(TextureRect::STRETCH_TILE);
-	checkerboard->set_texture_repeat(CanvasItem::TEXTURE_REPEAT_ENABLED);
-	checkerboard->set_custom_minimum_size(Size2(0.0, 256.0) * EDSCALE);
-	add_child(checkerboard);
+	set_custom_minimum_size(Size2(0.0, 256.0) * EDSCALE);
+
+	bg_rect = memnew(ColorRect);
+	bg_rect->set_anchors_preset(PRESET_FULL_RECT);
+	bg_rect->set_clip_contents(true);
+	add_child(bg_rect);
+
+	AspectRatioContainer *centering_container = memnew(AspectRatioContainer);
+	centering_container->set_anchors_preset(PRESET_FULL_RECT);
+	bg_rect->add_child(centering_container);
 
 	texture_display = memnew(TextureRect);
 	texture_display->set_texture_filter(TEXTURE_FILTER_NEAREST_WITH_MIPMAPS);
 	texture_display->set_texture(p_texture);
-	texture_display->set_anchors_preset(TextureRect::PRESET_FULL_RECT);
-	texture_display->set_stretch_mode(TextureRect::STRETCH_KEEP_ASPECT_CENTERED);
 	texture_display->set_expand_mode(TextureRect::EXPAND_IGNORE_SIZE);
-	add_child(texture_display);
+	texture_display->set_anchors_preset(PRESET_FULL_RECT);
+	centering_container->add_child(texture_display);
+
+	checkerboard = memnew(TextureRect);
+	checkerboard->set_stretch_mode(TextureRect::STRETCH_TILE);
+	checkerboard->set_texture_repeat(CanvasItem::TEXTURE_REPEAT_ENABLED);
+	checkerboard->set_anchors_preset(PRESET_FULL_RECT);
+	checkerboard->set_draw_behind_parent(true);
+	texture_display->add_child(checkerboard);
+
+	borders_rect = memnew(ReferenceRect);
+	borders_rect->set_border_width(2);
+	borders_rect->set_anchors_preset(PRESET_FULL_RECT);
+	borders_rect->set_draw_behind_parent(true);
+	checkerboard->add_child(borders_rect);
 
 	if (p_show_metadata) {
 		metadata_label = memnew(Label);

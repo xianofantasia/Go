@@ -33,7 +33,9 @@
 
 #include "editor/editor_inspector.h"
 #include "editor/plugins/editor_plugin.h"
+#include "scene/gui/color_rect.h"
 #include "scene/gui/margin_container.h"
+#include "scene/gui/reference_rect.h"
 #include "scene/resources/texture.h"
 
 class TextureRect;
@@ -44,7 +46,9 @@ class TexturePreview : public MarginContainer {
 private:
 	TextureRect *texture_display = nullptr;
 
+	ColorRect *bg_rect = nullptr;
 	TextureRect *checkerboard = nullptr;
+	ReferenceRect *borders_rect = nullptr;
 	Label *metadata_label = nullptr;
 
 	void _update_metadata_label_text();
