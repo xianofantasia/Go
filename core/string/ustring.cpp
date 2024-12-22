@@ -125,7 +125,7 @@ const char16_t *Char16String::get_data() const {
 
 void Char16String::copy_from(const char16_t *p_cstr) {
 	if (!p_cstr) {
-		resize(0);
+		clear();
 		return;
 	}
 
@@ -135,7 +135,7 @@ void Char16String::copy_from(const char16_t *p_cstr) {
 	size_t len = s - p_cstr;
 
 	if (len == 0) {
-		resize(0);
+		clear();
 		return;
 	}
 
@@ -195,14 +195,14 @@ const char *CharString::get_data() const {
 
 void CharString::copy_from(const char *p_cstr) {
 	if (!p_cstr) {
-		resize(0);
+		clear();
 		return;
 	}
 
 	size_t len = strlen(p_cstr);
 
 	if (len == 0) {
-		resize(0);
+		clear();
 		return;
 	}
 
@@ -301,7 +301,7 @@ Error String::parse_url(String &r_scheme, String &r_host, int &r_port, String &r
 
 void String::parse_latin1(const StrRange<char> &p_cstr) {
 	if (p_cstr.len == 0) {
-		resize(0);
+		clear();
 		return;
 	}
 
@@ -320,7 +320,7 @@ void String::parse_latin1(const StrRange<char> &p_cstr) {
 
 void String::parse_utf32(const StrRange<char32_t> &p_cstr) {
 	if (p_cstr.len == 0) {
-		resize(0);
+		clear();
 		return;
 	}
 

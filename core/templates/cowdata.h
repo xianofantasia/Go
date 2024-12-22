@@ -198,7 +198,10 @@ public:
 		}
 	}
 
-	_FORCE_INLINE_ void clear() { resize(0); }
+	_FORCE_INLINE_ void clear() {
+		_unref();
+		_ptr = nullptr;
+	}
 	_FORCE_INLINE_ bool is_empty() const { return _ptr == nullptr; }
 
 	_FORCE_INLINE_ void set(Size p_index, const T &p_elem) {
@@ -340,8 +343,7 @@ Error CowData<T>::resize(Size p_size) {
 
 	if (p_size == 0) {
 		// wants to clean up
-		_unref();
-		_ptr = nullptr;
+		clear();
 		return OK;
 	}
 
