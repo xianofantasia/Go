@@ -1368,7 +1368,7 @@ void RuntimeNodeSelect::_root_window_input(const Ref<InputEvent> &p_event) {
 			}
 		} else if (node_select_type == NODE_TYPE_3D) {
 #ifndef _3D_DISABLED
-			if (root->get_camera_3d() && _handle_3d_input(p_event)) {
+			if (_handle_3d_input(p_event)) {
 				return;
 			}
 #endif // _3D_DISABLED
@@ -2147,21 +2147,21 @@ Transform3D RuntimeNodeSelect::_get_cursor_transform() {
 void RuntimeNodeSelect::_reset_camera_3d() {
 	camera_first_override = true;
 
+	cursor = Cursor();
 	Window *root = SceneTree::get_singleton()->get_root();
 	Camera3D *camera = root->get_camera_3d();
-	if (!camera) {
-		return;
+	if (camera) {
+		Transform3D transform = camera->get_global_transform();
+		transform.translate_local(0, 0, -cursor.distance);
+		cursor.pos = transform.origin;
+
+		cursor.x_rot = -camera->get_global_rotation().x;
+		cursor.y_rot = -camera->get_global_rotation().y;
+
+		cursor.fov_scale = CLAMP(camera->get_fov() / CAMERA_BASE_FOV, CAMERA_MIN_FOV_SCALE, CAMERA_MAX_FOV_SCALE);
+	} else {
+		cursor.fov_scale = 1.0;
 	}
-
-	cursor = Cursor();
-	Transform3D transform = camera->get_global_transform();
-	transform.translate_local(0, 0, -cursor.distance);
-	cursor.pos = transform.origin;
-
-	cursor.x_rot = -camera->get_global_rotation().x;
-	cursor.y_rot = -camera->get_global_rotation().y;
-
-	cursor.fov_scale = CLAMP(camera->get_fov() / CAMERA_BASE_FOV, CAMERA_MIN_FOV_SCALE, CAMERA_MAX_FOV_SCALE);
 
 	SceneTree::get_singleton()->get_root()->set_camera_3d_override_transform(_get_cursor_transform());
 	SceneTree::get_singleton()->get_root()->set_camera_3d_override_perspective(CAMERA_BASE_FOV * cursor.fov_scale, CAMERA_ZNEAR, CAMERA_ZFAR);
