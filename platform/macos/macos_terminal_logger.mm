@@ -32,6 +32,8 @@
 
 #ifdef MACOS_ENABLED
 
+#include "core/os/os.h"
+
 #include <os/log.h>
 
 void MacOSTerminalLogger::log_error(const char *p_function, const char *p_file, int p_line, const char *p_code, const char *p_rationale, bool p_editor_notify, ErrorType p_type) {
@@ -39,42 +41,52 @@ void MacOSTerminalLogger::log_error(const char *p_function, const char *p_file, 
 		return;
 	}
 
-	const char *err_details;
-	if (p_rationale && p_rationale[0]) {
-		err_details = p_rationale;
-	} else {
-		err_details = p_code;
-	}
+	const char *err_details = p_rationale && p_rationale[0] ? p_rationale : p_code;
+
+	// Disable color codes if stdout is not a TTY or CI.
+	// This prevents Godot from writing ANSI escape codes when redirecting
+	// stdout and stderr to a file.
+	const bool color = OS::get_singleton()->has_environment("CI") || OS::get_singleton()->get_stdout_type() == OS::STD_HANDLE_CONSOLE;
+	const char *gray = color ? "\u001b[0;90m" : "";
+	const char *red = color ? "\u001b[0;31m" : "";
+	const char *red_bold = color ? "\u001b[1;31m" : "";
+	const char *yellow = color ? "\u001b[0;33m" : "";
+	const char *yellow_bold = color ? "\u001b[1;33m" : "";
+	const char *magenta = color ? "\u001b[0;35m" : "";
+	const char *magenta_bold = color ? "\u001b[1;35m" : "";
+	const char *cyan = color ? "\u001b[0;36m" : "";
+	const char *cyan_bold = color ? "\u001b[1;36m" : "";
+	const char *reset = color ? "\u001b[0m" : "";
 
 	switch (p_type) {
 		case ERR_WARNING:
 			os_log_info(OS_LOG_DEFAULT,
 					"WARNING: %{public}s\nat: %{public}s (%{public}s:%i)",
 					err_details, p_function, p_file, p_line);
-			logf_error("\E[1;33mWARNING:\E[0;93m %s\n", err_details);
-			logf_error("\E[0;90m     at: %s (%s:%i)\E[0m\n", p_function, p_file, p_line);
+			logf_error("%sWARNING:%s %s\n", yellow_bold, yellow, err_details);
+			logf_error("%s     at: %s (%s:%i)%s\n", gray, p_function, p_file, p_line, reset);
 			break;
 		case ERR_SCRIPT:
 			os_log_error(OS_LOG_DEFAULT,
 					"SCRIPT ERROR: %{public}s\nat: %{public}s (%{public}s:%i)",
 					err_details, p_function, p_file, p_line);
-			logf_error("\E[1;35mSCRIPT ERROR:\E[0;95m %s\n", err_details);
-			logf_error("\E[0;90m          at: %s (%s:%i)\E[0m\n", p_function, p_file, p_line);
+			logf_error("%sSCRIPT ERROR:%s %s\n", magenta_bold, magenta, err_details);
+			logf_error("%s          at: %s (%s:%i)%s\n", gray, p_function, p_file, p_line, reset);
 			break;
 		case ERR_SHADER:
 			os_log_error(OS_LOG_DEFAULT,
 					"SHADER ERROR: %{public}s\nat: %{public}s (%{public}s:%i)",
 					err_details, p_function, p_file, p_line);
-			logf_error("\E[1;36mSHADER ERROR:\E[0;96m %s\n", err_details);
-			logf_error("\E[0;90m          at: %s (%s:%i)\E[0m\n", p_function, p_file, p_line);
+			logf_error("%sSHADER ERROR:%s %s\n", cyan_bold, cyan, err_details);
+			logf_error("%s          at: %s (%s:%i)%s\n", gray, p_function, p_file, p_line, reset);
 			break;
 		case ERR_ERROR:
 		default:
 			os_log_error(OS_LOG_DEFAULT,
 					"ERROR: %{public}s\nat: %{public}s (%{public}s:%i)",
 					err_details, p_function, p_file, p_line);
-			logf_error("\E[1;31mERROR:\E[0;91m %s\n", err_details);
-			logf_error("\E[0;90m   at: %s (%s:%i)\E[0m\n", p_function, p_file, p_line);
+			logf_error("%sERROR:%s %s\n", red_bold, red, err_details);
+			logf_error("%s   at: %s (%s:%i)%s\n", gray, p_function, p_file, p_line, reset);
 			break;
 	}
 }

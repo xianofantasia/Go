@@ -30,9 +30,9 @@
 
 #include "windows_terminal_logger.h"
 
-#include "core/os/os.h"
-
 #ifdef WINDOWS_ENABLED
+
+#include "core/os/os.h"
 
 #include <stdio.h>
 
@@ -79,80 +79,41 @@ void WindowsTerminalLogger::log_error(const char *p_function, const char *p_file
 		return;
 	}
 
-	HANDLE hCon = GetStdHandle(STD_OUTPUT_HANDLE);
-	if (OS::get_singleton()->get_stdout_type() != OS::STD_HANDLE_CONSOLE || !hCon || hCon == INVALID_HANDLE_VALUE) {
-		StdLogger::log_error(p_function, p_file, p_line, p_code, p_rationale, p_type);
-	} else {
-		CONSOLE_SCREEN_BUFFER_INFO sbi; //original
-		GetConsoleScreenBufferInfo(hCon, &sbi);
+	const char *err_details = p_rationale && p_rationale[0] ? p_rationale : p_code;
 
-		WORD current_bg = sbi.wAttributes & (BACKGROUND_RED | BACKGROUND_GREEN | BACKGROUND_BLUE | BACKGROUND_INTENSITY);
+	// Disable color codes if stdout is not a TTY or CI.
+	// This prevents Godot from writing ANSI escape codes when redirecting
+	// stdout and stderr to a file.
+	const bool color = OS::get_singleton()->has_environment("CI") || OS::get_singleton()->get_stdout_type() == OS::STD_HANDLE_CONSOLE;
+	const char *gray = color ? "\u001b[0;90m" : "";
+	const char *red = color ? "\u001b[0;31m" : "";
+	const char *red_bold = color ? "\u001b[1;31m" : "";
+	const char *yellow = color ? "\u001b[0;33m" : "";
+	const char *yellow_bold = color ? "\u001b[1;33m" : "";
+	const char *magenta = color ? "\u001b[0;35m" : "";
+	const char *magenta_bold = color ? "\u001b[1;35m" : "";
+	const char *cyan = color ? "\u001b[0;36m" : "";
+	const char *cyan_bold = color ? "\u001b[1;36m" : "";
+	const char *reset = color ? "\u001b[0m" : "";
 
-		uint32_t basecol = 0;
-		switch (p_type) {
-			case ERR_ERROR:
-				basecol = FOREGROUND_RED;
-				break;
-			case ERR_WARNING:
-				basecol = FOREGROUND_RED | FOREGROUND_GREEN;
-				break;
-			case ERR_SCRIPT:
-				basecol = FOREGROUND_RED | FOREGROUND_BLUE;
-				break;
-			case ERR_SHADER:
-				basecol = FOREGROUND_GREEN | FOREGROUND_BLUE;
-				break;
-		}
-
-		basecol |= current_bg;
-
-		SetConsoleTextAttribute(hCon, basecol | FOREGROUND_INTENSITY);
-		switch (p_type) {
-			case ERR_ERROR:
-				logf_error("ERROR:");
-				break;
-			case ERR_WARNING:
-				logf_error("WARNING:");
-				break;
-			case ERR_SCRIPT:
-				logf_error("SCRIPT ERROR:");
-				break;
-			case ERR_SHADER:
-				logf_error("SHADER ERROR:");
-				break;
-		}
-
-		SetConsoleTextAttribute(hCon, basecol);
-		if (p_rationale && p_rationale[0]) {
-			logf_error(" %s\n", p_rationale);
-		} else {
-			logf_error(" %s\n", p_code);
-		}
-
-		// `FOREGROUND_INTENSITY` alone results in gray text.
-		SetConsoleTextAttribute(hCon, FOREGROUND_INTENSITY);
-		switch (p_type) {
-			case ERR_ERROR:
-				logf_error("   at: ");
-				break;
-			case ERR_WARNING:
-				logf_error("     at: ");
-				break;
-			case ERR_SCRIPT:
-				logf_error("          at: ");
-				break;
-			case ERR_SHADER:
-				logf_error("          at: ");
-				break;
-		}
-
-		if (p_rationale && p_rationale[0]) {
-			logf_error("(%s:%i)\n", p_file, p_line);
-		} else {
-			logf_error("%s (%s:%i)\n", p_function, p_file, p_line);
-		}
-
-		SetConsoleTextAttribute(hCon, sbi.wAttributes);
+	switch (p_type) {
+		case ERR_WARNING:
+			logf_error("%sWARNING:%s %s\n", yellow_bold, yellow, err_details);
+			logf_error("%s     at: %s (%s:%i)%s\n", gray, p_function, p_file, p_line, reset);
+			break;
+		case ERR_SCRIPT:
+			logf_error("%sSCRIPT ERROR:%s %s\n", magenta_bold, magenta, err_details);
+			logf_error("%s          at: %s (%s:%i)%s\n", gray, p_function, p_file, p_line, reset);
+			break;
+		case ERR_SHADER:
+			logf_error("%sSHADER ERROR:%s %s\n", cyan_bold, cyan, err_details);
+			logf_error("%s          at: %s (%s:%i)%s\n", gray, p_function, p_file, p_line, reset);
+			break;
+		case ERR_ERROR:
+		default:
+			logf_error("%sERROR:%s %s\n", red_bold, red, err_details);
+			logf_error("%s   at: %s (%s:%i)%s\n", gray, p_function, p_file, p_line, reset);
+			break;
 	}
 }
 
