@@ -26,7 +26,7 @@
 				Add custom option to the context menu of the plugin's specified slot. When the option is activated, [param callback] will be called. Callback should take single [Array] argument; array contents depend on context menu slot.
 				[codeblock]
 				func _popup_menu(paths):
-				    add_context_menu_item("File Custom options", handle, ICON)
+					add_context_menu_item("File Custom options", handle, ICON)
 				[/codeblock]
 				If you want to assign shortcut to the menu item, use [method add_context_menu_item_from_shortcut] instead.
 			</description>
@@ -40,10 +40,10 @@
 				Add custom option to the context menu of the plugin's specified slot. The option will have the [param shortcut] assigned and reuse its callback. The shortcut has to be registered beforehand with [method add_menu_shortcut].
 				[codeblock]
 				func _init():
-				    add_menu_shortcut(SHORTCUT, handle)
+					add_menu_shortcut(SHORTCUT, handle)
 
 				func _popup_menu(paths):
-				    add_context_menu_item_from_shortcut("File Custom options", SHORTCUT, ICON)
+					add_context_menu_item_from_shortcut("File Custom options", SHORTCUT, ICON)
 				[/codeblock]
 			</description>
 		</method>
@@ -56,12 +56,12 @@
 				Add a submenu to the context menu of the plugin's specified slot. The submenu is not automatically handled, you need to connect to its signals yourself. Also the submenu is freed on every popup, so provide a new [PopupMenu] every time.
 				[codeblock]
 				func _popup_menu(paths):
-				    var popup_menu = PopupMenu.new()
-				    popup_menu.add_item("Blue")
-				    popup_menu.add_item("White")
-				    popup_menu.id_pressed.connect(_on_color_submenu_option)
+					var popup_menu = PopupMenu.new()
+					popup_menu.add_item("Blue")
+					popup_menu.add_item("White")
+					popup_menu.id_pressed.connect(_on_color_submenu_option)
 
-				    add_context_menu_item("Set Node Color", popup_menu)
+					add_context_menu_item("Set Node Color", popup_menu)
 				[/codeblock]
 			</description>
 		</method>
@@ -73,7 +73,7 @@
 				Registers a shortcut associated with the plugin's context menu. This method should be called once (e.g. in plugin's [method Object._init]). [param callback] will be called when user presses the specified [param shortcut] while the menu's context is in effect (e.g. FileSystem dock is focused). Callback should take single [Array] argument; array contents depend on context menu slot.
 				[codeblock]
 				func _init():
-				    add_menu_shortcut(SHORTCUT, handle)
+					add_menu_shortcut(SHORTCUT, handle)
 				[/codeblock]
 			</description>
 		</method>
