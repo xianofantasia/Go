@@ -337,8 +337,8 @@ public:
 			VARIABLE,
 			WHILE,
 		};
-
 		Type type = NONE;
+
 		int start_line = 0, end_line = 0;
 		int start_column = 0, end_column = 0;
 		int leftmost_column = 0, rightmost_column = 0;
@@ -797,6 +797,20 @@ public:
 			members.push_back(Member(p_annotation_node));
 		}
 
+		Vector<StringName> get_super_class_fqcns() const {
+			Vector<StringName> ret;
+
+			const ClassNode *iterated_class = base_type.class_type;
+			while (iterated_class) {
+				if (iterated_class->datatype.kind == DataType::SCRIPT || iterated_class->datatype.kind == DataType::CLASS) {
+					ret.append(iterated_class->fqcn);
+				}
+				iterated_class = iterated_class->base_type.class_type;
+			}
+
+			return ret;
+		}
+
 		ClassNode() {
 			type = CLASS;
 		}
@@ -856,6 +870,7 @@ public:
 		SuiteNode *body = nullptr;
 		bool is_static = false; // For lambdas it's determined in the analyzer.
 		bool is_coroutine = false;
+		// bool is_virtual = false;
 		Variant rpc_config;
 		MethodInfo info;
 		LambdaNode *source_lambda = nullptr;
@@ -1510,6 +1525,7 @@ private:
 	bool icon_annotation(AnnotationNode *p_annotation, Node *p_target, ClassNode *p_class);
 	bool static_unload_annotation(AnnotationNode *p_annotation, Node *p_target, ClassNode *p_class);
 	bool onready_annotation(AnnotationNode *p_annotation, Node *p_target, ClassNode *p_class);
+	// bool virtual_annotation(AnnotationNode *p_annotation, Node *p_target, ClassNode *p_class);
 	template <PropertyHint t_hint, Variant::Type t_type>
 	bool export_annotations(AnnotationNode *p_annotation, Node *p_target, ClassNode *p_class);
 	bool export_storage_annotation(AnnotationNode *p_annotation, Node *p_target, ClassNode *p_class);
