@@ -222,6 +222,12 @@ constexpr T get_num_bits(T x) {
 	return floor_log2(x);
 }
 
+// Tells if a positive integer is a power of 2
+template <typename T>
+inline bool is_power_of_2(const T x) {
+	return x && ((x & (x - 1)) == 0);
+}
+
 // Swap 16, 32 and 64 bits value for endianness.
 #if defined(__GNUC__)
 #define BSWAP16(x) __builtin_bswap16(x)

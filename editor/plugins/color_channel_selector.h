@@ -1,5 +1,5 @@
 /**************************************************************************/
-/*  texture_3d_editor_plugin.h                                            */
+/*  color_channel_selector.h                                              */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                             GODOT ENGINE                               */
@@ -28,76 +28,35 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef TEXTURE_3D_EDITOR_PLUGIN_H
-#define TEXTURE_3D_EDITOR_PLUGIN_H
+#ifndef COLOR_CHANNEL_SELECTOR_H
+#define COLOR_CHANNEL_SELECTOR_H
 
-#include "editor/editor_inspector.h"
-#include "editor/plugins/editor_plugin.h"
-#include "scene/gui/spin_box.h"
-#include "scene/resources/shader.h"
-#include "scene/resources/texture.h"
+#include "scene/gui/panel_container.h"
 
-class ColorChannelSelector;
+class Button;
 
-class Texture3DEditor : public Control {
-	GDCLASS(Texture3DEditor, Control);
+class ColorChannelSelector : public PanelContainer {
+	GDCLASS(ColorChannelSelector, PanelContainer);
 
-	SpinBox *layer = nullptr;
-	Label *info = nullptr;
-	Ref<Texture3D> texture;
+	static const unsigned int CHANNEL_COUNT = 4;
 
-	Ref<Shader> shader;
-	Ref<ShaderMaterial> material;
+public:
+	ColorChannelSelector();
 
-	Control *texture_rect = nullptr;
+	void set_available_channels_mask(const uint32_t p_mask);
+	uint32_t get_selected_channels_mask() const;
+	Vector4 get_selected_channel_factors() const;
 
-	ColorChannelSelector *channel_selector = nullptr;
-
-	bool setting = false;
-
-	void _make_shaders();
-
-	void _layer_changed(double) {
-		if (!setting) {
-			_update_material(false);
-		}
-	}
-
-	void _texture_changed();
-
-	void _texture_rect_update_area();
-	void _texture_rect_draw();
-
-	void _update_material(bool p_texture_changed);
-	void _update_gui();
-
-	void on_selected_channels_changed();
-
-protected:
+private:
 	void _notification(int p_what);
 
-public:
-	void edit(Ref<Texture3D> p_texture);
+	void on_button_toggled(const bool p_unused_pressed);
+	void create_button(const unsigned int p_channel_index, const String p_text, Control *p_parent);
 
-	Texture3DEditor();
-	~Texture3DEditor();
+	static void _bind_methods();
+
+	Button *buttons[CHANNEL_COUNT];
+	bool _setting_up_theme = false;
 };
 
-class EditorInspectorPlugin3DTexture : public EditorInspectorPlugin {
-	GDCLASS(EditorInspectorPlugin3DTexture, EditorInspectorPlugin);
-
-public:
-	virtual bool can_handle(Object *p_object) override;
-	virtual void parse_begin(Object *p_object) override;
-};
-
-class Texture3DEditorPlugin : public EditorPlugin {
-	GDCLASS(Texture3DEditorPlugin, EditorPlugin);
-
-public:
-	virtual String get_plugin_name() const override { return "Texture3D"; }
-
-	Texture3DEditorPlugin();
-};
-
-#endif // TEXTURE_3D_EDITOR_PLUGIN_H
+#endif // COLOR_CHANNEL_SELECTOR_H
